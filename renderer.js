@@ -6,6 +6,9 @@ const state = {
   dirty: false,
   settingsDirty: false,
   generationInProgress: false,
+  pinCharacterPrompt: false,
+  pinnedCharacterPromptsText: '',
+  pinnedCharacterNegativePromptsText: '',
   tagSearch: '',
   draftTags: [],
   draftNegativeTags: [],
@@ -49,6 +52,7 @@ const elements = {
   negativeTagInput: document.querySelector('#negativeTagInput'),
   addNegativeTagButton: document.querySelector('#addNegativeTagButton'),
   negativeTagChips: document.querySelector('#negativeTagChips'),
+  pinCharacterPromptToggle: document.querySelector('#pinCharacterPromptToggle'),
   characterPromptsInput: document.querySelector('#characterPromptsInput'),
   characterNegativePromptsInput: document.querySelector('#characterNegativePromptsInput'),
   promptInput: document.querySelector('#promptInput'),
@@ -349,6 +353,25 @@ function renderPromptPreviewForScene(scene) {
   elements.promptInput.value = scene.prompt || computed.prompt;
   elements.negativePromptInput.value = scene.negativePrompt || computed.negativePrompt;
   renderPromptHighlights();
+}
+
+function capturePinnedCharacterPrompts() {
+  state.pinnedCharacterPromptsText = elements.characterPromptsInput.value;
+  state.pinnedCharacterNegativePromptsText = elements.characterNegativePromptsInput.value;
+}
+
+function getSceneCharacterPrompts(scene) {
+  if (state.pinCharacterPrompt) {
+    return {
+      prompt: state.pinnedCharacterPromptsText,
+      negativePrompt: state.pinnedCharacterNegativePromptsText
+    };
+  }
+
+  return {
+    prompt: scene.characterPromptsText || '',
+    negativePrompt: scene.characterNegativePromptsText || ''
+  };
 }
 
 function renderProjectMeta() {
@@ -703,11 +726,21 @@ function renderSceneForm() {
   elements.sceneStatus.className = `status-pill ${scene.status}`;
   elements.sceneNoInput.value = scene.sceneNo || '';
   elements.descriptionInput.value = scene.description || '';
-  elements.characterPromptsInput.value = scene.characterPromptsText || '';
-  elements.characterNegativePromptsInput.value = scene.characterNegativePromptsText || '';
+  const characterPrompts = getSceneCharacterPrompts(scene);
+  elements.characterPromptsInput.value = characterPrompts.prompt;
+  elements.characterNegativePromptsInput.value = characterPrompts.negativePrompt;
   state.draftTags = uniqueTags(scene.tags || []);
   state.draftNegativeTags = uniqueTags(scene.negativeTags || []);
-  renderPromptPreviewForScene(scene);
+  const promptScene = state.pinCharacterPrompt
+    ? {
+      ...scene,
+      prompt: '',
+      negativePrompt: '',
+      characterPromptsText: characterPrompts.prompt,
+      characterNegativePromptsText: characterPrompts.negativePrompt
+    }
+    : scene;
+  renderPromptPreviewForScene(promptScene);
   renderTagChips();
   renderWarnings(scene);
   renderQueueAndGallery();
@@ -1370,8 +1403,21 @@ function organizeTagsForSelectedScene() {
   elements.characterNegativePromptsInput
 ].forEach((element) => {
   element.addEventListener('input', () => {
+    if (state.pinCharacterPrompt) {
+      capturePinnedCharacterPrompts();
+    }
     refreshPromptPreview();
   });
+});
+
+elements.pinCharacterPromptToggle.addEventListener('change', () => {
+  state.pinCharacterPrompt = elements.pinCharacterPromptToggle.checked;
+
+  if (state.pinCharacterPrompt) {
+    capturePinnedCharacterPrompts();
+  }
+
+  refreshPromptPreview();
 });
 
 elements.tagSearchInput.addEventListener('input', () => {

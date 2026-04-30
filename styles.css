@@ -562,6 +562,34 @@ textarea:focus {
   align-items: stretch;
 }
 
+.prompt-lock-row {
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(16, 18, 24, 0.42);
+  padding: 12px;
+}
+
+.prompt-lock-row h3 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.inline-toggle {
+  display: inline-flex;
+  grid-auto-flow: column;
+  grid-template-columns: auto auto;
+  align-items: center;
+  gap: 8px;
+  width: auto;
+  color: var(--text);
+}
+
+.inline-toggle input {
+  width: 18px;
+  height: 18px;
+}
+
 .prompt-textarea {
   min-height: 150px;
   line-height: 1.55;

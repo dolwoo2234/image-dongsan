@@ -55,7 +55,7 @@
                   <span id="selectedImageStatus" class="status-pill">없음</span>
                 </div>
                 <div class="preview-actions">
-                  <button id="keepImageButton" class="ghost-button compact-button" type="button">채택</button>
+                  <button id="keepImageButton" class="ghost-button compact-button" type="button">채택/저장</button>
                   <button id="rejectImageButton" class="ghost-button compact-button" type="button">보류</button>
                   <button id="favoriteImageButton" class="ghost-button compact-button" type="button">즐겨찾기</button>
                   <button id="novelAiVariationButton" class="primary-button compact-button" type="button">해당 프롬프트로 재생성</button>
@@ -137,6 +137,17 @@
               </div>
               <div id="negativeTagChips" class="tag-chip-list"></div>
             </section>
+          </div>
+
+          <div class="section-title-row prompt-lock-row">
+            <div>
+              <p class="eyebrow">Character</p>
+              <h3>캐릭터 프롬프트</h3>
+            </div>
+            <label class="inline-toggle">
+              <input id="pinCharacterPromptToggle" type="checkbox">
+              <span>캐릭터 프롬프트 고정</span>
+            </label>
           </div>
 
           <div class="split-grid prompt-input-grid">
