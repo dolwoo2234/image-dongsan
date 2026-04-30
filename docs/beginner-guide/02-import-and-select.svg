@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <rect width="1280" height="720" fill="#111318"/>
+  <text x="64" y="82" fill="#edf0f4" font-family="Segoe UI, Arial, sans-serif" font-size="38" font-weight="700">1. TXT 불러오기 → 씬 선택</text>
+  <text x="64" y="121" fill="#9aa4b2" font-family="Segoe UI, Arial, sans-serif" font-size="21">먼저 씬 설명이 들어있는 TXT 파일을 앱에 넣고, 작업할 씬을 고릅니다.</text>
+  <rect x="70" y="170" width="300" height="470" rx="16" fill="#181b22" stroke="#2d3340"/>
+  <text x="104" y="218" fill="#edf0f4" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700">Dongsan</text>
+  <rect x="104" y="254" width="220" height="52" rx="8" fill="#57b8a7"/>
+  <text x="139" y="287" fill="#111318" font-family="Segoe UI, Arial, sans-serif" font-size="20" font-weight="700">TXT 불러오기</text>
+  <rect x="104" y="342" width="220" height="64" rx="10" fill="#20242d" stroke="#57b8a7"/>
+  <text x="126" y="382" fill="#edf0f4" font-family="Segoe UI, Arial, sans-serif" font-size="18">Scene 01-1</text>
+  <rect x="104" y="424" width="220" height="64" rx="10" fill="#101218" stroke="#2d3340"/>
+  <text x="126" y="464" fill="#9aa4b2" font-family="Segoe UI, Arial, sans-serif" font-size="18">Scene 01-2</text>
+  <rect x="104" y="506" width="220" height="64" rx="10" fill="#101218" stroke="#2d3340"/>
+  <text x="126" y="546" fill="#9aa4b2" font-family="Segoe UI, Arial, sans-serif" font-size="18">Scene 02</text>
+  <g font-family="Segoe UI, Arial, sans-serif">
+    <rect x="430" y="190" width="760" height="112" rx="14" fill="#181b22" stroke="#57b8a7"/>
+    <text x="462" y="235" fill="#57b8a7" font-size="24" font-weight="700">A. TXT 파일 업로드</text>
+    <text x="462" y="270" fill="#edf0f4" font-size="19">작업할 장면 설명 TXT를 선택합니다. 씬 번호가 있으면 자동으로 목록이 나뉩니다.</text>
+    <rect x="430" y="342" width="760" height="112" rx="14" fill="#181b22" stroke="#57b8a7"/>
+    <text x="462" y="387" fill="#57b8a7" font-size="24" font-weight="700">B. 왼쪽 씬 목록 확인</text>
+    <text x="462" y="422" fill="#edf0f4" font-size="19">불러옴, 프롬프트 승인됨, 생성 완료 상태를 색으로 확인합니다.</text>
+    <rect x="430" y="494" width="760" height="112" rx="14" fill="#181b22" stroke="#f0bb61"/>
+    <text x="462" y="539" fill="#f0bb61" font-size="24" font-weight="700">C. 작업할 씬 클릭</text>
+    <text x="462" y="574" fill="#edf0f4" font-size="19">선택한 씬의 장면 묘사와 태그 편집 화면이 가운데에 열립니다.</text>
+  </g>
+</svg>

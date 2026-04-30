@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <rect width="1280" height="720" fill="#111318"/>
+  <text x="64" y="82" fill="#edf0f4" font-family="Segoe UI, Arial, sans-serif" font-size="38" font-weight="700">4. 프롬프트 추가/삭제 → 해당 프롬프트로 재생성</text>
+  <text x="64" y="121" fill="#9aa4b2" font-family="Segoe UI, Arial, sans-serif" font-size="21">첫 이미지를 보고 부족한 태그를 고친 뒤, 현재 프롬프트로 다시 생성합니다.</text>
+  <g font-family="Segoe UI, Arial, sans-serif">
+    <rect x="80" y="178" width="350" height="430" rx="16" fill="#181b22" stroke="#2d3340"/>
+    <text x="112" y="226" fill="#edf0f4" font-size="25" font-weight="700">결과 이미지 확인</text>
+    <rect x="112" y="268" width="286" height="210" rx="10" fill="#101218" stroke="#2d3340"/>
+    <circle cx="255" cy="373" r="70" fill="#20242d" stroke="#57b8a7"/>
+    <text x="155" y="532" fill="#9aa4b2" font-size="18">구도, 표정, 포즈를 보고</text>
+    <text x="155" y="564" fill="#9aa4b2" font-size="18">수정할 태그를 결정합니다.</text>
+    <rect x="466" y="178" width="360" height="430" rx="16" fill="#181b22" stroke="#f0bb61"/>
+    <text x="498" y="226" fill="#f0bb61" font-size="25" font-weight="700">최종 프롬프트 수정</text>
+    <rect x="498" y="266" width="270" height="48" rx="24" fill="#101218" stroke="#57b8a7"/>
+    <text x="524" y="297" fill="#edf0f4" font-size="17">looking back  1.5  x</text>
+    <rect x="498" y="334" width="270" height="48" rx="24" fill="#101218" stroke="#57b8a7"/>
+    <text x="524" y="365" fill="#edf0f4" font-size="17">holding phone  1  x</text>
+    <rect x="498" y="402" width="270" height="48" rx="24" fill="#101218" stroke="#ef6b73"/>
+    <text x="524" y="433" fill="#edf0f4" font-size="17">bad hands  -1  x</text>
+    <text x="498" y="522" fill="#9aa4b2" font-size="18">x로 삭제, 숫자로 가중치 조정</text>
+    <rect x="862" y="178" width="340" height="430" rx="16" fill="#181b22" stroke="#57b8a7"/>
+    <text x="894" y="226" fill="#57b8a7" font-size="25" font-weight="700">재생성</text>
+    <rect x="894" y="274" width="250" height="58" rx="8" fill="#57b8a7"/>
+    <text x="916" y="312" fill="#111318" font-size="19" font-weight="700">해당 프롬프트로 재생성</text>
+    <text x="894" y="396" fill="#9aa4b2" font-size="18">현재 최종 프롬프트가</text>
+    <text x="894" y="430" fill="#9aa4b2" font-size="18">서버 요청에 반영됩니다.</text>
+    <text x="894" y="510" fill="#f0bb61" font-size="18" font-weight="700">이 과정을 반복해서 원하는 이미지에 가까워집니다.</text>
+  </g>
+</svg>

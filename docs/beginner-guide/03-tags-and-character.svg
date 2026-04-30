@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <rect width="1280" height="720" fill="#111318"/>
+  <text x="64" y="82" fill="#edf0f4" font-family="Segoe UI, Arial, sans-serif" font-size="38" font-weight="700">2. 태그 초안 생성 → 정리 → 캐릭터 프롬프트 넣기</text>
+  <text x="64" y="121" fill="#9aa4b2" font-family="Segoe UI, Arial, sans-serif" font-size="21">장면 묘사를 기반으로 태그를 만들고, 캐릭터 기본 프롬프트를 현재 씬에 넣습니다.</text>
+  <g font-family="Segoe UI, Arial, sans-serif">
+    <rect x="80" y="180" width="330" height="410" rx="16" fill="#181b22" stroke="#2d3340"/>
+    <text x="112" y="228" fill="#edf0f4" font-size="26" font-weight="700">장면 묘사</text>
+    <rect x="112" y="260" width="266" height="250" rx="10" fill="#101218" stroke="#2d3340"/>
+    <text x="132" y="304" fill="#9aa4b2" font-size="18">전화기 들고 걷는 중</text>
+    <text x="132" y="342" fill="#9aa4b2" font-size="18">FROM BELOW</text>
+    <text x="132" y="380" fill="#9aa4b2" font-size="18">뒤돌아보는 자세</text>
+    <rect x="470" y="180" width="330" height="410" rx="16" fill="#181b22" stroke="#57b8a7"/>
+    <text x="502" y="228" fill="#57b8a7" font-size="26" font-weight="700">태그 버튼 순서</text>
+    <rect x="502" y="270" width="240" height="48" rx="8" fill="#20242d" stroke="#57b8a7"/>
+    <text x="528" y="302" fill="#edf0f4" font-size="18">태그 초안 생성</text>
+    <rect x="502" y="342" width="240" height="48" rx="8" fill="#20242d" stroke="#57b8a7"/>
+    <text x="528" y="374" fill="#edf0f4" font-size="18">가이드 순서로 정리</text>
+    <text x="502" y="444" fill="#9aa4b2" font-size="18">예: 1girl, from below,</text>
+    <text x="502" y="478" fill="#9aa4b2" font-size="18">looking back, holding phone</text>
+    <rect x="860" y="180" width="340" height="410" rx="16" fill="#181b22" stroke="#f0bb61"/>
+    <text x="892" y="228" fill="#f0bb61" font-size="26" font-weight="700">캐릭터 프롬프트</text>
+    <rect x="892" y="270" width="250" height="54" rx="8" fill="#101218" stroke="#2d3340"/>
+    <text x="914" y="305" fill="#edf0f4" font-size="18">프리셋 선택</text>
+    <rect x="892" y="350" width="250" height="54" rx="8" fill="#f0bb61"/>
+    <text x="914" y="385" fill="#111318" font-size="18" font-weight="700">현재 씬에 넣기</text>
+    <text x="892" y="466" fill="#9aa4b2" font-size="18">캐릭터 외형, 고정 설정,</text>
+    <text x="892" y="500" fill="#9aa4b2" font-size="18">네거티브를 씬에 추가합니다.</text>
+  </g>
+</svg>

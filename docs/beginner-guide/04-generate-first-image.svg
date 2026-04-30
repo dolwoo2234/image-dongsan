@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <rect width="1280" height="720" fill="#111318"/>
+  <text x="64" y="82" fill="#edf0f4" font-family="Segoe UI, Arial, sans-serif" font-size="38" font-weight="700">3. 저장 후 현재 씬 생성</text>
+  <text x="64" y="121" fill="#9aa4b2" font-family="Segoe UI, Arial, sans-serif" font-size="21">태그와 캐릭터 프롬프트가 준비되면 첫 이미지를 생성합니다.</text>
+  <g font-family="Segoe UI, Arial, sans-serif">
+    <rect x="86" y="180" width="520" height="410" rx="16" fill="#181b22" stroke="#2d3340"/>
+    <text x="120" y="230" fill="#edf0f4" font-size="26" font-weight="700">최종 프롬프트 확인</text>
+    <rect x="120" y="268" width="430" height="190" rx="10" fill="#101218" stroke="#2d3340"/>
+    <text x="146" y="312" fill="#9aa4b2" font-size="18">1girl, from below, looking back,</text>
+    <text x="146" y="350" fill="#9aa4b2" font-size="18">holding phone, detailed face...</text>
+    <text x="120" y="510" fill="#f0bb61" font-size="19" font-weight="700">처음에는 완벽하지 않아도 됩니다.</text>
+    <text x="120" y="544" fill="#9aa4b2" font-size="18">결과를 보고 다음 단계에서 고칩니다.</text>
+    <rect x="690" y="180" width="500" height="410" rx="16" fill="#181b22" stroke="#57b8a7"/>
+    <text x="724" y="230" fill="#57b8a7" font-size="26" font-weight="700">상태창에서 생성</text>
+    <rect x="724" y="274" width="320" height="58" rx="8" fill="#57b8a7"/>
+    <text x="754" y="312" fill="#111318" font-size="20" font-weight="700">저장 후 현재 씬 생성</text>
+    <rect x="724" y="370" width="140" height="48" rx="8" fill="#20242d" stroke="#57b8a7"/>
+    <text x="782" y="402" fill="#edf0f4" font-size="18">1</text>
+    <rect x="884" y="370" width="140" height="48" rx="8" fill="#20242d" stroke="#57b8a7"/>
+    <text x="942" y="402" fill="#edf0f4" font-size="18">5</text>
+    <text x="724" y="478" fill="#9aa4b2" font-size="18">1 또는 5 버튼으로 연속 생성 수를</text>
+    <text x="724" y="512" fill="#9aa4b2" font-size="18">빠르게 지정할 수 있습니다.</text>
+  </g>
+</svg>
