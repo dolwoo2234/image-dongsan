@@ -9,7 +9,7 @@ const dongsanApi = {
   updateImage: (imageId, patch) => ipcRenderer.invoke('project:updateImage', imageId, patch),
   keepAndExportImage: (imageId) => ipcRenderer.invoke('project:keepAndExportImage', imageId),
   mockVariation: (imageId) => ipcRenderer.invoke('project:mockVariation', imageId),
-  novelAiVariation: (imageId) => ipcRenderer.invoke('project:novelAiVariation', imageId),
+  novelAiVariation: (imageId, sceneOverride) => ipcRenderer.invoke('project:novelAiVariation', imageId, sceneOverride),
   onGenerationStatus: (callback) => {
     const listener = (_event, payload) => callback(payload);
     ipcRenderer.on('generation:status', listener);

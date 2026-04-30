@@ -112,7 +112,7 @@ async function fetchLatestRelease() {
   });
 
   if (response.status === 404) {
-    throw new Error('GitHub Releases에 등록된 최신 버전이 아직 없습니다.');
+    return fetchLatestTag();
   }
 
   if (!response.ok) {
@@ -120,6 +120,33 @@ async function fetchLatestRelease() {
   }
 
   return response.json();
+}
+
+async function fetchLatestTag() {
+  const response = await fetch(`https://api.github.com/repos/${githubOwner}/${githubRepo}/tags?per_page=1`, {
+    headers: {
+      'Accept': 'application/vnd.github+json',
+      'User-Agent': `${packageData.name}/${packageData.version}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(`GitHub 태그 확인 실패 (${response.status})`);
+  }
+
+  const tags = await response.json();
+  const latestTag = Array.isArray(tags) ? tags[0] : null;
+
+  if (!latestTag?.name) {
+    throw new Error('GitHub에 등록된 버전 태그가 아직 없습니다.');
+  }
+
+  return {
+    tag_name: latestTag.name,
+    name: latestTag.name,
+    html_url: `https://github.com/${githubOwner}/${githubRepo}/releases/tag/${latestTag.name}`,
+    published_at: null
+  };
 }
 
 async function checkForUpdates() {
@@ -242,10 +269,7 @@ async function saveApiKey(apiKey) {
   });
 }
 
-async function readApiKey() {
-  const store = await readSecretStore();
-  const entry = store.novelAiApiKey;
-
+function decodeApiKeyEntry(entry) {
   if (!entry?.value) {
     return '';
   }
@@ -257,6 +281,18 @@ async function readApiKey() {
   return Buffer.from(entry.value, 'base64').toString('utf8');
 }
 
+async function readApiKey() {
+  const store = await readSecretStore();
+
+  try {
+    return decodeApiKeyEntry(store.novelAiApiKey);
+  } catch (error) {
+    delete store.novelAiApiKey;
+    await writeSecretStore(store);
+    throw new Error('저장된 NovelAI API 키를 복호화할 수 없어 삭제했습니다. 설정에서 API 키를 다시 입력하고 저장해주세요.');
+  }
+}
+
 async function clearApiKey() {
   const store = await readSecretStore();
   delete store.novelAiApiKey;
@@ -265,6 +301,16 @@ async function clearApiKey() {
 
 async function getSecretStatus() {
   const store = await readSecretStore();
+
+  if (store.novelAiApiKey) {
+    try {
+      decodeApiKeyEntry(store.novelAiApiKey);
+    } catch (_error) {
+      delete store.novelAiApiKey;
+      await writeSecretStore(store);
+    }
+  }
+
   return {
     hasApiKey: Boolean(store.novelAiApiKey),
     encryptionAvailable: safeStorage.isEncryptionAvailable()
@@ -1141,8 +1187,8 @@ ipcMain.handle('project:mockGenerate', async (_event, sceneId) => {
     throw new Error(`Scene not found: ${sceneId}`);
   }
 
-  if (scene.status !== 'prompt_approved') {
-    throw new Error('Approve the prompt before creating a generation job.');
+  if (!['prompt_approved', 'generated'].includes(scene.status)) {
+    throw new Error('프롬프트를 먼저 승인하거나 저장한 뒤 생성해주세요.');
   }
 
   const paths = await ensureProjectDirs();
@@ -1303,7 +1349,7 @@ ipcMain.handle('project:mockVariation', async (_event, imageId) => {
   return writeProject(nextProject);
 });
 
-ipcMain.handle('project:novelAiVariation', async (event, imageId) => {
+ipcMain.handle('project:novelAiVariation', async (event, imageId, sceneOverride = null) => {
   const project = await readProject();
   const image = project.images.find((item) => item.id === imageId);
 
@@ -1317,14 +1363,23 @@ ipcMain.handle('project:novelAiVariation', async (event, imageId) => {
     throw new Error(`Scene not found: ${image.sceneId}`);
   }
 
+  const currentScene = sceneOverride && sceneOverride.id === scene.id
+    ? {
+      ...scene,
+      ...sceneOverride,
+      prompt: String(sceneOverride.prompt || '').trim() || scene.prompt,
+      negativePrompt: String(sceneOverride.negativePrompt || '').trim() || scene.negativePrompt
+    }
+    : scene;
+
   const variationScene = {
-    ...scene,
-    prompt: scene.prompt || image.metadata?.prompt,
-    negativePrompt: scene.negativePrompt || image.metadata?.negativePrompt,
-    basePrompt: scene.basePrompt || image.metadata?.basePrompt,
-    baseNegativePrompt: scene.baseNegativePrompt || image.metadata?.baseNegativePrompt,
-    characterPromptsText: scene.characterPromptsText || image.metadata?.characterPromptsText,
-    characterNegativePromptsText: scene.characterNegativePromptsText || image.metadata?.characterNegativePromptsText,
+    ...currentScene,
+    prompt: currentScene.prompt || image.metadata?.prompt,
+    negativePrompt: currentScene.negativePrompt || image.metadata?.negativePrompt,
+    basePrompt: currentScene.basePrompt || image.metadata?.basePrompt,
+    baseNegativePrompt: currentScene.baseNegativePrompt || image.metadata?.baseNegativePrompt,
+    characterPromptsText: currentScene.characterPromptsText || image.metadata?.characterPromptsText,
+    characterNegativePromptsText: currentScene.characterNegativePromptsText || image.metadata?.characterNegativePromptsText,
     status: 'prompt_approved'
   };
   const settings = {
@@ -1352,8 +1407,8 @@ ipcMain.handle('project:novelAiGenerate', async (event, sceneId) => {
     throw new Error(`Scene not found: ${sceneId}`);
   }
 
-  if (scene.status !== 'prompt_approved') {
-    throw new Error('Approve the prompt before creating a generation job.');
+  if (!['prompt_approved', 'generated'].includes(scene.status)) {
+    throw new Error('프롬프트를 먼저 승인하거나 저장한 뒤 생성해주세요.');
   }
 
   try {

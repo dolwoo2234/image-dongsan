@@ -232,7 +232,7 @@ function selectLatestSceneImage(sceneId) {
 
 function setDirty(isDirty) {
   state.dirty = isDirty;
-  elements.saveState.textContent = isDirty ? '??λ릺吏 ?딆? 蹂寃??덉쓬' : '??λ맖';
+  elements.saveState.textContent = isDirty ? '저장되지 않은 변경 있음' : '저장됨';
 }
 
 function setGenerationStatus(status, message) {
@@ -456,8 +456,8 @@ function renderSceneList() {
 
     item.type = 'button';
     item.className = `scene-item${scene.id === state.selectedSceneId ? ' active' : ''}`;
-    title.textContent = String(scene.sceneNo) + '번 씬';
-    description.textContent = scene.description || '장면 묘사 없음';
+    title.textContent = `Scene ${scene.sceneNo}`;
+    description.textContent = scene.description || 'No description';
     status.className = `scene-status-label ${scene.status || 'empty'}`;
     status.textContent = labelStatus(scene.status);
 
@@ -515,12 +515,12 @@ function createChip(tag, index, target, isSearchMatch = false) {
   weightInput.className = 'tag-weight-input';
   weightInput.step = '0.1';
   weightInput.value = formatWeight(parsed.weight);
-  weightInput.title = 'NovelAI 媛以묒튂. 1? ?쇰컲 ?쒓렇, -1? ?듭젣 ?쒓렇?낅땲??';
+  weightInput.title = 'NovelAI weight. 1 is normal, -1 suppresses the tag.';
 
   removeButton.type = 'button';
   removeButton.className = 'tag-remove-button';
-  removeButton.textContent = '횞';
-  removeButton.title = '?쒓렇 ?쒓굅';
+  removeButton.textContent = 'x';
+  removeButton.title = '태그 삭제';
 
   const commitWeight = (nextWeight) => {
     updateTagAtIndex(target, index, formatWeightedTag(parsed.label, nextWeight));
@@ -559,11 +559,11 @@ function renderTagChips() {
   const query = state.tagSearch.trim().toLowerCase();
 
   if (state.draftTags.length === 0) {
-    renderTagEmpty(elements.tagChips, '?꾩쭅 ?쒓렇 珥덉븞???놁뒿?덈떎');
+    renderTagEmpty(elements.tagChips, '아직 태그 초안이 없습니다');
   }
 
   if (state.draftNegativeTags.length === 0) {
-    renderTagEmpty(elements.negativeTagChips, '?꾩쭅 ?ㅺ굅?곕툕 ?쒓렇媛 ?놁뒿?덈떎');
+    renderTagEmpty(elements.negativeTagChips, '아직 네거티브 태그가 없습니다');
   }
 
   state.draftTags.forEach((tag, index) => {
@@ -616,20 +616,20 @@ function renderQueueAndGallery() {
   elements.galleryList.innerHTML = '';
 
   if (!scene) {
-    elements.queueList.appendChild(createEmptyPanel('?곹깭瑜?蹂대젮硫??ъ쓣 ?좏깮?섏꽭??'));
-    elements.galleryList.appendChild(createEmptyPanel('?대?吏瑜?蹂대젮硫??ъ쓣 ?좏깮?섏꽭??'));
+    elements.queueList.appendChild(createEmptyPanel('상태를 보려면 씬을 선택하세요'));
+    elements.galleryList.appendChild(createEmptyPanel('이미지를 보려면 씬을 선택하세요'));
     return;
   }
 
   if (sceneJobs.length === 0) {
-    elements.queueList.appendChild(createEmptyPanel('?꾩쭅 ?앹꽦 ?묒뾽???놁뒿?덈떎.'));
+    elements.queueList.appendChild(createEmptyPanel('아직 생성 작업이 없습니다.'));
   } else {
     sceneJobs.slice().reverse().forEach((job) => {
       const item = document.createElement('article');
       item.className = 'queue-item';
       const title = document.createElement('strong');
       const meta = document.createElement('span');
-      title.textContent = String(scene.sceneNo) + '번 씬';
+      title.textContent = labelStatus(job.status);
       meta.textContent = new Date(job.createdAt).toLocaleString();
       item.append(title, meta);
       elements.queueList.appendChild(item);
@@ -637,7 +637,7 @@ function renderQueueAndGallery() {
   }
 
   if (sceneImages.length === 0) {
-    elements.galleryList.appendChild(createEmptyPanel('???ъ뿉 ?곌껐???대?吏媛 ?놁뒿?덈떎.'));
+    elements.galleryList.appendChild(createEmptyPanel('이 씬에 연결된 이미지가 없습니다.'));
   } else {
     sceneImages.slice().reverse().forEach((image) => {
       const card = document.createElement('article');
@@ -653,7 +653,7 @@ function renderQueueAndGallery() {
       badge.className = `gallery-status ${imageStatus}`;
       badge.textContent = labelStatus(imageStatus);
       preview.src = image.uri;
-      preview.alt = String(scene.sceneNo) + '번 씬 생성 이미지 미리보기';
+      preview.alt = `Scene ${scene.sceneNo} generated image preview`;
       caption.textContent = (image.metadata?.model || '모델 없음') + ' / ' + (image.metadata?.width || '-') + 'x' + (image.metadata?.height || '-');
       card.append(preview, badge, caption);
       if (image.note) {
@@ -673,7 +673,6 @@ function renderQueueAndGallery() {
 
   renderSelectedImage();
 }
-
 function createEmptyPanel(text) {
   const panel = document.createElement('div');
   panel.className = 'queue-empty';
@@ -685,8 +684,8 @@ function renderSceneForm() {
   const scene = getSelectedScene();
 
   if (!scene) {
-    elements.sceneTitle.textContent = '씬 파일을 불러와주세요';
-    elements.sceneStatus.textContent = '비어 있음';
+    elements.sceneTitle.textContent = 'Load a TXT file';
+    elements.sceneStatus.textContent = 'Empty';
     elements.sceneStatus.className = 'status-pill';
     elements.emptyState.classList.remove('hidden');
     elements.sceneForm.classList.add('hidden');
@@ -699,7 +698,7 @@ function renderSceneForm() {
 
   elements.emptyState.classList.add('hidden');
   elements.sceneForm.classList.remove('hidden');
-  elements.sceneTitle.textContent = String(scene.sceneNo) + '번 씬';
+  elements.sceneTitle.textContent = `Scene ${scene.sceneNo}`;
   elements.sceneStatus.textContent = labelStatus(scene.status);
   elements.sceneStatus.className = `status-pill ${scene.status}`;
   elements.sceneNoInput.value = scene.sceneNo || '';
@@ -729,11 +728,11 @@ function renderSelectedImage() {
   elements.selectedImageStatus.textContent = labelStatus(image.status || 'candidate');
   elements.selectedImageStatus.className = `status-pill ${image.status || 'candidate'}`;
   elements.imageNoteInput.value = image.note || '';
-  elements.favoriteImageButton.textContent = image.favorite ? '즐겨찾기 해제' : '즐겨찾기';
+  elements.favoriteImageButton.textContent = image.favorite ? 'Unfavorite' : 'Favorite';
   elements.novelAiVariationButton.disabled = !state.secretStatus?.hasApiKey;
   elements.novelAiVariationButton.title = state.secretStatus?.hasApiKey
-    ? '선택 이미지의 프롬프트와 설정으로 다시 생성합니다'
-    : 'NovelAI API 키를 저장해야 사용할 수 있습니다';
+    ? 'Regenerate with the selected image prompt and settings'
+    : 'Save a NovelAI API key first';
   elements.selectedImagePrompt.textContent = image.metadata?.prompt || '';
   elements.selectedImageNegative.textContent = image.metadata?.negativePrompt || '';
   elements.selectedImageSettings.textContent = [
@@ -768,20 +767,27 @@ async function loadProject() {
 }
 
 async function importText() {
-  await persistSettingsIfDirty();
-  const project = await window.dongsan.importText();
+  try {
+    await persistSettingsIfDirty();
+    const project = await window.dongsan.importText();
 
-  if (!project) {
-    return;
+    if (!project) {
+      setGenerationStatus('idle', 'TXT 불러오기를 취소했습니다');
+      return;
+    }
+
+    state.project = project;
+    state.settings = project.settings || state.settings;
+    state.selectedSceneId = project.scenes[0]?.id || null;
+    state.selectedImageId = null;
+    state.settingsDirty = false;
+    setDirty(false);
+    render();
+    setGenerationStatus('done', `TXT 불러오기 완료 (${project.scenes.length}개 씬)`);
+  } catch (error) {
+    console.error(error);
+    setGenerationStatus('error', `TXT 불러오기 실패: ${error.message}`);
   }
-
-  state.project = project;
-  state.settings = project.settings || state.settings;
-  state.selectedSceneId = project.scenes[0]?.id || null;
-  state.selectedImageId = null;
-  state.settingsDirty = false;
-  setDirty(false);
-  render();
 }
 
 function readSettingsFromForm() {
@@ -895,7 +901,7 @@ function renderCharacterPromptLibrary() {
   if (presets.length === 0) {
     const empty = document.createElement('div');
     empty.className = 'preset-empty';
-    empty.textContent = '??λ맂 罹먮┃???꾨＼?꾪듃媛 ?놁뒿?덈떎';
+    empty.textContent = '저장된 캐릭터 프롬프트가 없습니다';
     elements.characterPresetList.appendChild(empty);
     return;
   }
@@ -907,8 +913,8 @@ function renderCharacterPromptLibrary() {
 
     item.type = 'button';
     item.className = `preset-item${preset.id === state.selectedCharacterPresetId ? ' active' : ''}`;
-    title.textContent = String(scene.sceneNo) + '번 씬';
-    preview.textContent = preset.prompt || '?꾨＼?꾪듃 ?놁쓬';
+    title.textContent = preset.name || '이름 없음';
+    preview.textContent = preset.prompt || '프롬프트 없음';
     item.append(title, preview);
     item.addEventListener('click', () => {
       state.selectedCharacterPresetId = preset.id;
@@ -920,7 +926,6 @@ function renderCharacterPromptLibrary() {
     elements.characterPresetList.appendChild(item);
   });
 }
-
 async function persistCharacterPresets(nextPresets, message) {
   state.settings = {
     ...(state.settings || {}),
@@ -938,7 +943,7 @@ async function saveCharacterPreset() {
   const negativePrompt = elements.characterPresetNegativeInput.value.trim();
 
   if (!name && !prompt && !negativePrompt) {
-    setGenerationStatus('error', '??ν븷 罹먮┃???꾨＼?꾪듃瑜??낅젰?섏꽭??');
+    setGenerationStatus('error', '저장할 캐릭터 프롬프트를 입력하세요');
     return;
   }
 
@@ -946,7 +951,7 @@ async function saveCharacterPreset() {
   const id = state.selectedCharacterPresetId || `character-preset-${Date.now()}`;
   const nextPreset = {
     id,
-    name: name || '?대쫫 ?놁쓬',
+    name: name || '이름 없음',
     prompt,
     negativePrompt,
     updatedAt: new Date().toISOString()
@@ -956,14 +961,14 @@ async function saveCharacterPreset() {
     : [...presets, nextPreset];
 
   state.selectedCharacterPresetId = id;
-  await persistCharacterPresets(nextPresets, '罹먮┃???꾨＼?꾪듃 ????꾨즺');
+  await persistCharacterPresets(nextPresets, '캐릭터 프롬프트 저장 완료');
 }
 
 async function deleteCharacterPreset() {
   const preset = getSelectedCharacterPreset();
 
   if (!preset) {
-    setGenerationStatus('error', '??젣???꾨━?뗭쓣 ?좏깮?섏꽭??');
+    setGenerationStatus('error', '삭제할 프리셋을 선택하세요');
     return;
   }
 
@@ -972,7 +977,7 @@ async function deleteCharacterPreset() {
   elements.characterPresetNameInput.value = '';
   elements.characterPresetPromptInput.value = '';
   elements.characterPresetNegativeInput.value = '';
-  await persistCharacterPresets(nextPresets, '罹먮┃???꾨＼?꾪듃 ??젣 ?꾨즺');
+  await persistCharacterPresets(nextPresets, '캐릭터 프롬프트 삭제 완료');
 }
 
 function appendLineValue(currentValue, value) {
@@ -990,7 +995,7 @@ function insertCharacterPreset() {
   const negativePrompt = elements.characterPresetNegativeInput.value.trim();
 
   if (!prompt && !negativePrompt) {
-    setGenerationStatus('error', '?ｌ쓣 罹먮┃???꾨＼?꾪듃瑜??좏깮?섍굅???낅젰?섏꽭??');
+    setGenerationStatus('error', '넣을 캐릭터 프롬프트를 선택하거나 입력하세요');
     return;
   }
 
@@ -1006,7 +1011,6 @@ function insertCharacterPreset() {
   setDirty(true);
   setGenerationStatus('done', '현재 씬에 캐릭터 프롬프트를 넣었습니다');
 }
-
 async function copyCharacterPreset() {
   const prompt = elements.characterPresetPromptInput.value.trim();
   const negativePrompt = elements.characterPresetNegativeInput.value.trim();
@@ -1016,17 +1020,17 @@ async function copyCharacterPreset() {
   ].filter(Boolean).join('\n');
 
   if (!text) {
-    setGenerationStatus('error', '蹂듭궗??罹먮┃???꾨＼?꾪듃媛 ?놁뒿?덈떎.');
+    setGenerationStatus('error', '복사할 캐릭터 프롬프트가 없습니다');
     return;
   }
 
   try {
     await navigator.clipboard.writeText(text);
-    setGenerationStatus('done', '罹먮┃???꾨＼?꾪듃 蹂듭궗 ?꾨즺');
+    setGenerationStatus('done', '캐릭터 프롬프트 복사 완료');
   } catch (_error) {
     elements.characterPresetPromptInput.focus();
     elements.characterPresetPromptInput.select();
-    setGenerationStatus('error', '?대┰蹂대뱶 蹂듭궗 ?ㅽ뙣. ?꾨＼?꾪듃 移몄쓣 ?좏깮?대몢?덉뒿?덈떎.');
+    setGenerationStatus('error', '클립보드 복사 실패. 프롬프트 칸을 선택해두었습니다.');
   }
 }
 
@@ -1065,6 +1069,7 @@ async function persistScene(scene, statusOverride) {
   state.selectedSceneId = nextScene.id;
   setDirty(false);
   render();
+  return nextScene;
 }
 
 async function saveSelectedScene(event) {
@@ -1104,7 +1109,7 @@ async function approvePromptForSelectedScene() {
 
   await persistSettingsIfDirty();
   await persistScene(scene, 'prompt_approved');
-  setGenerationStatus('done', '현재 씬에 캐릭터 프롬프트를 넣었습니다');
+  setGenerationStatus('done', '현재 프롬프트 저장 완료');
 }
 
 async function prepareSceneForGeneration() {
@@ -1125,13 +1130,13 @@ async function mockGenerateSelectedScene() {
   }
 
   try {
-    setGenerationStatus('running', '?꾩옱 ?꾨＼?꾪듃 ??????뚯뒪???대?吏 ?앹꽦 以?..');
+    setGenerationStatus('running', '테스트 이미지 생성 중...');
     state.project = await window.dongsan.mockGenerate(scene.id);
     state.selectedSceneId = scene.id;
     selectLatestSceneImage(scene.id);
     setDirty(false);
     render();
-    setGenerationStatus('done', '?뚯뒪???대?吏 ?앹꽦 ?꾨즺');
+    setGenerationStatus('done', '테스트 이미지 생성 완료');
   } catch (error) {
     setGenerationStatus('error', error.message);
   }
@@ -1150,7 +1155,7 @@ async function novelAiGenerateSelectedScene() {
     renderQueueAndGallery();
 
     for (let index = 0; index < runCount; index += 1) {
-      setGenerationStatus('running', `NovelAI ?앹꽦 以?.. (${index + 1}/${runCount})`);
+      setGenerationStatus('running', `NovelAI 생성 중... (${index + 1}/${runCount})`);
       state.project = await window.dongsan.novelAiGenerate(scene.id);
       state.selectedSceneId = scene.id;
       selectLatestSceneImage(scene.id);
@@ -1158,12 +1163,12 @@ async function novelAiGenerateSelectedScene() {
       render();
 
       if (index < runCount - 1) {
-        setGenerationStatus('running', `?ㅼ쓬 ?앹꽦源뚯? 0.5珥??湲?以?.. (${index + 1}/${runCount} ?꾨즺)`);
+        setGenerationStatus('running', `다음 생성까지 0.5초 대기 중... (${index + 1}/${runCount} 완료)`);
         await wait(500);
       }
     }
 
-    setGenerationStatus('done', `NovelAI ?곗냽 ?앹꽦 ?꾨즺 (${runCount}/${runCount})`);
+    setGenerationStatus('done', `NovelAI 연속 생성 완료 (${runCount}/${runCount})`);
   } catch (error) {
     elements.projectStatus.textContent = error.message;
     setGenerationStatus('error', error.message);
@@ -1176,7 +1181,6 @@ async function novelAiGenerateSelectedScene() {
     renderQueueAndGallery();
   }
 }
-
 async function updateSelectedImage(patch) {
   const image = getSelectedImage();
 
@@ -1197,7 +1201,7 @@ async function keepAndExportSelectedImage() {
   }
 
   try {
-    setGenerationStatus('running', '梨꾪깮 ?대?吏 ????꾩튂 ?좏깮 以?..');
+    setGenerationStatus('running', '채택 이미지 저장 위치 선택 중...');
     const result = await window.dongsan.keepAndExportImage(image.id);
 
     if (result.canceled) {
@@ -1208,7 +1212,7 @@ async function keepAndExportSelectedImage() {
     state.project = result.project;
     state.selectedImageId = image.id;
     render();
-    setGenerationStatus('done', '梨꾪깮 ?대?吏 PNG ?대낫?닿린 ?꾨즺');
+    setGenerationStatus('done', '채택 이미지 PNG 내보내기 완료');
   } catch (error) {
     elements.projectStatus.textContent = error.message;
     setGenerationStatus('error', error.message);
@@ -1217,12 +1221,12 @@ async function keepAndExportSelectedImage() {
 
 async function saveSelectedImageNote() {
   await updateSelectedImage({ note: elements.imageNoteInput.value.trim() });
-  setGenerationStatus('done', '硫붾え ????꾨즺');
+  setGenerationStatus('done', '메모 저장 완료');
 }
 
 async function rejectSelectedImage() {
   await updateSelectedImage({ status: 'rejected' });
-  setGenerationStatus('done', '?대?吏 蹂대쪟 泥섎━ ?꾨즺');
+  setGenerationStatus('done', '이미지 보류 처리 완료');
 }
 
 async function toggleFavoriteSelectedImage() {
@@ -1233,7 +1237,7 @@ async function toggleFavoriteSelectedImage() {
   }
 
   await updateSelectedImage({ favorite: !image.favorite });
-  setGenerationStatus('done', image.favorite ? '利먭꺼李얘린 ?댁젣 ?꾨즺' : '利먭꺼李얘린 異붽? ?꾨즺');
+  setGenerationStatus('done', image.favorite ? '즐겨찾기 해제 완료' : '즐겨찾기 추가 완료');
 }
 
 async function novelAiVariationFromSelectedImage() {
@@ -1241,12 +1245,12 @@ async function novelAiVariationFromSelectedImage() {
   const scene = getSelectedScene();
 
   if (!image || !scene) {
-    setGenerationStatus('error', '?ъ깮?깊븷 ?대?吏 ?꾨＼?꾪듃瑜?癒쇱? ?좏깮?섏꽭??');
+    setGenerationStatus('error', '재생성할 이미지 프롬프트를 먼저 선택하세요');
     return;
   }
 
   if (typeof window.dongsan.novelAiVariation !== 'function') {
-    setGenerationStatus('error', '?꾨＼?꾪듃 ?ъ깮??湲곕뒫??遺덈윭?ㅼ? 紐삵뻽?듬땲?? ?깆쓣 ?꾩쟾??醫낅즺?????ㅼ떆 ?ㅽ뻾?섏꽭??');
+    setGenerationStatus('error', '프롬프트 재생성 기능을 불러오지 못했습니다. 앱을 완전히 종료한 뒤 다시 실행하세요.');
     return;
   }
 
@@ -1254,27 +1258,27 @@ async function novelAiVariationFromSelectedImage() {
 
   try {
     await persistSettingsIfDirty();
-    await persistScene(scene, 'prompt_approved');
+    const sceneOverride = await persistScene(scene, 'prompt_approved');
     state.generationInProgress = true;
     renderQueueAndGallery();
 
     for (let index = 0; index < runCount; index += 1) {
-      setGenerationStatus('running', `?대떦 ?꾨＼?꾪듃濡??ъ깮??以?.. (${index + 1}/${runCount})`);
-      state.project = await window.dongsan.novelAiVariation(image.id);
+      setGenerationStatus('running', `해당 프롬프트로 재생성 중... (${index + 1}/${runCount})`);
+      state.project = await window.dongsan.novelAiVariation(image.id, sceneOverride);
       const sceneImages = state.project.images.filter((item) => item.sceneId === image.sceneId);
       state.selectedImageId = sceneImages[sceneImages.length - 1]?.id || image.id;
       render();
 
       if (index < runCount - 1) {
-        setGenerationStatus('running', `?ㅼ쓬 ?ъ깮?깃퉴吏 0.5珥??湲?以?.. (${index + 1}/${runCount} ?꾨즺)`);
+        setGenerationStatus('running', `다음 재생성까지 0.5초 대기 중... (${index + 1}/${runCount} 완료)`);
         await wait(500);
       }
     }
 
-    setGenerationStatus('done', `?꾨＼?꾪듃 ?ъ깮???꾨즺 (${runCount}/${runCount})`);
+    setGenerationStatus('done', `프롬프트 재생성 완료 (${runCount}/${runCount})`);
   } catch (error) {
     const message = error.message?.includes("No handler registered for 'project:novelAiVariation'")
-      ? '?꾨＼?꾪듃 ?ъ깮???몃뱾?ш? ?꾩옱 ?ㅽ뻾 以묒씤 ?깆뿉 ?놁뒿?덈떎. ?깆쓣 ?꾩쟾??醫낅즺?????ㅼ떆 ?ㅽ뻾?섏꽭??'
+      ? '프롬프트 재생성 기능이 현재 실행 중인 앱에 없습니다. 앱을 완전히 종료한 뒤 다시 실행하세요.'
       : error.message;
     elements.projectStatus.textContent = message;
     setGenerationStatus('error', message);
@@ -1285,7 +1289,6 @@ async function novelAiVariationFromSelectedImage() {
     renderQueueAndGallery();
   }
 }
-
 async function loadSelectedImagePromptToEditor() {
   const image = getSelectedImage();
   const scene = getSelectedScene();
@@ -1340,7 +1343,7 @@ function organizeTagsForSelectedScene() {
   refreshPromptPreview();
   setDirty(true);
   renderTagChips();
-  setGenerationStatus('done', '?쒓렇瑜?媛?대뱶 ?쒖꽌濡??뺣━?덉뒿?덈떎');
+  setGenerationStatus('done', '태그를 가이드 순서로 정리했습니다');
 }
 
 [
@@ -1430,7 +1433,7 @@ document.querySelectorAll('[data-reject-reason]').forEach((button) => {
     const reason = button.getAttribute('data-reject-reason');
     elements.imageNoteInput.value = appendLineValue(elements.imageNoteInput.value, reason);
     await updateSelectedImage({ note: elements.imageNoteInput.value.trim(), status: 'rejected' });
-    setGenerationStatus('done', '?섏젙 硫붾え ???諛?蹂대쪟 泥섎━ ?꾨즺');
+    setGenerationStatus('done', '수정 메모 저장 및 보류 처리 완료');
   });
 });
 elements.toggleSettingsButton.addEventListener('click', toggleSettings);
@@ -1458,7 +1461,7 @@ elements.addNegativeTagButton.addEventListener('click', () => addTagFromInput(el
 
 if (typeof window.dongsan.onGenerationStatus === 'function') {
   window.dongsan.onGenerationStatus((payload) => {
-    setGenerationStatus(payload?.status || 'running', payload?.message || 'NovelAI ?곹깭 ?낅뜲?댄듃 ?섏떊');
+    setGenerationStatus(payload?.status || 'running', payload?.message || 'NovelAI 상태 업데이트 수신');
   });
 }
 
