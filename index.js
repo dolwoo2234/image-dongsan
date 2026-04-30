@@ -155,9 +155,48 @@ async function applyGitUpdate() {
 
 async function ensureProjectDirs() {
   const paths = getProjectPaths();
+  await fs.mkdir(paths.dataDir, { recursive: true });
+  await migrateLegacyUserData(paths);
   await fs.mkdir(paths.importsDir, { recursive: true });
   await fs.mkdir(paths.imagesDir, { recursive: true });
   return paths;
+}
+
+async function pathExists(targetPath) {
+  try {
+    await fs.access(targetPath);
+    return true;
+  } catch (_error) {
+    return false;
+  }
+}
+
+async function copyIfMissing(sourcePath, targetPath) {
+  if (!(await pathExists(sourcePath)) || (await pathExists(targetPath))) {
+    return;
+  }
+
+  await fs.mkdir(path.dirname(targetPath), { recursive: true });
+  await fs.cp(sourcePath, targetPath, { recursive: true });
+}
+
+async function migrateLegacyUserData(paths) {
+  const legacyRoots = [
+    path.join(path.dirname(paths.root), 'harness-desktop-viewer'),
+    path.join(path.dirname(paths.root), 'Harness Desktop Viewer')
+  ];
+
+  for (const legacyRoot of legacyRoots) {
+    if (legacyRoot === paths.root || !(await pathExists(legacyRoot))) {
+      continue;
+    }
+
+    const legacyDataDir = path.join(legacyRoot, 'data');
+    await copyIfMissing(path.join(legacyDataDir, 'project.json'), paths.projectFile);
+    await copyIfMissing(path.join(legacyDataDir, 'secrets.json'), paths.secretFile);
+    await copyIfMissing(path.join(legacyDataDir, 'imports'), paths.importsDir);
+    await copyIfMissing(path.join(legacyDataDir, 'images'), paths.imagesDir);
+  }
 }
 
 async function readSecretStore() {
