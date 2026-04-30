@@ -472,7 +472,6 @@ function renderSceneList() {
     elements.sceneList.appendChild(item);
   });
 }
-
 function updateTagAtIndex(target, index, nextTag) {
   if (target === 'positive') {
     state.draftTags = state.draftTags.map((tag, tagIndex) => tagIndex === index ? nextTag : tag);
@@ -686,8 +685,8 @@ function renderSceneForm() {
   const scene = getSelectedScene();
 
   if (!scene) {
-    elements.scenetitle.textContent = String(scene.sceneNo) + '번 씬';
-    elements.sceneStatus.textContent = '鍮꾩뼱 ?덉쓬';
+    elements.sceneTitle.textContent = '씬 파일을 불러와주세요';
+    elements.sceneStatus.textContent = '비어 있음';
     elements.sceneStatus.className = 'status-pill';
     elements.emptyState.classList.remove('hidden');
     elements.sceneForm.classList.add('hidden');
@@ -700,7 +699,7 @@ function renderSceneForm() {
 
   elements.emptyState.classList.add('hidden');
   elements.sceneForm.classList.remove('hidden');
-  elements.scenetitle.textContent = String(scene.sceneNo) + '번 씬';
+  elements.sceneTitle.textContent = String(scene.sceneNo) + '번 씬';
   elements.sceneStatus.textContent = labelStatus(scene.status);
   elements.sceneStatus.className = `status-pill ${scene.status}`;
   elements.sceneNoInput.value = scene.sceneNo || '';
@@ -714,7 +713,6 @@ function renderSceneForm() {
   renderWarnings(scene);
   renderQueueAndGallery();
 }
-
 function renderSelectedImage() {
   const image = getSelectedImage();
   const scene = getSelectedScene();
