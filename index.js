@@ -940,9 +940,9 @@ function createMockSvg(scene) {
 function buildNovelAiPayload(scene, settings) {
   const seed = settings.seed ? Number(settings.seed) : Math.floor(Math.random() * 4294967295);
   const sampler = normalizeNovelAiSampler(settings.sampler);
-  const basePrompt = scene.prompt || scene.basePrompt || '';
-  const baseNegativePrompt = scene.negativePrompt || scene.baseNegativePrompt || '';
   const characterPrompts = parseCharacterPrompts(scene);
+  const basePrompt = buildNovelAiBasePrompt(scene, 'prompt');
+  const baseNegativePrompt = buildNovelAiBasePrompt(scene, 'negativePrompt');
   const charCaptions = characterPrompts.map((character) => ({
     char_caption: character.prompt,
     centers: [character.center]
@@ -1000,6 +1000,49 @@ function buildNovelAiPayload(scene, settings) {
       }
     }
   };
+}
+
+function splitPromptParts(value) {
+  return String(value || '')
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+function stripCharacterPromptParts(prompt, characterPromptText) {
+  const characterParts = new Set(
+    String(characterPromptText || '')
+      .split('\n')
+      .flatMap(splitPromptParts)
+      .map((part) => part.toLowerCase())
+  );
+
+  if (characterParts.size === 0) {
+    return String(prompt || '').trim();
+  }
+
+  return splitPromptParts(prompt)
+    .filter((part) => !characterParts.has(part.toLowerCase()))
+    .join(', ');
+}
+
+function buildNovelAiBasePrompt(scene, kind) {
+  const isNegative = kind === 'negativePrompt';
+  const baseText = isNegative ? scene.baseNegativePrompt : scene.basePrompt;
+  const tags = isNegative ? scene.negativeTags : scene.tags;
+  const savedPrompt = isNegative ? scene.negativePrompt : scene.prompt;
+  const characterText = isNegative ? scene.characterNegativePromptsText : scene.characterPromptsText;
+  const tagPrompt = [
+    String(baseText || '').trim(),
+    ...orderPromptTags(tags || [])
+  ].filter(Boolean).join(', ');
+  const strippedTagPrompt = stripCharacterPromptParts(tagPrompt, characterText);
+
+  if (strippedTagPrompt) {
+    return strippedTagPrompt;
+  }
+
+  return stripCharacterPromptParts(savedPrompt, characterText) || String(baseText || '').trim();
 }
 
 function parseCharacterPrompts(scene) {

@@ -150,16 +150,13 @@
             </label>
           </div>
 
-          <div class="split-grid prompt-input-grid">
-            <label>
-              <span>캐릭터 프롬프트</span>
-              <textarea id="characterPromptsInput" class="prompt-textarea" rows="8" placeholder="캐릭터별 프롬프트를 한 줄씩 입력"></textarea>
-            </label>
-
-            <label>
-              <span>캐릭터 네거티브 프롬프트</span>
-              <textarea id="characterNegativePromptsInput" class="prompt-textarea" rows="8" placeholder="캐릭터별 네거티브 프롬프트를 한 줄씩 입력"></textarea>
-            </label>
+          <div class="character-editor">
+            <div id="characterSlots" class="character-slots"></div>
+            <button id="addCharacterButton" class="ghost-button compact-button" type="button">캐릭터 추가</button>
+            <textarea id="characterPromptsInput" class="storage-textarea" aria-hidden="true" tabindex="-1"></textarea>
+            <textarea id="characterNegativePromptsInput" class="storage-textarea" aria-hidden="true" tabindex="-1"></textarea>
+            <div id="characterPromptHighlightPreview" class="prompt-highlight-preview compact-highlight-preview" aria-label="캐릭터 프롬프트 검색 하이라이트"></div>
+            <div id="characterNegativePromptHighlightPreview" class="prompt-highlight-preview compact-highlight-preview" aria-label="캐릭터 네거티브 프롬프트 검색 하이라이트"></div>
           </div>
 
           <label class="final-prompt-field">

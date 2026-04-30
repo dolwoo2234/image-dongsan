@@ -55,6 +55,10 @@ const elements = {
   pinCharacterPromptToggle: document.querySelector('#pinCharacterPromptToggle'),
   characterPromptsInput: document.querySelector('#characterPromptsInput'),
   characterNegativePromptsInput: document.querySelector('#characterNegativePromptsInput'),
+  characterSlots: document.querySelector('#characterSlots'),
+  addCharacterButton: document.querySelector('#addCharacterButton'),
+  characterPromptHighlightPreview: document.querySelector('#characterPromptHighlightPreview'),
+  characterNegativePromptHighlightPreview: document.querySelector('#characterNegativePromptHighlightPreview'),
   promptInput: document.querySelector('#promptInput'),
   negativePromptSection: document.querySelector('#negativePromptSection'),
   toggleNegativePromptButton: document.querySelector('#toggleNegativePromptButton'),
@@ -295,29 +299,43 @@ function escapeHtml(value) {
     .replace(/'/g, '&#39;');
 }
 
-function renderHighlightedText(value, query) {
-  const text = String(value || '');
-  const trimmedQuery = String(query || '').trim();
+function escapeRegExp(value) {
+  return String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
-  if (!text) {
-    return '?꾨＼?꾪듃媛 鍮꾩뼱 ?덉뒿?덈떎.';
+function createSearchRegex(query) {
+  const tokens = String(query || '').trim().split(/[\s_]+/).filter(Boolean);
+
+  if (tokens.length === 0) {
+    return null;
   }
 
-  if (!trimmedQuery) {
+  return new RegExp(tokens.map(escapeRegExp).join('[\\s_]+'), 'gi');
+}
+
+function renderHighlightedText(value, query) {
+  const text = String(value || '');
+  const searchRegex = createSearchRegex(query);
+
+  if (!text) {
+    return '\uD504\uB86C\uD504\uD2B8\uAC00 \uBE44\uC5B4 \uC788\uC2B5\uB2C8\uB2E4.';
+  }
+
+  if (!searchRegex) {
     return escapeHtml(text);
   }
 
-  const lowerText = text.toLowerCase();
-  const lowerQuery = trimmedQuery.toLowerCase();
   const parts = [];
   let cursor = 0;
-  let matchIndex = lowerText.indexOf(lowerQuery, cursor);
+  let match = searchRegex.exec(text);
 
-  while (matchIndex !== -1) {
+  while (match) {
+    const matchIndex = match.index;
+    const matchedText = match[0];
     parts.push(escapeHtml(text.slice(cursor, matchIndex)));
-    parts.push(`<mark>${escapeHtml(text.slice(matchIndex, matchIndex + trimmedQuery.length))}</mark>`);
-    cursor = matchIndex + trimmedQuery.length;
-    matchIndex = lowerText.indexOf(lowerQuery, cursor);
+    parts.push(`<mark>${escapeHtml(matchedText)}</mark>`);
+    cursor = matchIndex + matchedText.length;
+    match = searchRegex.exec(text);
   }
 
   parts.push(escapeHtml(text.slice(cursor)));
@@ -326,11 +344,17 @@ function renderHighlightedText(value, query) {
 
 function renderPromptHighlights() {
   const query = state.tagSearch;
+  const characterPrompt = elements.characterPromptsInput.value;
+  const characterNegativePrompt = elements.characterNegativePromptsInput.value;
   const prompt = elements.promptInput.value;
   const negativePrompt = elements.negativePromptInput.value;
 
+  elements.characterPromptHighlightPreview.classList.toggle('is-empty', !characterPrompt);
+  elements.characterNegativePromptHighlightPreview.classList.toggle('is-empty', !characterNegativePrompt);
   elements.promptHighlightPreview.classList.toggle('is-empty', !prompt);
   elements.negativePromptHighlightPreview.classList.toggle('is-empty', !negativePrompt);
+  elements.characterPromptHighlightPreview.innerHTML = renderHighlightedText(characterPrompt, query);
+  elements.characterNegativePromptHighlightPreview.innerHTML = renderHighlightedText(characterNegativePrompt, query);
   elements.promptHighlightPreview.innerHTML = renderHighlightedText(prompt, query);
   elements.negativePromptHighlightPreview.innerHTML = renderHighlightedText(negativePrompt, query);
 }
@@ -358,6 +382,114 @@ function renderPromptPreviewForScene(scene) {
 function capturePinnedCharacterPrompts() {
   state.pinnedCharacterPromptsText = elements.characterPromptsInput.value;
   state.pinnedCharacterNegativePromptsText = elements.characterNegativePromptsInput.value;
+}
+
+function getCharacterPromptSlots() {
+  const prompts = elements.characterPromptsInput.value.split('\n');
+  const negativePrompts = elements.characterNegativePromptsInput.value.split('\n');
+  const promptCount = elements.characterPromptsInput.value.trim() ? prompts.length : 0;
+  const negativePromptCount = elements.characterNegativePromptsInput.value.trim() ? negativePrompts.length : 0;
+  const count = Math.max(promptCount, negativePromptCount, 1);
+
+  return Array.from({ length: count }, (_item, index) => ({
+    prompt: (prompts[index] || '').trim(),
+    negativePrompt: (negativePrompts[index] || '').trim()
+  }));
+}
+
+function renumberCharacterSlots() {
+  elements.characterSlots.querySelectorAll('.character-slot').forEach((slot, index) => {
+    slot.querySelector('.character-slot-title').textContent = `Character ${index + 1}`;
+  });
+}
+
+function syncCharacterInputsFromSlots() {
+  const slots = Array.from(elements.characterSlots.querySelectorAll('.character-slot')).map((slot) => ({
+    prompt: slot.querySelector('.character-slot-prompt').value.trim(),
+    negativePrompt: slot.querySelector('.character-slot-negative').value.trim()
+  }));
+  const lastFilledIndex = slots.reduce((lastIndex, slot, index) => (
+    slot.prompt || slot.negativePrompt ? index : lastIndex
+  ), -1);
+  const activeSlots = lastFilledIndex >= 0 ? slots.slice(0, lastFilledIndex + 1) : [];
+
+  elements.characterPromptsInput.value = activeSlots.map((slot) => slot.prompt).join('\n');
+  elements.characterNegativePromptsInput.value = activeSlots.map((slot) => slot.negativePrompt).join('\n');
+
+  if (state.pinCharacterPrompt) {
+    capturePinnedCharacterPrompts();
+  }
+}
+
+function createCharacterPromptSlot(prompt = '', negativePrompt = '') {
+  const slot = document.createElement('article');
+  slot.className = 'character-slot';
+
+  const header = document.createElement('div');
+  header.className = 'character-slot-header';
+
+  const title = document.createElement('strong');
+  title.className = 'character-slot-title';
+
+  const removeButton = document.createElement('button');
+  removeButton.className = 'ghost-button compact-button character-slot-remove';
+  removeButton.type = 'button';
+  removeButton.textContent = '삭제';
+
+  const promptLabel = document.createElement('label');
+  promptLabel.className = 'character-slot-field';
+  const promptTitle = document.createElement('span');
+  promptTitle.textContent = '프롬프트';
+  const promptInput = document.createElement('textarea');
+  promptInput.className = 'prompt-textarea character-slot-prompt';
+  promptInput.rows = 4;
+  promptInput.value = prompt;
+  promptInput.placeholder = '1girl, solo, looking back';
+  promptLabel.append(promptTitle, promptInput);
+
+  const negativeLabel = document.createElement('label');
+  negativeLabel.className = 'character-slot-field';
+  const negativeTitle = document.createElement('span');
+  negativeTitle.textContent = '네거티브';
+  const negativeInput = document.createElement('textarea');
+  negativeInput.className = 'prompt-textarea character-slot-negative';
+  negativeInput.rows = 3;
+  negativeInput.value = negativePrompt;
+  negativeInput.placeholder = 'bad anatomy';
+  negativeLabel.append(negativeTitle, negativeInput);
+
+  [promptInput, negativeInput].forEach((input) => {
+    input.addEventListener('input', () => {
+      syncCharacterInputsFromSlots();
+      setDirty(true);
+      refreshPromptPreview();
+    });
+  });
+
+  removeButton.addEventListener('click', () => {
+    slot.remove();
+
+    if (elements.characterSlots.children.length === 0) {
+      elements.characterSlots.appendChild(createCharacterPromptSlot());
+    }
+
+    renumberCharacterSlots();
+    syncCharacterInputsFromSlots();
+    setDirty(true);
+    refreshPromptPreview();
+  });
+
+  header.append(title, removeButton);
+  slot.append(header, promptLabel, negativeLabel);
+  return slot;
+}
+
+function renderCharacterPromptSlots() {
+  elements.characterSlots.innerHTML = '';
+  getCharacterPromptSlots().forEach((slot) => {
+    elements.characterSlots.appendChild(createCharacterPromptSlot(slot.prompt, slot.negativePrompt));
+  });
+  renumberCharacterSlots();
 }
 
 function getSceneCharacterPrompts(scene) {
@@ -729,6 +861,7 @@ function renderSceneForm() {
   const characterPrompts = getSceneCharacterPrompts(scene);
   elements.characterPromptsInput.value = characterPrompts.prompt;
   elements.characterNegativePromptsInput.value = characterPrompts.negativePrompt;
+  renderCharacterPromptSlots();
   state.draftTags = uniqueTags(scene.tags || []);
   state.draftNegativeTags = uniqueTags(scene.negativeTags || []);
   const promptScene = state.pinCharacterPrompt
@@ -1023,6 +1156,13 @@ function appendLineValue(currentValue, value) {
   return lines.join('\n');
 }
 
+function appendCharacterPromptPair(prompt, negativePrompt) {
+  const slots = getCharacterPromptSlots().filter((slot) => slot.prompt || slot.negativePrompt);
+  slots.push({ prompt, negativePrompt });
+  elements.characterPromptsInput.value = slots.map((slot) => slot.prompt).join('\n');
+  elements.characterNegativePromptsInput.value = slots.map((slot) => slot.negativePrompt).join('\n');
+}
+
 function insertCharacterPreset() {
   const prompt = elements.characterPresetPromptInput.value.trim();
   const negativePrompt = elements.characterPresetNegativeInput.value.trim();
@@ -1032,14 +1172,9 @@ function insertCharacterPreset() {
     return;
   }
 
-  if (prompt) {
-    elements.characterPromptsInput.value = appendLineValue(elements.characterPromptsInput.value, prompt);
-  }
+  appendCharacterPromptPair(prompt, negativePrompt);
 
-  if (negativePrompt) {
-    elements.characterNegativePromptsInput.value = appendLineValue(elements.characterNegativePromptsInput.value, negativePrompt);
-  }
-
+  renderCharacterPromptSlots();
   refreshPromptPreview();
   setDirty(true);
   setGenerationStatus('done', '현재 씬에 캐릭터 프롬프트를 넣었습니다');
@@ -1418,6 +1553,11 @@ elements.pinCharacterPromptToggle.addEventListener('change', () => {
   }
 
   refreshPromptPreview();
+});
+
+elements.addCharacterButton.addEventListener('click', () => {
+  elements.characterSlots.appendChild(createCharacterPromptSlot());
+  renumberCharacterSlots();
 });
 
 elements.tagSearchInput.addEventListener('input', () => {

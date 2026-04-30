@@ -562,6 +562,58 @@ textarea:focus {
   align-items: stretch;
 }
 
+.storage-textarea {
+  display: none;
+}
+
+.character-editor {
+  display: grid;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(16, 18, 24, 0.42);
+  padding: 12px;
+}
+
+.character-slots {
+  display: grid;
+  gap: 10px;
+}
+
+.character-slot {
+  display: grid;
+  gap: 10px;
+  border: 1px solid rgba(73, 86, 102, 0.7);
+  border-radius: 8px;
+  background: rgba(12, 14, 19, 0.54);
+  padding: 10px;
+}
+
+.character-slot-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.character-slot-title {
+  color: var(--text);
+  font-size: 13px;
+}
+
+.character-slot-field {
+  display: grid;
+  gap: 6px;
+}
+
+.character-slot-field span {
+  color: var(--muted);
+}
+
+.character-slot .prompt-textarea {
+  min-height: 88px;
+}
+
 .prompt-lock-row {
   align-items: center;
   border: 1px solid var(--line);
@@ -646,6 +698,11 @@ textarea:focus {
   line-height: 1.55;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.compact-highlight-preview {
+  min-height: 46px;
+  max-height: 110px;
 }
 
 .prompt-highlight-preview.is-empty {
