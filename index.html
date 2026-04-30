@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dongsan</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <aside class="sidebar">
+        <header class="brand">
+          <div>
+            <h1>Dongsan</h1>
+            <p>씬 이미지 제작 작업대</p>
+          </div>
+        </header>
+
+        <section class="toolbar" aria-label="프로젝트 작업">
+          <button id="importButton" class="primary-button" type="button">TXT 불러오기</button>
+        </section>
+
+        <section class="project-meta">
+          <span id="sceneCount">0개 씬</span>
+          <span id="projectStatus">불러온 프로젝트 없음</span>
+        </section>
+
+        <nav id="sceneList" class="scene-list" aria-label="씬 목록"></nav>
+      </aside>
+
+      <section class="editor">
+        <header class="editor-header">
+          <div>
+            <p class="eyebrow">씬 상세</p>
+            <h2 id="sceneTitle">씬 파일을 불러와주세요</h2>
+          </div>
+          <span id="sceneStatus" class="status-pill">비어 있음</span>
+        </header>
+
+        <section id="emptyState" class="empty-state">
+          <h3>TXT 파일을 불러오면 씬 검토를 시작할 수 있어요.</h3>
+          <p>앱이 씬 번호와 장면 묘사를 파싱하고, 수정 가능한 Danbooru 스타일 태그 초안을 준비합니다.</p>
+        </section>
+
+        <form id="sceneForm" class="scene-form hidden">
+          <section id="imageWorkbench" class="image-workbench hidden">
+            <div class="preview-stage">
+              <img id="selectedPreviewImage" alt="선택한 생성 이미지 미리보기">
+            </div>
+            <section class="preview-meta">
+              <p class="eyebrow">선택 이미지</p>
+              <div class="preview-console-grid">
+                <div class="preview-console-summary">
+                  <h3 id="selectedImageTitle">선택한 이미지 없음</h3>
+                  <span id="selectedImageStatus" class="status-pill">없음</span>
+                </div>
+                <div class="preview-actions">
+                  <button id="keepImageButton" class="ghost-button compact-button" type="button">채택</button>
+                  <button id="rejectImageButton" class="ghost-button compact-button" type="button">보류</button>
+                  <button id="favoriteImageButton" class="ghost-button compact-button" type="button">즐겨찾기</button>
+                  <button id="novelAiVariationButton" class="primary-button compact-button" type="button">해당 프롬프트로 재생성</button>
+                  <button id="loadImagePromptButton" class="ghost-button compact-button" type="button">프롬프트 불러오기</button>
+                </div>
+                <div class="reject-presets">
+                  <button class="ghost-button compact-button" type="button" data-reject-reason="구도 변경 필요">구도 변경</button>
+                  <button class="ghost-button compact-button" type="button" data-reject-reason="얼굴 변경 필요">얼굴 변경</button>
+                  <button class="ghost-button compact-button" type="button" data-reject-reason="배경 변경 필요">배경 변경</button>
+                  <button class="ghost-button compact-button" type="button" data-reject-reason="의상 변경 필요">의상 변경</button>
+                </div>
+                <label class="preview-note">
+                  <span>검토 메모</span>
+                  <textarea id="imageNoteInput" rows="3" placeholder="구도 변경 필요, 얼굴 변경 필요, 배경 변경 필요, 의상 변경 필요"></textarea>
+                </label>
+                <div class="preview-actions">
+                  <button id="saveImageNoteButton" class="ghost-button compact-button" type="button">메모 저장</button>
+                </div>
+                <section class="image-meta-box">
+                  <div>
+                    <span>프롬프트</span>
+                    <p id="selectedImagePrompt"></p>
+                  </div>
+                  <div>
+                    <span>네거티브</span>
+                    <p id="selectedImageNegative"></p>
+                  </div>
+                  <div>
+                    <span>설정</span>
+                    <p id="selectedImageSettings"></p>
+                  </div>
+                </section>
+              </div>
+            </section>
+          </section>
+
+          <section class="scene-actions">
+            <button id="generateTagsButton" class="ghost-button" type="button">태그 초안 생성</button>
+            <button id="organizeTagsButton" class="ghost-button" type="button">가이드 순서로 정리</button>
+            <button id="approvePromptButton" class="ghost-button" type="button">현재 프롬프트 저장</button>
+          </section>
+
+          <label>
+            <span>씬 번호</span>
+            <input id="sceneNoInput" type="text" autocomplete="off">
+          </label>
+
+          <label>
+            <span>장면 묘사</span>
+            <textarea id="descriptionInput" rows="8"></textarea>
+          </label>
+
+          <div class="split-grid">
+            <label class="tag-search-field">
+              <span>태그 검색</span>
+              <input id="tagSearchInput" type="search" placeholder="Ctrl+F, wink / blush / looking..." autocomplete="off">
+            </label>
+          </div>
+
+          <div class="split-grid">
+            <section class="tag-editor">
+              <div class="tag-editor-header">
+                <span>태그 초안</span>
+                <div class="tag-add-row">
+                  <input id="tagInput" type="text" placeholder="1girl">
+                  <button id="addTagButton" class="ghost-button compact-button" type="button">추가</button>
+                </div>
+              </div>
+              <div id="tagChips" class="tag-chip-list"></div>
+            </section>
+
+            <section class="tag-editor">
+              <div class="tag-editor-header">
+                <span>네거티브 태그</span>
+                <div class="tag-add-row">
+                  <input id="negativeTagInput" type="text" placeholder="bad anatomy">
+                  <button id="addNegativeTagButton" class="ghost-button compact-button" type="button">추가</button>
+                </div>
+              </div>
+              <div id="negativeTagChips" class="tag-chip-list"></div>
+            </section>
+          </div>
+
+          <div class="split-grid prompt-input-grid">
+            <label>
+              <span>캐릭터 프롬프트</span>
+              <textarea id="characterPromptsInput" class="prompt-textarea" rows="8" placeholder="캐릭터별 프롬프트를 한 줄씩 입력"></textarea>
+            </label>
+
+            <label>
+              <span>캐릭터 네거티브 프롬프트</span>
+              <textarea id="characterNegativePromptsInput" class="prompt-textarea" rows="8" placeholder="캐릭터별 네거티브 프롬프트를 한 줄씩 입력"></textarea>
+            </label>
+          </div>
+
+          <label class="final-prompt-field">
+            <span>최종 프롬프트 미리보기</span>
+            <textarea id="promptInput" class="prompt-textarea final-prompt-textarea" rows="9"></textarea>
+            <div id="promptHighlightPreview" class="prompt-highlight-preview" aria-label="최종 프롬프트 검색 하이라이트"></div>
+          </label>
+
+          <section id="negativePromptSection" class="final-prompt-field collapsible-prompt-field collapsed">
+            <div class="collapsible-prompt-header">
+              <span>최종 네거티브 미리보기</span>
+              <button id="toggleNegativePromptButton" class="ghost-button compact-button" type="button" aria-expanded="false">펼치기</button>
+            </div>
+            <div class="collapsible-prompt-body">
+              <textarea id="negativePromptInput" class="prompt-textarea" rows="6"></textarea>
+              <div id="negativePromptHighlightPreview" class="prompt-highlight-preview" aria-label="최종 네거티브 검색 하이라이트"></div>
+            </div>
+          </section>
+
+          <section id="warningsPanel" class="warnings hidden">
+            <h3>파싱 경고</h3>
+            <ul id="warningsList"></ul>
+          </section>
+
+          <footer class="form-actions">
+            <span id="saveState">저장됨</span>
+            <button id="saveButton" class="primary-button" type="submit">씬 저장</button>
+          </footer>
+        </form>
+      </section>
+
+      <aside class="queue-panel">
+        <section id="settingsSection" class="settings-section collapsed">
+          <div class="section-title-row">
+            <div>
+              <p class="eyebrow">NovelAI</p>
+              <h2>설정</h2>
+            </div>
+            <button id="toggleSettingsButton" class="ghost-button compact-button" type="button">펼치기</button>
+          </div>
+          <form id="settingsForm" class="settings-form">
+            <label>
+              <span>API 키</span>
+              <input id="apiKeyInput" type="password" placeholder="프로젝트 JSON 밖에 저장됩니다">
+            </label>
+            <div class="settings-actions">
+              <button id="saveSettingsButton" class="ghost-button compact-button" type="submit">저장</button>
+              <button id="clearApiKeyButton" class="ghost-button compact-button" type="button">키 삭제</button>
+            </div>
+            <span id="apiKeyStatus" class="secret-status">저장된 키 없음</span>
+
+            <div class="settings-actions">
+              <button id="checkUpdateButton" class="ghost-button compact-button" type="button">최신 버전 확인</button>
+              <button id="applyUpdateButton" class="primary-button compact-button" type="button" disabled>업데이트</button>
+            </div>
+            <span id="updateStatus" class="secret-status">현재 버전 확인 전</span>
+
+            <div class="settings-actions">
+              <button id="importTagDictionaryButton" class="ghost-button compact-button" type="button">태그 사전 불러오기</button>
+              <span id="tagDictionaryStatus" class="secret-status">태그 사전 0개</span>
+            </div>
+
+            <label>
+              <span>모델</span>
+              <input id="modelInput" type="text" autocomplete="off">
+            </label>
+
+            <label>
+              <span>엔드포인트</span>
+              <input id="endpointInput" type="text" autocomplete="off">
+            </label>
+
+            <div class="numeric-grid">
+              <label>
+                <span>가로</span>
+                <input id="widthInput" type="number" min="64" step="64">
+              </label>
+              <label>
+                <span>세로</span>
+                <input id="heightInput" type="number" min="64" step="64">
+              </label>
+            </div>
+
+            <div class="numeric-grid">
+              <label>
+                <span>스텝</span>
+                <input id="stepsInput" type="number" min="1" max="100">
+              </label>
+              <label>
+                <span>스케일</span>
+                <input id="scaleInput" type="number" min="0" max="10" step="0.1">
+              </label>
+            </div>
+
+            <label>
+              <span>샘플러</span>
+              <input id="samplerInput" type="text" autocomplete="off">
+            </label>
+
+            <div class="numeric-grid">
+              <label>
+                <span>가이던스 리스케일</span>
+                <input id="cfgRescaleInput" type="number" min="0" max="1" step="0.05">
+              </label>
+              <label>
+                <span>노이즈 스케줄</span>
+                <input id="noiseScheduleInput" type="text" autocomplete="off">
+              </label>
+            </div>
+
+            <label>
+              <span>시드</span>
+              <input id="seedInput" type="text" autocomplete="off" placeholder="비우면 랜덤">
+            </label>
+          </form>
+        </section>
+
+        <section>
+          <p class="eyebrow">생성</p>
+          <h2>상태창</h2>
+          <div id="generationStatus" class="generation-status idle">대기 중</div>
+          <label class="generation-run-control">
+            <span>연속 실행</span>
+            <div class="generation-run-input-row">
+              <input id="generationRunCountInput" type="number" min="1" max="50" step="1" value="1">
+              <button class="ghost-button compact-button" type="button" data-run-count="1">1</button>
+              <button class="ghost-button compact-button" type="button" data-run-count="5">5</button>
+            </div>
+          </label>
+          <div class="generation-actions">
+            <button id="novelAiGenerateButton" class="primary-button full-button" type="button">저장 후 현재 씬 생성</button>
+          </div>
+          <div id="queueList" class="queue-list"></div>
+        </section>
+
+        <section>
+          <p class="eyebrow">이미지</p>
+          <h2>갤러리</h2>
+          <div id="galleryList" class="gallery-list"></div>
+        </section>
+      </aside>
+
+      <aside class="character-panel">
+        <section class="global-prompt-section">
+          <div class="section-title-row">
+            <div>
+              <p class="eyebrow">Global</p>
+              <h2>전체 기본 프롬프트</h2>
+            </div>
+          </div>
+
+          <label>
+            <span>전체 기본 프롬프트</span>
+            <textarea id="projectBasePromptInput" rows="4" placeholder="모든 씬에 적용됩니다"></textarea>
+          </label>
+
+          <label>
+            <span>전체 기본 네거티브 프롬프트</span>
+            <textarea id="projectBaseNegativePromptInput" rows="3" placeholder="모든 씬에 적용됩니다"></textarea>
+          </label>
+        </section>
+
+        <section class="character-library-section">
+          <div class="section-title-row">
+            <div>
+              <p class="eyebrow">프리셋</p>
+              <h2>캐릭터 프롬프트 저장소</h2>
+            </div>
+          </div>
+
+          <div class="character-preset-list" id="characterPresetList"></div>
+
+          <label>
+            <span>이름</span>
+            <input id="characterPresetNameInput" type="text" autocomplete="off" placeholder="남캐 / 여캐 / 엑스트라">
+          </label>
+
+          <label>
+            <span>프롬프트</span>
+            <textarea id="characterPresetPromptInput" rows="4" placeholder="1boy, tall, black hair, serious"></textarea>
+          </label>
+
+          <label>
+            <span>네거티브</span>
+            <textarea id="characterPresetNegativeInput" rows="3" placeholder="childlike face, wrong outfit"></textarea>
+          </label>
+
+          <div class="preset-actions">
+            <button id="newCharacterPresetButton" class="ghost-button compact-button" type="button">새로 작성</button>
+            <button id="saveCharacterPresetButton" class="primary-button compact-button" type="button">저장</button>
+            <button id="deleteCharacterPresetButton" class="ghost-button compact-button" type="button">삭제</button>
+            <button id="copyCharacterPresetButton" class="ghost-button compact-button" type="button">복사</button>
+            <button id="insertCharacterPresetButton" class="primary-button compact-button" type="button">현재 씬에 넣기</button>
+          </div>
+        </section>
+      </aside>
+    </main>
+
+    <script src="./renderer.js"></script>
+  </body>
+</html>

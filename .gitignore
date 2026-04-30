@@ -1,0 +1,32 @@
+node_modules/
+
+# Local agent/workspace notes
+.claude/
+CLAUDE.md
+
+# Legacy/non-Electron prototype files
+build.gradle.kts
+src/
+
+# Local Electron/user data and generated assets
+data/
+secrets.json
+project.json
+imports/
+images/
+docs/usage-video/
+
+# Build outputs
+dist/
+out/
+release/
+
+# Logs and local environment
+*.log
+.env
+.env.*
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.vscode/
