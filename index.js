@@ -1029,6 +1029,56 @@ function buildNovelAiPayload(scene, settings) {
   };
 }
 
+function stripDataUrlPrefix(value) {
+  return String(value || '').replace(/^data:[^;]+;base64,/, '');
+}
+
+function normalizeInpaintStrength(value) {
+  const numberValue = Number(value);
+
+  if (!Number.isFinite(numberValue)) {
+    return 1;
+  }
+
+  return Math.min(Math.max(numberValue, 0), 1);
+}
+
+function getNovelAiInpaintModel(model) {
+  const normalized = String(model || '').trim();
+
+  if (/inpaint/i.test(normalized)) {
+    return normalized;
+  }
+
+  const knownModels = {
+    'nai-diffusion-4-5-full': 'nai-diffusion-4-5-full-inpainting',
+    'nai-diffusion-4-full': 'nai-diffusion-4-full-inpainting',
+    'nai-diffusion-3': 'nai-diffusion-3-inpainting'
+  };
+
+  return knownModels[normalized] || normalized;
+}
+
+function buildNovelAiInpaintPayload(scene, settings, sourceImageBase64, maskBase64, strength) {
+  const payload = buildNovelAiPayload(scene, settings);
+
+  payload.model = getNovelAiInpaintModel(settings.model);
+  payload.action = 'infill';
+  payload.parameters.image = sourceImageBase64;
+  payload.parameters.mask = maskBase64;
+  payload.parameters.inpaintImg2ImgStrength = normalizeInpaintStrength(strength);
+  payload.parameters.img2img = {
+    strength: normalizeInpaintStrength(strength),
+    color_correct: true
+  };
+  payload.parameters.extra_noise_seed = payload.parameters.seed;
+  payload.parameters.add_original_image = false;
+  payload.parameters.noise = 0;
+  payload.parameters.n_samples = 1;
+
+  return payload;
+}
+
 function splitPromptParts(value) {
   return String(value || '')
     .split(',')
@@ -1142,7 +1192,7 @@ function normalizeNovelAiSampler(sampler) {
   return samplerMap[normalized] || sampler || 'k_euler_ancestral';
 }
 
-async function saveNovelAiResponse(responseBuffer, scene, settings) {
+async function saveNovelAiResponse(responseBuffer, scene, settings, options = {}) {
   const paths = await ensureProjectDirs();
   const sceneImageDir = path.join(paths.imagesDir, scene.id);
   await fs.mkdir(sceneImageDir, { recursive: true });
@@ -1156,9 +1206,13 @@ async function saveNovelAiResponse(responseBuffer, scene, settings) {
 
   try {
     await extractZip(zipPath, { dir: extractedDir });
-    const entries = await collectFiles(extractedDir);
+    const entries = (await collectFiles(extractedDir)).sort((first, second) => first.localeCompare(second));
 
     for (const entryPath of entries) {
+      if (options.maxImages && imageRecords.length >= options.maxImages) {
+        break;
+      }
+
       const ext = path.extname(entryPath).toLowerCase();
 
       if (!['.png', '.jpg', '.jpeg', '.webp'].includes(ext)) {
@@ -1315,6 +1369,61 @@ async function generateWithNovelAi(project, scene, settingsOverride = null, webC
 
   const imageRecords = await saveNovelAiResponse(responseBuffer, scene, settings);
   return createGenerationRecord(project, scene, imageRecords, settings, 'novelai');
+}
+
+async function generateWithNovelAiInpaint(project, scene, image, maskDataUrl, strength, settingsOverride = null, webContents = null) {
+  const settings = {
+    ...defaultGenerationSettings,
+    ...(image.metadata || {}),
+    ...(project.settings || {}),
+    ...(settingsOverride || {}),
+    provider: 'novelai',
+    seed: ''
+  };
+
+  if (image.metadata?.width && image.metadata?.height) {
+    settings.width = image.metadata.width;
+    settings.height = image.metadata.height;
+  }
+  const apiKey = await readApiKey();
+
+  if (!apiKey) {
+    throw new Error('NovelAI API key is not stored.');
+  }
+
+  const sourceImageBase64 = await fs.readFile(image.path, 'base64');
+  const maskBase64 = stripDataUrlPrefix(maskDataUrl);
+  const endpoint = settings.endpoint || defaultGenerationSettings.endpoint;
+  const inpaintStrength = normalizeInpaintStrength(strength);
+  activeNovelAiAbortController = new AbortController();
+  let responseBuffer;
+
+  try {
+    responseBuffer = await requestNovelAiGeneration(
+      endpoint,
+      apiKey,
+      buildNovelAiInpaintPayload(scene, settings, sourceImageBase64, maskBase64, inpaintStrength),
+      {
+        signal: activeNovelAiAbortController.signal,
+        onRetry: ({ retryAttempt, maxRetries, retryDelayMs }) => {
+          webContents?.send('generation:status', {
+            status: 'running',
+            message: `NovelAI 동시 생성 잠금(429). ${retryDelayMs / 1000}초 후 자동 재시도 중... (${retryAttempt}/${maxRetries})`
+          });
+        }
+      }
+    );
+  } finally {
+    activeNovelAiAbortController = null;
+  }
+
+  const imageRecords = await saveNovelAiResponse(responseBuffer, scene, settings, { maxImages: 1 });
+  return createGenerationRecord(project, scene, imageRecords, {
+    ...settings,
+    mode: 'novelai-inpaint',
+    sourceImageId: image.id,
+    inpaintStrength
+  }, 'novelai-inpaint');
 }
 
 ipcMain.handle('project:mockGenerate', async (_event, sceneId) => {
@@ -1538,6 +1647,67 @@ ipcMain.handle('project:novelAiVariation', async (event, imageId, sceneOverride 
     }
 
     const failedProject = createFailedGenerationRecord(project, variationScene, error.message, settings, 'novelai-variation');
+    await writeProject(failedProject);
+    throw error;
+  }
+});
+
+ipcMain.handle('project:novelAiInpaint', async (event, imageId, sceneOverride = null, maskDataUrl = '', strength = 1) => {
+  const project = await readProject();
+  const image = project.images.find((item) => item.id === imageId);
+
+  if (!image) {
+    throw new Error(`Image not found: ${imageId}`);
+  }
+
+  if (!maskDataUrl) {
+    throw new Error('Inpaint mask is empty.');
+  }
+
+  const scene = project.scenes.find((item) => item.id === image.sceneId);
+
+  if (!scene) {
+    throw new Error(`Scene not found: ${image.sceneId}`);
+  }
+
+  const currentScene = sceneOverride && sceneOverride.id === scene.id
+    ? {
+      ...scene,
+      ...sceneOverride,
+      prompt: String(sceneOverride.prompt || '').trim() || scene.prompt || image.metadata?.prompt || '',
+      negativePrompt: String(sceneOverride.negativePrompt || '').trim() || scene.negativePrompt || image.metadata?.negativePrompt || ''
+    }
+    : scene;
+
+  const inpaintScene = {
+    ...currentScene,
+    prompt: currentScene.prompt || image.metadata?.prompt,
+    negativePrompt: currentScene.negativePrompt || image.metadata?.negativePrompt,
+    basePrompt: currentScene.basePrompt || image.metadata?.basePrompt,
+    baseNegativePrompt: currentScene.baseNegativePrompt || image.metadata?.baseNegativePrompt,
+    characterPromptsText: currentScene.characterPromptsText || image.metadata?.characterPromptsText,
+    characterNegativePromptsText: currentScene.characterNegativePromptsText || image.metadata?.characterNegativePromptsText,
+    characterPositionsText: currentScene.characterPositionsText || image.metadata?.characterPositionsText,
+    status: 'prompt_approved'
+  };
+  const settings = {
+    ...defaultGenerationSettings,
+    ...(image.metadata || {}),
+    ...(project.settings || {}),
+    seed: '',
+    inpaintStrength: normalizeInpaintStrength(strength),
+    sourceImageId: image.id
+  };
+
+  try {
+    const nextProject = await generateWithNovelAiInpaint(project, inpaintScene, image, maskDataUrl, strength, settings, event.sender);
+    return writeProject(nextProject);
+  } catch (error) {
+    if (String(error.message || '').includes('canceled')) {
+      throw error;
+    }
+
+    const failedProject = createFailedGenerationRecord(project, inpaintScene, error.message, settings, 'novelai-inpaint');
     await writeProject(failedProject);
     throw error;
   }

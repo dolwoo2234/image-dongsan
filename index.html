@@ -116,6 +116,33 @@
                   <button id="novelAiVariationButton" class="primary-button compact-button" type="button">해당 프롬프트로 재생성</button>
                   <button id="loadImagePromptButton" class="ghost-button compact-button" type="button">프롬프트 불러오기</button>
                 </div>
+                <section id="inpaintPanel" class="inpaint-panel hidden">
+                  <div class="inpaint-toolbar">
+                    <button id="inpaintBrushButton" class="primary-button compact-button" type="button">브러시</button>
+                    <button id="inpaintEraserButton" class="ghost-button compact-button" type="button">지우개</button>
+                    <button id="clearInpaintMaskButton" class="ghost-button compact-button" type="button">마스크 지우기</button>
+                  </div>
+                  <div class="inpaint-canvas-wrap">
+                    <img id="inpaintBaseImage" alt="인페인트 기준 이미지">
+                    <canvas id="inpaintMaskCanvas" aria-label="인페인트 마스크"></canvas>
+                    <div id="inpaintBrushCursor" class="inpaint-brush-cursor hidden"></div>
+                  </div>
+                  <div class="inpaint-controls">
+                    <label>
+                      <span>브러시 크기</span>
+                      <input id="inpaintBrushSizeInput" type="range" min="4" max="160" step="2" value="48">
+                    </label>
+                    <label>
+                      <span>인페인트 강도</span>
+                      <input id="inpaintStrengthInput" type="range" min="0" max="1" step="0.05" value="1.0">
+                    </label>
+                    <label>
+                      <span>마스크 확장</span>
+                      <input id="inpaintMaskGrowInput" type="range" min="0" max="64" step="1" value="12">
+                    </label>
+                    <button id="novelAiInpaintButton" class="primary-button compact-button" type="button">인페인트 생성</button>
+                  </div>
+                </section>
                 <div class="reject-presets">
                   <button class="ghost-button compact-button" type="button" data-reject-reason="구도 변경 필요">구도 변경</button>
                   <button class="ghost-button compact-button" type="button" data-reject-reason="얼굴 변경 필요">얼굴 변경</button>
@@ -199,10 +226,7 @@
               <p class="eyebrow">Character</p>
               <h3>캐릭터 프롬프트</h3>
             </div>
-            <label class="inline-toggle">
-              <input id="pinCharacterPromptToggle" type="checkbox">
-              <span>캐릭터 프롬프트 고정</span>
-            </label>
+            <button id="carryCharacterToNextSceneButton" class="ghost-button compact-button" type="button">캐릭터 유지하고 다음 씬</button>
           </div>
 
           <div class="character-editor">

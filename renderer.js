@@ -7,17 +7,22 @@ const state = {
   settingsDirty: false,
   generationInProgress: false,
   generationCancelRequested: false,
-  pinCharacterPrompt: false,
-  pinnedCharacterPromptsText: '',
-  pinnedCharacterNegativePromptsText: '',
-  pinnedCharacterPositionsText: '',
   pendingCharacterPromptCarry: null,
   tagSearch: '',
   draftTags: [],
   draftNegativeTags: [],
   settings: null,
   secretStatus: null,
-  updateInfo: null
+  updateInfo: null,
+  inpaintOpen: false,
+  inpaintMode: 'brush',
+  inpaintSourceImageId: null,
+  inpaintDrawing: false,
+  inpaintMaskPixels: null,
+  inpaintLastPoint: null,
+  inpaintZoom: 1,
+  inpaintPanX: 0,
+  inpaintPanY: 0
 };
 
 const elements = {
@@ -38,6 +43,17 @@ const elements = {
   favoriteImageButton: document.querySelector('#favoriteImageButton'),
   novelAiVariationButton: document.querySelector('#novelAiVariationButton'),
   loadImagePromptButton: document.querySelector('#loadImagePromptButton'),
+  inpaintPanel: document.querySelector('#inpaintPanel'),
+  inpaintBaseImage: document.querySelector('#inpaintBaseImage'),
+  inpaintMaskCanvas: document.querySelector('#inpaintMaskCanvas'),
+  inpaintBrushCursor: document.querySelector('#inpaintBrushCursor'),
+  inpaintBrushButton: document.querySelector('#inpaintBrushButton'),
+  inpaintEraserButton: document.querySelector('#inpaintEraserButton'),
+  clearInpaintMaskButton: document.querySelector('#clearInpaintMaskButton'),
+  inpaintBrushSizeInput: document.querySelector('#inpaintBrushSizeInput'),
+  inpaintStrengthInput: document.querySelector('#inpaintStrengthInput'),
+  inpaintMaskGrowInput: document.querySelector('#inpaintMaskGrowInput'),
+  novelAiInpaintButton: document.querySelector('#novelAiInpaintButton'),
   imageNoteInput: document.querySelector('#imageNoteInput'),
   saveImageNoteButton: document.querySelector('#saveImageNoteButton'),
   selectedImagePrompt: document.querySelector('#selectedImagePrompt'),
@@ -55,7 +71,7 @@ const elements = {
   negativeTagInput: document.querySelector('#negativeTagInput'),
   addNegativeTagButton: document.querySelector('#addNegativeTagButton'),
   negativeTagChips: document.querySelector('#negativeTagChips'),
-  pinCharacterPromptToggle: document.querySelector('#pinCharacterPromptToggle'),
+  carryCharacterToNextSceneButton: document.querySelector('#carryCharacterToNextSceneButton'),
   characterPromptsInput: document.querySelector('#characterPromptsInput'),
   characterNegativePromptsInput: document.querySelector('#characterNegativePromptsInput'),
   characterPositionsInput: document.querySelector('#characterPositionsInput'),
@@ -402,25 +418,14 @@ function renderPromptPreviewForScene(scene) {
   renderPromptHighlights();
 }
 
-function capturePinnedCharacterPrompts() {
-  state.pinnedCharacterPromptsText = elements.characterPromptsInput.value;
-  state.pinnedCharacterNegativePromptsText = elements.characterNegativePromptsInput.value;
-  state.pinnedCharacterPositionsText = elements.characterPositionsInput.value;
-}
+function captureCharacterPromptCarry() {
+  syncCharacterInputsFromSlots();
 
-function releaseCharacterPromptPinForSceneChange() {
-  if (!state.pinCharacterPrompt) {
-    return;
-  }
-
-  capturePinnedCharacterPrompts();
-  state.pendingCharacterPromptCarry = {
-    prompt: state.pinnedCharacterPromptsText,
-    negativePrompt: state.pinnedCharacterNegativePromptsText,
-    positions: state.pinnedCharacterPositionsText
+  return {
+    prompt: elements.characterPromptsInput.value,
+    negativePrompt: elements.characterNegativePromptsInput.value,
+    positions: elements.characterPositionsInput.value
   };
-  state.pinCharacterPrompt = false;
-  elements.pinCharacterPromptToggle.checked = false;
 }
 
 function getCharacterPromptSlots() {
@@ -460,9 +465,6 @@ function syncCharacterInputsFromSlots() {
   elements.characterNegativePromptsInput.value = activeSlots.map((slot) => slot.negativePrompt).join('\n');
   elements.characterPositionsInput.value = activeSlots.map((slot) => slot.position || 'auto').join('\n');
 
-  if (state.pinCharacterPrompt) {
-    capturePinnedCharacterPrompts();
-  }
 }
 
 function renderCharacterSlotHighlights(query) {
@@ -589,14 +591,6 @@ function getSceneCharacterPrompts(scene) {
     return state.pendingCharacterPromptCarry;
   }
 
-  if (state.pinCharacterPrompt) {
-    return {
-      prompt: state.pinnedCharacterPromptsText,
-      negativePrompt: state.pinnedCharacterNegativePromptsText,
-      positions: state.pinnedCharacterPositionsText
-    };
-  }
-
   return {
     prompt: scene.characterPromptsText || '',
     negativePrompt: scene.characterNegativePromptsText || '',
@@ -717,10 +711,6 @@ function renderSceneList() {
     body.append(title, description);
     item.append(body, status);
     item.addEventListener('click', () => {
-      if (scene.id !== state.selectedSceneId) {
-        releaseCharacterPromptPinForSceneChange();
-      }
-
       state.selectedSceneId = scene.id;
       state.selectedImageId = null;
       setDirty(false);
@@ -900,6 +890,7 @@ function renderQueueAndGallery() {
     sceneImages.slice().reverse().forEach((image) => {
       const card = document.createElement('article');
       const preview = document.createElement('img');
+      const inpaintAction = document.createElement('button');
       const caption = document.createElement('span');
       const note = document.createElement('span');
       const badge = document.createElement('span');
@@ -912,8 +903,20 @@ function renderQueueAndGallery() {
       badge.textContent = labelStatus(imageStatus);
       preview.src = image.uri;
       preview.alt = `Scene ${scene.sceneNo} generated image preview`;
+      inpaintAction.className = 'gallery-inpaint-button';
+      inpaintAction.type = 'button';
+      inpaintAction.textContent = '인페인트';
+      inpaintAction.disabled = !state.secretStatus?.hasApiKey;
+      inpaintAction.title = state.secretStatus?.hasApiKey ? '이 이미지로 인페인트 열기' : 'NovelAI API 키를 먼저 저장하세요';
+      inpaintAction.addEventListener('click', (event) => {
+        event.stopPropagation();
+        state.selectedImageId = image.id;
+        state.inpaintOpen = true;
+        renderSelectedImage();
+        renderQueueAndGallery();
+      });
       caption.textContent = (image.metadata?.model || '모델 없음') + ' / ' + (image.metadata?.width || '-') + 'x' + (image.metadata?.height || '-');
-      card.append(preview, badge, caption);
+      card.append(preview, badge, inpaintAction, caption);
       if (image.note) {
         note.className = 'gallery-note';
         note.textContent = image.note;
@@ -922,6 +925,7 @@ function renderQueueAndGallery() {
       }
       card.addEventListener('click', () => {
         state.selectedImageId = image.id;
+        state.inpaintOpen = false;
         renderSelectedImage();
         renderQueueAndGallery();
       });
@@ -950,6 +954,7 @@ function renderSceneForm() {
     state.draftTags = [];
     state.draftNegativeTags = [];
     state.selectedImageId = null;
+    elements.carryCharacterToNextSceneButton.disabled = true;
     renderSelectedImage();
     return;
   }
@@ -959,6 +964,9 @@ function renderSceneForm() {
   elements.sceneTitle.textContent = `Scene ${scene.sceneNo}`;
   elements.sceneStatus.textContent = labelStatus(scene.status);
   elements.sceneStatus.className = `status-pill ${scene.status}`;
+  const scenes = state.project?.scenes || [];
+  const sceneIndex = scenes.findIndex((item) => item.id === scene.id);
+  elements.carryCharacterToNextSceneButton.disabled = sceneIndex === -1 || sceneIndex >= scenes.length - 1;
   elements.sceneNoInput.value = scene.sceneNo || '';
   elements.descriptionInput.value = scene.description || '';
   const characterPrompts = getSceneCharacterPrompts(scene);
@@ -969,7 +977,7 @@ function renderSceneForm() {
   state.draftTags = uniqueTags(scene.tags || []);
   state.draftNegativeTags = uniqueTags(scene.negativeTags || []);
   const hadPendingCharacterPromptCarry = Boolean(state.pendingCharacterPromptCarry);
-  const usesCarriedCharacterPrompts = Boolean(state.pendingCharacterPromptCarry || state.pinCharacterPrompt);
+  const usesCarriedCharacterPrompts = Boolean(state.pendingCharacterPromptCarry);
   const promptScene = usesCarriedCharacterPrompts
     ? {
       ...scene,
@@ -989,12 +997,360 @@ function renderSceneForm() {
   renderWarnings(scene);
   renderQueueAndGallery();
 }
+
+function setInpaintMode(mode) {
+  state.inpaintMode = mode === 'eraser' ? 'eraser' : 'brush';
+  elements.inpaintBrushButton.className = state.inpaintMode === 'brush'
+    ? 'primary-button compact-button'
+    : 'ghost-button compact-button';
+  elements.inpaintEraserButton.className = state.inpaintMode === 'eraser'
+    ? 'primary-button compact-button'
+    : 'ghost-button compact-button';
+}
+
+function prepareInpaintCanvas(image) {
+  if (!elements.inpaintPanel || !elements.inpaintMaskCanvas || !elements.inpaintBaseImage || !image) {
+    return;
+  }
+
+  elements.inpaintPanel.classList.remove('hidden');
+  elements.inpaintBaseImage.onload = () => {
+    const width = elements.inpaintBaseImage.naturalWidth || Number(image.metadata?.width) || 1024;
+    const height = elements.inpaintBaseImage.naturalHeight || Number(image.metadata?.height) || 1024;
+
+    if (state.inpaintSourceImageId === image.id && elements.inpaintMaskCanvas.width === width && elements.inpaintMaskCanvas.height === height) {
+      return;
+    }
+
+    elements.inpaintMaskCanvas.width = width;
+    elements.inpaintMaskCanvas.height = height;
+    elements.inpaintMaskCanvas.parentElement.style.aspectRatio = `${width} / ${height}`;
+    state.inpaintMaskPixels = new Uint8Array(width * height);
+    state.inpaintZoom = 1;
+    state.inpaintPanX = 0;
+    state.inpaintPanY = 0;
+    clearInpaintMask();
+    updateInpaintViewport();
+    state.inpaintSourceImageId = image.id;
+  };
+  elements.inpaintBaseImage.src = image.uri;
+  setInpaintMode(state.inpaintMode);
+}
+
+function updateInpaintViewport() {
+  const transform = `translate(${state.inpaintPanX}px, ${state.inpaintPanY}px) scale(${state.inpaintZoom})`;
+  elements.inpaintBaseImage.style.transform = transform;
+  elements.inpaintMaskCanvas.style.transform = transform;
+  updateInpaintBrushCursor();
+}
+
+function getInpaintViewportPoint(event) {
+  const rect = elements.inpaintMaskCanvas.getBoundingClientRect();
+  return {
+    x: event.clientX - rect.left,
+    y: event.clientY - rect.top,
+    rect
+  };
+}
+
+function updateInpaintBrushCursor(event = null) {
+  if (!elements.inpaintBrushCursor || !elements.inpaintMaskCanvas?.width) {
+    return;
+  }
+
+  const brushSize = Math.max(4, Number(elements.inpaintBrushSizeInput.value) || 48);
+  const rect = elements.inpaintMaskCanvas.getBoundingClientRect();
+  const displaySize = (brushSize / elements.inpaintMaskCanvas.width) * rect.width;
+
+  elements.inpaintBrushCursor.style.width = `${Math.max(4, displaySize)}px`;
+  elements.inpaintBrushCursor.style.height = `${Math.max(4, displaySize)}px`;
+
+  if (event) {
+    const wrapRect = elements.inpaintMaskCanvas.parentElement.getBoundingClientRect();
+    elements.inpaintBrushCursor.style.left = `${event.clientX - wrapRect.left}px`;
+    elements.inpaintBrushCursor.style.top = `${event.clientY - wrapRect.top}px`;
+  }
+}
+
+function zoomInpaintCanvas(event) {
+  if (!elements.inpaintMaskCanvas?.width) {
+    return;
+  }
+
+  event.preventDefault();
+  const wrapRect = elements.inpaintMaskCanvas.parentElement.getBoundingClientRect();
+  const pointerX = event.clientX - wrapRect.left;
+  const pointerY = event.clientY - wrapRect.top;
+  const previousZoom = state.inpaintZoom;
+  const zoomFactor = event.deltaY < 0 ? 1.12 : 1 / 1.12;
+  const nextZoom = Math.min(Math.max(previousZoom * zoomFactor, 1), 8);
+
+  if (nextZoom === previousZoom) {
+    return;
+  }
+
+  state.inpaintPanX = pointerX - ((pointerX - state.inpaintPanX) * (nextZoom / previousZoom));
+  state.inpaintPanY = pointerY - ((pointerY - state.inpaintPanY) * (nextZoom / previousZoom));
+
+  if (nextZoom === 1) {
+    state.inpaintPanX = 0;
+    state.inpaintPanY = 0;
+  }
+
+  state.inpaintZoom = nextZoom;
+  updateInpaintViewport();
+  updateInpaintBrushCursor(event);
+}
+
+function renderInpaintMaskCanvas() {
+  if (!elements.inpaintMaskCanvas?.width || !state.inpaintMaskPixels) {
+    return;
+  }
+
+  const canvas = elements.inpaintMaskCanvas;
+  const context = canvas.getContext('2d');
+  const output = context.createImageData(canvas.width, canvas.height);
+
+  for (let pixelIndex = 0; pixelIndex < state.inpaintMaskPixels.length; pixelIndex += 1) {
+    if (!state.inpaintMaskPixels[pixelIndex]) {
+      continue;
+    }
+
+    const dataIndex = pixelIndex * 4;
+    output.data[dataIndex] = 73;
+    output.data[dataIndex + 1] = 132;
+    output.data[dataIndex + 2] = 255;
+    output.data[dataIndex + 3] = 112;
+  }
+
+  context.putImageData(output, 0, 0);
+}
+
+function paintInpaintCircle(point, radius, value) {
+  const canvas = elements.inpaintMaskCanvas;
+
+  if (!state.inpaintMaskPixels || !canvas.width || !canvas.height) {
+    return;
+  }
+
+  const centerX = Math.round(point.x);
+  const centerY = Math.round(point.y);
+  const radiusValue = Math.max(1, Math.round(radius));
+  const radiusSquared = radiusValue * radiusValue;
+  const minX = Math.max(0, centerX - radiusValue);
+  const maxX = Math.min(canvas.width - 1, centerX + radiusValue);
+  const minY = Math.max(0, centerY - radiusValue);
+  const maxY = Math.min(canvas.height - 1, centerY + radiusValue);
+
+  for (let y = minY; y <= maxY; y += 1) {
+    const dy = y - centerY;
+
+    for (let x = minX; x <= maxX; x += 1) {
+      const dx = x - centerX;
+
+      if ((dx * dx) + (dy * dy) <= radiusSquared) {
+        state.inpaintMaskPixels[(y * canvas.width) + x] = value;
+      }
+    }
+  }
+}
+
+function paintInpaintLine(fromPoint, toPoint, radius, value) {
+  const dx = toPoint.x - fromPoint.x;
+  const dy = toPoint.y - fromPoint.y;
+  const distance = Math.hypot(dx, dy);
+  const steps = Math.max(1, Math.ceil(distance / Math.max(1, radius * 0.45)));
+
+  for (let index = 0; index <= steps; index += 1) {
+    const progress = index / steps;
+    paintInpaintCircle({
+      x: fromPoint.x + (dx * progress),
+      y: fromPoint.y + (dy * progress)
+    }, radius, value);
+  }
+}
+
+function getInpaintCanvasPoint(event) {
+  const { x, y, rect } = getInpaintViewportPoint(event);
+  return {
+    x: (x / rect.width) * elements.inpaintMaskCanvas.width,
+    y: (y / rect.height) * elements.inpaintMaskCanvas.height
+  };
+}
+
+function drawInpaintStroke(event) {
+  updateInpaintBrushCursor(event);
+
+  if (!state.inpaintDrawing || !elements.inpaintMaskCanvas.width || !state.inpaintLastPoint) {
+    return;
+  }
+
+  const point = getInpaintCanvasPoint(event);
+  const brushSize = Math.max(4, Number(elements.inpaintBrushSizeInput.value) || 48);
+  paintInpaintLine(state.inpaintLastPoint, point, brushSize / 2, state.inpaintMode === 'eraser' ? 0 : 1);
+  state.inpaintLastPoint = point;
+  renderInpaintMaskCanvas();
+}
+
+function beginInpaintStroke(event) {
+  if (!elements.inpaintMaskCanvas.width) {
+    return;
+  }
+
+  event.preventDefault();
+  updateInpaintBrushCursor(event);
+  const point = getInpaintCanvasPoint(event);
+  const brushSize = Math.max(4, Number(elements.inpaintBrushSizeInput.value) || 48);
+  state.inpaintDrawing = true;
+  state.inpaintLastPoint = point;
+  paintInpaintCircle(point, brushSize / 2, state.inpaintMode === 'eraser' ? 0 : 1);
+  renderInpaintMaskCanvas();
+  elements.inpaintMaskCanvas.setPointerCapture(event.pointerId);
+}
+
+function endInpaintStroke(event) {
+  if (!state.inpaintDrawing) {
+    return;
+  }
+
+  state.inpaintDrawing = false;
+  state.inpaintLastPoint = null;
+
+  if (elements.inpaintMaskCanvas.hasPointerCapture(event.pointerId)) {
+    elements.inpaintMaskCanvas.releasePointerCapture(event.pointerId);
+  }
+}
+
+function clearInpaintMask() {
+  if (!elements.inpaintMaskCanvas) {
+    return;
+  }
+
+  const context = elements.inpaintMaskCanvas.getContext('2d');
+  context.clearRect(0, 0, elements.inpaintMaskCanvas.width, elements.inpaintMaskCanvas.height);
+  state.inpaintMaskPixels?.fill(0);
+}
+
+function growInpaintMaskPixels(sourcePixels, width, height, growPixels) {
+  const grow = Math.max(0, Math.round(growPixels));
+
+  if (!grow) {
+    return sourcePixels;
+  }
+
+  const grownPixels = new Uint8Array(sourcePixels);
+  const radiusSquared = grow * grow;
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      if (!sourcePixels[(y * width) + x]) {
+        continue;
+      }
+
+      const minX = Math.max(0, x - grow);
+      const maxX = Math.min(width - 1, x + grow);
+      const minY = Math.max(0, y - grow);
+      const maxY = Math.min(height - 1, y + grow);
+
+      for (let targetY = minY; targetY <= maxY; targetY += 1) {
+        const dy = targetY - y;
+
+        for (let targetX = minX; targetX <= maxX; targetX += 1) {
+          const dx = targetX - x;
+
+          if ((dx * dx) + (dy * dy) <= radiusSquared) {
+            grownPixels[(targetY * width) + targetX] = 1;
+          }
+        }
+      }
+    }
+  }
+
+  return grownPixels;
+}
+
+function showInpaintBrushCursor(event) {
+  elements.inpaintBrushCursor?.classList.remove('hidden');
+  updateInpaintBrushCursor(event);
+}
+
+function hideInpaintBrushCursor() {
+  elements.inpaintBrushCursor?.classList.add('hidden');
+}
+
+function snapMaskToNovelAiGrid(maskCanvas, targetCanvas) {
+  const gridCanvas = document.createElement('canvas');
+  gridCanvas.width = Math.max(1, Math.floor(maskCanvas.width / 8));
+  gridCanvas.height = Math.max(1, Math.floor(maskCanvas.height / 8));
+  const gridContext = gridCanvas.getContext('2d');
+  gridContext.imageSmoothingEnabled = false;
+  gridContext.drawImage(maskCanvas, 0, 0, gridCanvas.width, gridCanvas.height);
+
+  const outputContext = targetCanvas.getContext('2d');
+  outputContext.imageSmoothingEnabled = false;
+  outputContext.fillStyle = 'black';
+  outputContext.fillRect(0, 0, targetCanvas.width, targetCanvas.height);
+  outputContext.drawImage(gridCanvas, 0, 0, targetCanvas.width, targetCanvas.height);
+
+  const snappedData = outputContext.getImageData(0, 0, targetCanvas.width, targetCanvas.height);
+
+  for (let index = 0; index < snappedData.data.length; index += 4) {
+    const maskValue = snappedData.data[index] >= 128 ? 255 : 0;
+    snappedData.data[index] = maskValue;
+    snappedData.data[index + 1] = maskValue;
+    snappedData.data[index + 2] = maskValue;
+    snappedData.data[index + 3] = 255;
+  }
+
+  outputContext.putImageData(snappedData, 0, 0);
+}
+
+function getInpaintMaskDataUrl() {
+  const sourceCanvas = elements.inpaintMaskCanvas;
+  const hasMask = state.inpaintMaskPixels?.some(Boolean);
+
+  if (!hasMask) {
+    return null;
+  }
+
+  const outputCanvas = document.createElement('canvas');
+  outputCanvas.width = sourceCanvas.width;
+  outputCanvas.height = sourceCanvas.height;
+  const maskCanvas = document.createElement('canvas');
+  maskCanvas.width = sourceCanvas.width;
+  maskCanvas.height = sourceCanvas.height;
+  const maskContext = maskCanvas.getContext('2d');
+  const outputData = maskContext.createImageData(maskCanvas.width, maskCanvas.height);
+  const maskGrow = Number(elements.inpaintMaskGrowInput.value) || 0;
+  const outputMaskPixels = growInpaintMaskPixels(
+    state.inpaintMaskPixels,
+    maskCanvas.width,
+    maskCanvas.height,
+    maskGrow
+  );
+
+  for (let pixelIndex = 0; pixelIndex < outputMaskPixels.length; pixelIndex += 1) {
+    const dataIndex = pixelIndex * 4;
+    const maskValue = outputMaskPixels[pixelIndex] ? 255 : 0;
+    outputData.data[dataIndex] = maskValue;
+    outputData.data[dataIndex + 1] = maskValue;
+    outputData.data[dataIndex + 2] = maskValue;
+    outputData.data[dataIndex + 3] = 255;
+  }
+
+  maskContext.putImageData(outputData, 0, 0);
+  snapMaskToNovelAiGrid(maskCanvas, outputCanvas);
+
+  return outputCanvas.toDataURL('image/png');
+}
+
 function renderSelectedImage() {
   const image = getSelectedImage();
   const scene = getSelectedScene();
 
   if (!scene || !image) {
     elements.imageWorkbench.classList.add('hidden');
+    elements.inpaintPanel?.classList.add('hidden');
     elements.selectedPreviewImage.removeAttribute('src');
     return;
   }
@@ -1010,6 +1366,15 @@ function renderSelectedImage() {
   elements.novelAiVariationButton.title = state.secretStatus?.hasApiKey
     ? 'Regenerate with the selected image prompt and settings'
     : 'Save a NovelAI API key first';
+  elements.novelAiInpaintButton.disabled = !state.secretStatus?.hasApiKey;
+  elements.novelAiInpaintButton.title = state.secretStatus?.hasApiKey
+    ? 'Paint a mask and regenerate only that area'
+    : 'Save a NovelAI API key first';
+  if (state.inpaintOpen) {
+    prepareInpaintCanvas(image);
+  } else {
+    elements.inpaintPanel?.classList.add('hidden');
+  }
   elements.selectedImagePrompt.textContent = image.metadata?.prompt || '';
   elements.selectedImageNegative.textContent = image.metadata?.negativePrompt || '';
   elements.selectedImageSettings.textContent = [
@@ -1017,10 +1382,27 @@ function renderSelectedImage() {
     `${image.metadata?.width || '-'}x${image.metadata?.height || '-'}`,
     `steps ${image.metadata?.steps ?? '-'}`,
     `scale ${image.metadata?.scale ?? '-'}`,
+    image.metadata?.inpaintStrength !== undefined && image.metadata?.inpaintStrength !== '' ? `inpaint ${image.metadata.inpaintStrength}` : '',
     image.metadata?.sampler,
     `seed ${image.metadata?.seed ?? '-'}`
   ].filter(Boolean).join(' / ');
 }
+
+function getLatestJobResultImageId(sceneId, mode = null) {
+  const jobs = state.project?.generationJobs || [];
+  const latestJob = jobs
+    .slice()
+    .reverse()
+    .find((job) => (
+      job.sceneId === sceneId
+      && Array.isArray(job.resultImageIds)
+      && job.resultImageIds.length > 0
+      && (!mode || job.request?.mode === mode)
+    ));
+
+  return latestJob?.resultImageIds?.[0] || null;
+}
+
 function render() {
   renderProjectMeta();
   renderSettings();
@@ -1391,6 +1773,29 @@ async function approvePromptForSelectedScene() {
   setGenerationStatus('done', '현재 프롬프트 저장 완료');
 }
 
+async function carryCharacterPromptsToNextScene() {
+  const scene = getSelectedScene();
+  const scenes = state.project?.scenes || [];
+  const sceneIndex = scenes.findIndex((item) => item.id === scene?.id);
+  const nextScene = scenes[sceneIndex + 1];
+
+  if (!scene || !nextScene) {
+    setGenerationStatus('error', '다음 씬이 없습니다.');
+    return;
+  }
+
+  const carriedPrompts = captureCharacterPromptCarry();
+  await persistSettingsIfDirty();
+  await persistScene(scene);
+
+  state.pendingCharacterPromptCarry = carriedPrompts;
+  state.selectedSceneId = nextScene.id;
+  state.selectedImageId = null;
+  setDirty(false);
+  render();
+  setGenerationStatus('done', `캐릭터를 유지하고 Scene ${nextScene.sceneNo}로 이동했습니다.`);
+}
+
 async function prepareSceneForGeneration() {
   const scene = getSelectedScene();
   if (!scene) {
@@ -1612,6 +2017,61 @@ async function novelAiVariationFromSelectedImage() {
     renderQueueAndGallery();
   }
 }
+
+async function novelAiInpaintSelectedImage() {
+  const image = getSelectedImage();
+  const scene = getSelectedScene();
+
+  if (!image || !scene) {
+    setGenerationStatus('error', '인페인트할 이미지를 먼저 선택하세요.');
+    return;
+  }
+
+  if (typeof window.dongsan.novelAiInpaint !== 'function') {
+    setGenerationStatus('error', '인페인트 기능을 불러오지 못했습니다. 앱을 완전히 종료한 뒤 다시 실행하세요.');
+    return;
+  }
+
+  const maskDataUrl = getInpaintMaskDataUrl();
+
+  if (!maskDataUrl) {
+    setGenerationStatus('error', '인페인트할 영역을 먼저 브러시로 칠하세요.');
+    return;
+  }
+
+  const strength = Math.min(Math.max(Number(elements.inpaintStrengthInput.value) || 1, 0), 1);
+  try {
+    await persistSettingsIfDirty();
+    const sceneOverride = await persistScene(scene, 'prompt_approved');
+    state.generationInProgress = true;
+    state.generationCancelRequested = false;
+    renderQueueAndGallery();
+    setGenerationStatus('running', '인페인트 생성 중...');
+    state.project = await window.dongsan.novelAiInpaint(image.id, sceneOverride, maskDataUrl, strength);
+    state.selectedImageId = getLatestJobResultImageId(image.sceneId, 'novelai-inpaint') || image.id;
+    state.inpaintOpen = false;
+    clearInpaintMask();
+    render();
+    setGenerationStatus('done', '인페인트 생성 완료');
+  } catch (error) {
+    if (String(error.message || '').includes('canceled')) {
+      setGenerationStatus('idle', '이미지 생성이 중단되었습니다.');
+      state.project = await window.dongsan.loadProject();
+      render();
+      return;
+    }
+
+    elements.projectStatus.textContent = error.message;
+    setGenerationStatus('error', error.message);
+    state.project = await window.dongsan.loadProject();
+    render();
+  } finally {
+    state.generationInProgress = false;
+    state.generationCancelRequested = false;
+    renderQueueAndGallery();
+  }
+}
+
 async function loadSelectedImagePromptToEditor() {
   const image = getSelectedImage();
   const scene = getSelectedScene();
@@ -1695,27 +2155,16 @@ function organizeTagsForSelectedScene() {
   elements.characterNegativePromptsInput
 ].forEach((element) => {
   element.addEventListener('input', () => {
-    if (state.pinCharacterPrompt) {
-      capturePinnedCharacterPrompts();
-    }
     refreshPromptPreview();
   });
-});
-
-elements.pinCharacterPromptToggle.addEventListener('change', () => {
-  state.pinCharacterPrompt = elements.pinCharacterPromptToggle.checked;
-
-  if (state.pinCharacterPrompt) {
-    capturePinnedCharacterPrompts();
-  }
-
-  refreshPromptPreview();
 });
 
 elements.addCharacterButton.addEventListener('click', () => {
   elements.characterSlots.appendChild(createCharacterPromptSlot());
   renumberCharacterSlots();
 });
+
+elements.carryCharacterToNextSceneButton.addEventListener('click', carryCharacterPromptsToNextScene);
 
 elements.tagSearchInput.addEventListener('input', () => {
   state.tagSearch = elements.tagSearchInput.value;
@@ -1782,6 +2231,18 @@ elements.rejectImageButton.addEventListener('click', rejectSelectedImage);
 elements.favoriteImageButton.addEventListener('click', toggleFavoriteSelectedImage);
 elements.saveImageNoteButton.addEventListener('click', saveSelectedImageNote);
 elements.novelAiVariationButton.addEventListener('click', novelAiVariationFromSelectedImage);
+elements.novelAiInpaintButton.addEventListener('click', novelAiInpaintSelectedImage);
+elements.inpaintBrushButton.addEventListener('click', () => setInpaintMode('brush'));
+elements.inpaintEraserButton.addEventListener('click', () => setInpaintMode('eraser'));
+elements.clearInpaintMaskButton.addEventListener('click', clearInpaintMask);
+elements.inpaintBrushSizeInput.addEventListener('input', () => updateInpaintBrushCursor());
+elements.inpaintMaskCanvas.addEventListener('wheel', zoomInpaintCanvas, { passive: false });
+elements.inpaintMaskCanvas.addEventListener('pointerenter', showInpaintBrushCursor);
+elements.inpaintMaskCanvas.addEventListener('pointerleave', hideInpaintBrushCursor);
+elements.inpaintMaskCanvas.addEventListener('pointerdown', beginInpaintStroke);
+elements.inpaintMaskCanvas.addEventListener('pointermove', drawInpaintStroke);
+elements.inpaintMaskCanvas.addEventListener('pointerup', endInpaintStroke);
+elements.inpaintMaskCanvas.addEventListener('pointercancel', endInpaintStroke);
 elements.loadImagePromptButton.addEventListener('click', loadSelectedImagePromptToEditor);
 
 document.querySelectorAll('[data-reject-reason]').forEach((button) => {

@@ -653,7 +653,9 @@ function createMockGeneration(project, scene, imagePath, imageUri, settings = {}
       cfgRescale: generationSettings.cfgRescale,
       noiseSchedule: generationSettings.noiseSchedule,
       width: generationSettings.width,
-      height: generationSettings.height
+      height: generationSettings.height,
+      sourceImageId: generationSettings.sourceImageId || '',
+      inpaintStrength: generationSettings.inpaintStrength ?? ''
     },
     favorite: false,
     status: 'candidate',

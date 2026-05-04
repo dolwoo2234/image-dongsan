@@ -11,6 +11,7 @@ const dongsanApi = {
   keepAndExportImage: (imageId) => ipcRenderer.invoke('project:keepAndExportImage', imageId),
   mockVariation: (imageId) => ipcRenderer.invoke('project:mockVariation', imageId),
   novelAiVariation: (imageId, sceneOverride) => ipcRenderer.invoke('project:novelAiVariation', imageId, sceneOverride),
+  novelAiInpaint: (imageId, sceneOverride, maskDataUrl, strength) => ipcRenderer.invoke('project:novelAiInpaint', imageId, sceneOverride, maskDataUrl, strength),
   onGenerationStatus: (callback) => {
     const listener = (_event, payload) => callback(payload);
     ipcRenderer.on('generation:status', listener);
