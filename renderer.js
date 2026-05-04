@@ -1440,7 +1440,7 @@ async function novelAiGenerateSelectedScene() {
         break;
       }
 
-      setGenerationStatus('running', `NovelAI 생성 중... (${index + 1}/${runCount})`);
+      setGenerationStatus('running', `현재 씬 저장 후 생성 중... (${index + 1}/${runCount})`);
       state.project = await window.dongsan.novelAiGenerate(scene.id);
       state.selectedSceneId = scene.id;
       selectLatestSceneImage(scene.id);
