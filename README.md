@@ -33,6 +33,8 @@ npm install
 npm start
 ```
 
+On Windows, users can also double-click `run.bat`. It checks for Node.js/npm, installs dependencies when `node_modules` is missing, and then starts Electron.
+
 NovelAI API keys are saved locally on each user's computer through Electron user data storage. They are not stored in this repository.
 
 ## Updates
