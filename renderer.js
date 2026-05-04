@@ -968,6 +968,7 @@ function renderSceneForm() {
   renderCharacterPromptSlots();
   state.draftTags = uniqueTags(scene.tags || []);
   state.draftNegativeTags = uniqueTags(scene.negativeTags || []);
+  const hadPendingCharacterPromptCarry = Boolean(state.pendingCharacterPromptCarry);
   const usesCarriedCharacterPrompts = Boolean(state.pendingCharacterPromptCarry || state.pinCharacterPrompt);
   const promptScene = usesCarriedCharacterPrompts
     ? {
@@ -981,6 +982,9 @@ function renderSceneForm() {
     : scene;
   renderPromptPreviewForScene(promptScene);
   state.pendingCharacterPromptCarry = null;
+  if (hadPendingCharacterPromptCarry) {
+    setDirty(true);
+  }
   renderTagChips();
   renderWarnings(scene);
   renderQueueAndGallery();
@@ -1368,13 +1372,10 @@ async function generateTagsForSelectedScene() {
   }
 
   await persistSettingsIfDirty();
+  const savedScene = await persistScene(scene);
 
-  if (state.dirty) {
-    await persistScene(scene);
-  }
-
-  state.project = await window.dongsan.generateTags(scene.id);
-  state.selectedSceneId = scene.id;
+  state.project = await window.dongsan.generateTags(savedScene.id);
+  state.selectedSceneId = savedScene.id;
   setDirty(false);
   render();
 }

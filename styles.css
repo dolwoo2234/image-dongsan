@@ -840,7 +840,11 @@ textarea:focus {
 }
 
 .global-prompt-section #projectBasePromptInput {
-  min-height: 112px;
+  min-height: 190px;
+}
+
+.global-prompt-section #projectBaseNegativePromptInput {
+  min-height: 120px;
 }
 
 .character-preset-list {
