@@ -55,3 +55,8 @@ After a successful update, Dongsan restarts automatically.
 - Added a scene generation cancel button.
 - Changed NovelAI 429 retry handling to retry 8 times at 1-second intervals.
 - Expanded Danbooru tag drafting for the NSFW Rena Sachon scene set.
+
+### v1.0.3
+
+- Made `run.bat` install dependencies automatically when Electron is missing.
+- Added clearer Windows run instructions for cloned/downloaded copies.
