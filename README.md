@@ -44,3 +44,12 @@ git pull --ff-only
 ```
 
 After a successful update, Dongsan restarts automatically.
+
+### v1.0.2
+
+- Reworked the main layout into scene list, global/character presets, editor, and settings/gallery columns.
+- Added character position controls for NovelAI character prompts.
+- Made character prompt carry-over apply once and then turn off automatically when changing scenes.
+- Added a scene generation cancel button.
+- Changed NovelAI 429 retry handling to retry 8 times at 1-second intervals.
+- Expanded Danbooru tag drafting for the NSFW Rena Sachon scene set.

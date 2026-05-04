@@ -28,6 +28,61 @@
         <nav id="sceneList" class="scene-list" aria-label="씬 목록"></nav>
       </aside>
 
+      <aside class="character-panel">
+        <section class="global-prompt-section">
+          <div class="section-title-row">
+            <div>
+              <p class="eyebrow">Global</p>
+              <h2>전체 기본 프롬프트</h2>
+            </div>
+          </div>
+
+          <label>
+            <span>전체 기본 프롬프트</span>
+            <textarea id="projectBasePromptInput" rows="4" placeholder="모든 씬에 적용됩니다"></textarea>
+          </label>
+
+          <label>
+            <span>전체 기본 네거티브 프롬프트</span>
+            <textarea id="projectBaseNegativePromptInput" rows="3" placeholder="모든 씬에 적용됩니다"></textarea>
+          </label>
+        </section>
+
+        <section class="character-library-section">
+          <div class="section-title-row">
+            <div>
+              <p class="eyebrow">프리셋</p>
+              <h2>캐릭터 프롬프트 저장소</h2>
+            </div>
+          </div>
+
+          <div class="character-preset-list" id="characterPresetList"></div>
+
+          <label>
+            <span>이름</span>
+            <input id="characterPresetNameInput" type="text" autocomplete="off" placeholder="남캐 / 여캐 / 엑스트라">
+          </label>
+
+          <label>
+            <span>프롬프트</span>
+            <textarea id="characterPresetPromptInput" rows="4" placeholder="1boy, tall, black hair, serious"></textarea>
+          </label>
+
+          <label>
+            <span>네거티브</span>
+            <textarea id="characterPresetNegativeInput" rows="3" placeholder="childlike face, wrong outfit"></textarea>
+          </label>
+
+          <div class="preset-actions">
+            <button id="newCharacterPresetButton" class="ghost-button compact-button" type="button">새로 작성</button>
+            <button id="saveCharacterPresetButton" class="primary-button compact-button" type="button">저장</button>
+            <button id="deleteCharacterPresetButton" class="ghost-button compact-button" type="button">삭제</button>
+            <button id="copyCharacterPresetButton" class="ghost-button compact-button" type="button">복사</button>
+            <button id="insertCharacterPresetButton" class="primary-button compact-button" type="button">현재 씬에 넣기</button>
+          </div>
+        </section>
+      </aside>
+
       <section class="editor">
         <header class="editor-header">
           <div>
@@ -155,13 +210,14 @@
             <button id="addCharacterButton" class="ghost-button compact-button" type="button">캐릭터 추가</button>
             <textarea id="characterPromptsInput" class="storage-textarea" aria-hidden="true" tabindex="-1"></textarea>
             <textarea id="characterNegativePromptsInput" class="storage-textarea" aria-hidden="true" tabindex="-1"></textarea>
+            <textarea id="characterPositionsInput" class="storage-textarea" aria-hidden="true" tabindex="-1"></textarea>
             <div id="characterPromptHighlightPreview" class="prompt-highlight-preview compact-highlight-preview" aria-label="캐릭터 프롬프트 검색 하이라이트"></div>
             <div id="characterNegativePromptHighlightPreview" class="prompt-highlight-preview compact-highlight-preview" aria-label="캐릭터 네거티브 프롬프트 검색 하이라이트"></div>
           </div>
 
           <label class="final-prompt-field">
             <span>최종 프롬프트 미리보기</span>
-            <textarea id="promptInput" class="prompt-textarea final-prompt-textarea" rows="9"></textarea>
+            <textarea id="promptInput" class="storage-textarea" aria-hidden="true" tabindex="-1"></textarea>
             <div id="promptHighlightPreview" class="prompt-highlight-preview" aria-label="최종 프롬프트 검색 하이라이트"></div>
           </label>
 
@@ -171,7 +227,7 @@
               <button id="toggleNegativePromptButton" class="ghost-button compact-button" type="button" aria-expanded="false">펼치기</button>
             </div>
             <div class="collapsible-prompt-body">
-              <textarea id="negativePromptInput" class="prompt-textarea" rows="6"></textarea>
+              <textarea id="negativePromptInput" class="storage-textarea" aria-hidden="true" tabindex="-1"></textarea>
               <div id="negativePromptHighlightPreview" class="prompt-highlight-preview" aria-label="최종 네거티브 검색 하이라이트"></div>
             </div>
           </section>
@@ -288,6 +344,7 @@
           </label>
           <div class="generation-actions">
             <button id="novelAiGenerateButton" class="primary-button full-button" type="button">저장 후 현재 씬 생성</button>
+            <button id="cancelGenerationButton" class="ghost-button full-button" type="button" disabled>씬 생성 중단</button>
           </div>
           <div id="queueList" class="queue-list"></div>
         </section>
@@ -299,60 +356,6 @@
         </section>
       </aside>
 
-      <aside class="character-panel">
-        <section class="global-prompt-section">
-          <div class="section-title-row">
-            <div>
-              <p class="eyebrow">Global</p>
-              <h2>전체 기본 프롬프트</h2>
-            </div>
-          </div>
-
-          <label>
-            <span>전체 기본 프롬프트</span>
-            <textarea id="projectBasePromptInput" rows="4" placeholder="모든 씬에 적용됩니다"></textarea>
-          </label>
-
-          <label>
-            <span>전체 기본 네거티브 프롬프트</span>
-            <textarea id="projectBaseNegativePromptInput" rows="3" placeholder="모든 씬에 적용됩니다"></textarea>
-          </label>
-        </section>
-
-        <section class="character-library-section">
-          <div class="section-title-row">
-            <div>
-              <p class="eyebrow">프리셋</p>
-              <h2>캐릭터 프롬프트 저장소</h2>
-            </div>
-          </div>
-
-          <div class="character-preset-list" id="characterPresetList"></div>
-
-          <label>
-            <span>이름</span>
-            <input id="characterPresetNameInput" type="text" autocomplete="off" placeholder="남캐 / 여캐 / 엑스트라">
-          </label>
-
-          <label>
-            <span>프롬프트</span>
-            <textarea id="characterPresetPromptInput" rows="4" placeholder="1boy, tall, black hair, serious"></textarea>
-          </label>
-
-          <label>
-            <span>네거티브</span>
-            <textarea id="characterPresetNegativeInput" rows="3" placeholder="childlike face, wrong outfit"></textarea>
-          </label>
-
-          <div class="preset-actions">
-            <button id="newCharacterPresetButton" class="ghost-button compact-button" type="button">새로 작성</button>
-            <button id="saveCharacterPresetButton" class="primary-button compact-button" type="button">저장</button>
-            <button id="deleteCharacterPresetButton" class="ghost-button compact-button" type="button">삭제</button>
-            <button id="copyCharacterPresetButton" class="ghost-button compact-button" type="button">복사</button>
-            <button id="insertCharacterPresetButton" class="primary-button compact-button" type="button">현재 씬에 넣기</button>
-          </div>
-        </section>
-      </aside>
     </main>
 
     <script src="./renderer.js"></script>

@@ -22,6 +22,7 @@ const appName = 'Dongsan';
 const githubOwner = 'dolwoo2234';
 const githubRepo = 'image-dongsan';
 const githubRepoUrl = `https://github.com/${githubOwner}/${githubRepo}.git`;
+let activeNovelAiAbortController = null;
 
 app.setName(appName);
 
@@ -434,6 +435,7 @@ function parseScenes(text) {
       baseNegativePrompt: '',
       characterPromptsText: '',
       characterNegativePromptsText: '',
+      characterPositionsText: '',
       parserWarnings: ['No scene markers were found. Review and split this scene manually.'],
       userLockedTags: [],
       createdAt: now,
@@ -474,6 +476,7 @@ function parseScenes(text) {
       baseNegativePrompt: '',
       characterPromptsText: '',
       characterNegativePromptsText: '',
+      characterPositionsText: '',
       parserWarnings,
       userLockedTags: [],
       createdAt: now,
@@ -511,6 +514,7 @@ const promptTagOrder = [
   ['standing', 'walking', 'sitting', 'kneeling', 'lying', 'leaning forward', 'arms around shoulders', 'holding hands', 'waving', 'hands behind back', 'hair flip', 'pointing', 'wink', 'whispering', 'background crowd'],
   ['smile', 'angry', 'glaring', 'scared', 'surprised', 'embarrassed', 'drunk', 'blush', 'tears'],
   ['breasts', 'breast focus', 'ass focus', 'cropped torso', 'face out of frame', 'cropped face', 'highly detailed'],
+  ['explicit', 'sex', 'vaginal', 'pussy', 'pussy focus', 'spread legs', 'fingering', 'clitoris', 'breast sucking', 'breast grab', 'kissing', 'saliva', 'doggystyle', 'mating press', 'missionary', 'fellatio', 'cum', 'cumdrip', 'after sex', 'restrained', 'hand over mouth', 'head grab'],
   ['holding phone', 'smartphone', 'drinking', 'undressing', 'covering self']
 ];
 
@@ -567,7 +571,30 @@ const renaSachonDraftRules = [
   { triggers: ['\uC637 \uD6CC\uB801', '\uBC97\uACA8', '\uB0B4\uB824\uC694'], tags: ['undressing'] },
   { triggers: ['\uBAB8\uC744 \uAC00\uB9AC', '\uC785 \uD2C0\uC5B4\uB9C9'], tags: ['covering self'] },
   { triggers: ['\uB0A8\uC790 \uC190\uB9CC', 'pov hand only'], tags: ['pov hands'] },
-  { triggers: ['\uAC77\uB294', '\uC6C0\uC9C1\uC774\uB294', '\uC6C0\uC9C1\uC784'], tags: ['walking'] }
+  { triggers: ['\uAC77\uB294', '\uC6C0\uC9C1\uC774\uB294', '\uC6C0\uC9C1\uC784'], tags: ['walking'] },
+  { triggers: ['pussy focus', '\uBCF4\uC9C0'], tags: ['explicit', 'pussy', 'pussy focus'] },
+  { triggers: ['\uC131\uAE30 \uD074\uB85C\uC988\uC5C5'], tags: ['explicit', 'pussy', 'pussy focus', 'close-up'] },
+  { triggers: ['\uC190\uAC00\uB77D', '\uD551\uAC70\uB9C1', 'fingering'], tags: ['explicit', 'fingering'] },
+  { triggers: ['\uB2E4\uB9AC \uBC8C\uB9B0', '\uB2E4\uB9AC\uB97C \uBC8C\uB9B0'], tags: ['spread legs'] },
+  { triggers: ['\uD074\uB9AC', '\uD074\uB9AC\uD1A0\uB9AC\uC2A4', 'clitoris'], tags: ['explicit', 'clitoris'] },
+  { triggers: ['\uAC00\uC2B4 \uBE68', '\uAC00\uC2B4 \uBE60', '\uC720\uB450 \uBE68'], tags: ['explicit', 'breast sucking', 'breast focus'] },
+  { triggers: ['\uAC00\uC2B4 \uC7A1', '\uAC00\uC2B4 \uC7A1\uAE30'], tags: ['breast grab', 'breast focus'] },
+  { triggers: ['\uD0A4\uC2A4', 'kiss'], tags: ['kissing'] },
+  { triggers: ['\uAC8C\uAC78\uC2A4\uB7FD', '\uB098\uB20C\uC11C'], tags: ['saliva'] },
+  { triggers: ['\uC0BD\uC785', '\uD53C\uC2A4\uD1A4', '\uBC15\uAE30', '\uD37D\uD37D'], tags: ['explicit', 'sex', 'vaginal'] },
+  { triggers: ['\uD6C4\uBC30\uC704', '\uB4A4\uB85C \uBC15\uAE30'], tags: ['explicit', 'sex', 'doggystyle', 'from behind'] },
+  { triggers: ['\uAD50\uBC30 \uD504\uB808\uC2A4', '\uAD50\uBC30\uD504\uB808\uC2A4'], tags: ['explicit', 'sex', 'mating press', 'missionary'] },
+  { triggers: ['\uCE21\uC704'], tags: ['explicit', 'sex', 'side view'] },
+  { triggers: ['\uD3A0\uB77C'], tags: ['explicit', 'fellatio'] },
+  { triggers: ['\uBA38\uB9AC \uC7A1', '\uBA38\uB9AC\uB97C \uC7A1'], tags: ['head grab'] },
+  { triggers: ['\uC785\uC5D0 \uB123', '\uC785\uC5D0 \uB123\uC740'], tags: ['fellatio'] },
+  { triggers: ['\uC815\uC561', '\uD750\uB974\uB294', '\uD750\uB974\uB294 \uC815\uC561'], tags: ['explicit', 'cum', 'cumdrip'] },
+  { triggers: ['\uC9C0\uCCD0\uC11C', '\uC4F0\uB7EC\uC9C4'], tags: ['after sex', 'lying'] },
+  { triggers: ['\uC5C9\uB369\uC774 \uB4E4\uACE0', '\uC5C9\uB369\uC774\uB97C \uB4E4'], tags: ['ass focus'] },
+  { triggers: ['\uC785 \uD2C0\uC5B4\uB9C9', '\uC785\uC744 \uD2C0\uC5B4\uB9C9'], tags: ['hand over mouth'] },
+  { triggers: ['\uD314 \uB4A4\uB85C \uBD99\uC7A1', '\uBD99\uC7A1\uD78C \uD314'], tags: ['restrained', 'arms behind back'] },
+  { triggers: ['\uCE68\uB300 \uC704', '\uCE68\uB300\uC5D0'], tags: ['bedroom', 'bed'] },
+  { triggers: ['\uC6B0\uB294 \uC5BC\uAD74', '\uC6B8\uBD80\uC9D6'], tags: ['crying', 'tears'] }
 ];
 
 function applyDraftRuleSet(description, tags) {
@@ -1054,17 +1081,50 @@ function parseCharacterPrompts(scene) {
   const negatives = String(scene.characterNegativePromptsText || '')
     .split('\n')
     .map((line) => line.trim());
+  const positions = String(scene.characterPositionsText || '')
+    .split('\n')
+    .map((line) => line.trim());
   const count = prompts.length;
 
   return prompts.map((prompt, index) => ({
     prompt,
     uc: negatives[index] || '',
-    center: {
-      x: count <= 1 ? 0.5 : Number((0.2 + (0.6 * index / (count - 1))).toFixed(2)),
-      y: 0.5
-    },
+    center: resolveCharacterCenter(positions[index], index, count),
     enabled: true
   }));
+}
+
+function resolveCharacterCenter(position, index, count) {
+  const normalized = String(position || 'auto').trim().toLowerCase();
+  const positionMap = {
+    left: { x: 0.25, y: 0.5 },
+    center: { x: 0.5, y: 0.5 },
+    right: { x: 0.75, y: 0.5 },
+    top: { x: 0.5, y: 0.25 },
+    bottom: { x: 0.5, y: 0.75 },
+    'top-left': { x: 0.25, y: 0.25 },
+    'top-right': { x: 0.75, y: 0.25 },
+    'bottom-left': { x: 0.25, y: 0.75 },
+    'bottom-right': { x: 0.75, y: 0.75 }
+  };
+
+  if (positionMap[normalized]) {
+    return positionMap[normalized];
+  }
+
+  const coordinateMatch = normalized.match(/^([0-9]*\.?[0-9]+)\s*,\s*([0-9]*\.?[0-9]+)$/);
+
+  if (coordinateMatch) {
+    return {
+      x: Math.min(Math.max(Number(coordinateMatch[1]), 0), 1),
+      y: Math.min(Math.max(Number(coordinateMatch[2]), 0), 1)
+    };
+  }
+
+  return {
+    x: count <= 1 ? 0.5 : Number((0.2 + (0.6 * index / (count - 1))).toFixed(2)),
+    y: 0.5
+  };
 }
 
 function normalizeNovelAiSampler(sampler) {
@@ -1151,16 +1211,43 @@ function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function waitWithAbort(ms, signal) {
+  if (!signal) {
+    return wait(ms);
+  }
+
+  if (signal.aborted) {
+    return Promise.reject(new Error('NovelAI generation canceled.'));
+  }
+
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      signal.removeEventListener('abort', onAbort);
+      resolve();
+    }, ms);
+    const onAbort = () => {
+      clearTimeout(timeout);
+      reject(new Error('NovelAI generation canceled.'));
+    };
+    signal.addEventListener('abort', onAbort, { once: true });
+  });
+}
+
 function isConcurrentGenerationLock(status, message) {
   return status === 429 && String(message || '').toLowerCase().includes('concurrent generation is locked');
 }
 
 async function requestNovelAiGeneration(endpoint, apiKey, payload, retryOptions = {}) {
-  const maxAttempts = retryOptions.maxAttempts || 8;
-  const retryDelayMs = retryOptions.retryDelayMs || 500;
+  const maxRetries = retryOptions.maxRetries ?? 8;
+  const retryDelayMs = retryOptions.retryDelayMs || 1000;
   const onRetry = typeof retryOptions.onRetry === 'function' ? retryOptions.onRetry : null;
+  const signal = retryOptions.signal || null;
 
-  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+  for (let attempt = 1; attempt <= maxRetries + 1; attempt += 1) {
+    if (signal?.aborted) {
+      throw new Error('NovelAI generation canceled.');
+    }
+
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
@@ -1168,7 +1255,8 @@ async function requestNovelAiGeneration(endpoint, apiKey, payload, retryOptions 
         'Content-Type': 'application/json',
         Accept: 'application/zip,image/png,image/webp,*/*'
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
+      signal
     });
     const responseBuffer = Buffer.from(await response.arrayBuffer());
 
@@ -1178,14 +1266,13 @@ async function requestNovelAiGeneration(endpoint, apiKey, payload, retryOptions 
 
     const message = responseBuffer.toString('utf8').slice(0, 500);
 
-    if (isConcurrentGenerationLock(response.status, message) && attempt < maxAttempts) {
+    if (isConcurrentGenerationLock(response.status, message) && attempt <= maxRetries) {
       onRetry?.({
-        attempt,
-        nextAttempt: attempt + 1,
-        maxAttempts,
+        retryAttempt: attempt,
+        maxRetries,
         retryDelayMs
       });
-      await wait(retryDelayMs);
+      await waitWithAbort(retryDelayMs, signal);
       continue;
     }
 
@@ -1209,14 +1296,22 @@ async function generateWithNovelAi(project, scene, settingsOverride = null, webC
   }
 
   const endpoint = settings.endpoint || defaultGenerationSettings.endpoint;
-  const responseBuffer = await requestNovelAiGeneration(endpoint, apiKey, buildNovelAiPayload(scene, settings), {
-    onRetry: ({ nextAttempt, maxAttempts, retryDelayMs }) => {
+  activeNovelAiAbortController = new AbortController();
+  let responseBuffer;
+
+  try {
+    responseBuffer = await requestNovelAiGeneration(endpoint, apiKey, buildNovelAiPayload(scene, settings), {
+    signal: activeNovelAiAbortController.signal,
+    onRetry: ({ retryAttempt, maxRetries, retryDelayMs }) => {
       webContents?.send('generation:status', {
         status: 'running',
-        message: `NovelAI 동시 생성 잠금(429). ${retryDelayMs / 1000}초 뒤 자동 재시도 중... (${nextAttempt}/${maxAttempts})`
+        message: `NovelAI 동시 생성 잠금(429). ${retryDelayMs / 1000}초 뒤 자동 재시도 중... (${retryAttempt}/${maxRetries})`
       });
     }
-  });
+    });
+  } finally {
+    activeNovelAiAbortController = null;
+  }
 
   const imageRecords = await saveNovelAiResponse(responseBuffer, scene, settings);
   return createGenerationRecord(project, scene, imageRecords, settings, 'novelai');
@@ -1366,6 +1461,7 @@ ipcMain.handle('project:mockVariation', async (_event, imageId) => {
     baseNegativePrompt: scene.baseNegativePrompt || image.metadata?.baseNegativePrompt,
     characterPromptsText: scene.characterPromptsText || image.metadata?.characterPromptsText,
     characterNegativePromptsText: scene.characterNegativePromptsText || image.metadata?.characterNegativePromptsText,
+    characterPositionsText: scene.characterPositionsText || image.metadata?.characterPositionsText,
     status: 'prompt_approved'
   };
   const settings = {
@@ -1423,6 +1519,7 @@ ipcMain.handle('project:novelAiVariation', async (event, imageId, sceneOverride 
     baseNegativePrompt: currentScene.baseNegativePrompt || image.metadata?.baseNegativePrompt,
     characterPromptsText: currentScene.characterPromptsText || image.metadata?.characterPromptsText,
     characterNegativePromptsText: currentScene.characterNegativePromptsText || image.metadata?.characterNegativePromptsText,
+    characterPositionsText: currentScene.characterPositionsText || image.metadata?.characterPositionsText,
     status: 'prompt_approved'
   };
   const settings = {
@@ -1436,6 +1533,10 @@ ipcMain.handle('project:novelAiVariation', async (event, imageId, sceneOverride 
     const nextProject = await generateWithNovelAi(project, variationScene, settings, event.sender);
     return writeProject(nextProject);
   } catch (error) {
+    if (String(error.message || '').includes('canceled')) {
+      throw error;
+    }
+
     const failedProject = createFailedGenerationRecord(project, variationScene, error.message, settings, 'novelai-variation');
     await writeProject(failedProject);
     throw error;
@@ -1458,10 +1559,22 @@ ipcMain.handle('project:novelAiGenerate', async (event, sceneId) => {
     const nextProject = await generateWithNovelAi(project, scene, null, event.sender);
     return writeProject(nextProject);
   } catch (error) {
+    if (String(error.message || '').includes('canceled')) {
+      throw error;
+    }
+
     const failedProject = createFailedGenerationRecord(project, scene, error.message, project.settings, 'novelai');
     await writeProject(failedProject);
     throw error;
   }
+});
+
+ipcMain.handle('project:cancelNovelAiGeneration', async () => {
+  if (activeNovelAiAbortController) {
+    activeNovelAiAbortController.abort();
+  }
+
+  return { canceled: true };
 });
 
 ipcMain.handle('project:importText', async () => {

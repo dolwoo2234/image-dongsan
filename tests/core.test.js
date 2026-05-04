@@ -222,6 +222,46 @@ function testRenaSachonDraftTags() {
   });
 }
 
+function testRenaSachonNsfwDraftTags() {
+  const pussyFocusDraft = generateDraftTags([
+    '\uB0A8\uC790\uAC00 \uAC00\uC2B4 \uBE68\uBA74\uC11C \uC5EC\uC790 \uBCF4\uC9C0 \uB9CC\uC9C0\uACE0 \uC788\uB294 \uC0F7',
+    'PUSSY FOCUS',
+    '\uC5EC\uC790 \uB2E4\uB9AC \uBC8C\uB9B0 \uC0C1\uD0DC',
+    '\uC190\uAC00\uB77D\uC774 \uD551\uAC70\uB9C1\uC911 FROM ABOVE'
+  ].join('\n'));
+
+  [
+    'explicit',
+    'pussy',
+    'pussy focus',
+    'fingering',
+    'breast sucking',
+    'spread legs'
+  ].forEach((tag) => {
+    assert.ok(pussyFocusDraft.tags.includes(tag), `Expected ${tag} in ${pussyFocusDraft.tags.join(', ')}`);
+  });
+
+  const positionDraft = generateDraftTags([
+    '\uD6C4\uBC30\uC704 \uB4A4\uB85C \uBC15\uAE30 / \uD314 \uB4A4\uB85C \uBD99\uC7A1\uD78C',
+    '\uAD50\uBC30\uD504\uB808\uC2A4 PUSSY FOCUS',
+    '\uC815\uC561\uC774 \uC544\uB798\uB85C \uD750\uB974\uB294 \uC7A5\uBA74'
+  ].join('\n'));
+
+  [
+    'sex',
+    'vaginal',
+    'doggystyle',
+    'from behind',
+    'restrained',
+    'mating press',
+    'missionary',
+    'cum',
+    'cumdrip'
+  ].forEach((tag) => {
+    assert.ok(positionDraft.tags.includes(tag), `Expected ${tag} in ${positionDraft.tags.join(', ')}`);
+  });
+}
+
 function testCustomTagDictionaryRules() {
   const rules = parseTagDictionary([
     '■ 얼굴 - 감정',
@@ -317,6 +357,7 @@ testDraftTags();
 testKoreanActionCameraTags();
 testGuideTagOrderingAndExpandedCues();
 testRenaSachonDraftTags();
+testRenaSachonNsfwDraftTags();
 testCustomTagDictionaryRules();
 testMockGeneration();
 testFailedGeneration();

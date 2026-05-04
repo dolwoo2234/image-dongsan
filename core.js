@@ -230,6 +230,7 @@ const promptTagOrder = [
   ['standing', 'walking', 'sitting', 'kneeling', 'lying', 'leaning forward', 'arms around shoulders', 'holding hands', 'waving', 'hands behind back', 'hair flip', 'pointing', 'wink', 'whispering', 'background crowd'],
   ['smile', 'angry', 'glaring', 'scared', 'surprised', 'embarrassed', 'drunk', 'blush', 'tears'],
   ['breasts', 'breast focus', 'ass focus', 'cropped torso', 'face out of frame', 'cropped face', 'highly detailed'],
+  ['explicit', 'sex', 'vaginal', 'pussy', 'pussy focus', 'spread legs', 'fingering', 'clitoris', 'breast sucking', 'breast grab', 'kissing', 'saliva', 'doggystyle', 'mating press', 'missionary', 'fellatio', 'cum', 'cumdrip', 'after sex', 'restrained', 'hand over mouth', 'head grab'],
   ['holding phone', 'smartphone', 'drinking', 'undressing', 'covering self']
 ];
 
@@ -286,7 +287,30 @@ const renaSachonDraftRules = [
   { triggers: ['\uC637 \uD6CC\uB801', '\uBC97\uACA8', '\uB0B4\uB824\uC694'], tags: ['undressing'] },
   { triggers: ['\uBAB8\uC744 \uAC00\uB9AC', '\uC785 \uD2C0\uC5B4\uB9C9'], tags: ['covering self'] },
   { triggers: ['\uB0A8\uC790 \uC190\uB9CC', 'pov hand only'], tags: ['pov hands'] },
-  { triggers: ['\uAC77\uB294', '\uC6C0\uC9C1\uC774\uB294', '\uC6C0\uC9C1\uC784'], tags: ['walking'] }
+  { triggers: ['\uAC77\uB294', '\uC6C0\uC9C1\uC774\uB294', '\uC6C0\uC9C1\uC784'], tags: ['walking'] },
+  { triggers: ['pussy focus', '\uBCF4\uC9C0'], tags: ['explicit', 'pussy', 'pussy focus'] },
+  { triggers: ['\uC131\uAE30 \uD074\uB85C\uC988\uC5C5'], tags: ['explicit', 'pussy', 'pussy focus', 'close-up'] },
+  { triggers: ['\uC190\uAC00\uB77D', '\uD551\uAC70\uB9C1', 'fingering'], tags: ['explicit', 'fingering'] },
+  { triggers: ['\uB2E4\uB9AC \uBC8C\uB9B0', '\uB2E4\uB9AC\uB97C \uBC8C\uB9B0'], tags: ['spread legs'] },
+  { triggers: ['\uD074\uB9AC', '\uD074\uB9AC\uD1A0\uB9AC\uC2A4', 'clitoris'], tags: ['explicit', 'clitoris'] },
+  { triggers: ['\uAC00\uC2B4 \uBE68', '\uAC00\uC2B4 \uBE60', '\uC720\uB450 \uBE68'], tags: ['explicit', 'breast sucking', 'breast focus'] },
+  { triggers: ['\uAC00\uC2B4 \uC7A1', '\uAC00\uC2B4 \uC7A1\uAE30'], tags: ['breast grab', 'breast focus'] },
+  { triggers: ['\uD0A4\uC2A4', 'kiss'], tags: ['kissing'] },
+  { triggers: ['\uAC8C\uAC78\uC2A4\uB7FD', '\uB098\uB20C\uC11C'], tags: ['saliva'] },
+  { triggers: ['\uC0BD\uC785', '\uD53C\uC2A4\uD1A4', '\uBC15\uAE30', '\uD37D\uD37D'], tags: ['explicit', 'sex', 'vaginal'] },
+  { triggers: ['\uD6C4\uBC30\uC704', '\uB4A4\uB85C \uBC15\uAE30'], tags: ['explicit', 'sex', 'doggystyle', 'from behind'] },
+  { triggers: ['\uAD50\uBC30 \uD504\uB808\uC2A4', '\uAD50\uBC30\uD504\uB808\uC2A4'], tags: ['explicit', 'sex', 'mating press', 'missionary'] },
+  { triggers: ['\uCE21\uC704'], tags: ['explicit', 'sex', 'side view'] },
+  { triggers: ['\uD3A0\uB77C'], tags: ['explicit', 'fellatio'] },
+  { triggers: ['\uBA38\uB9AC \uC7A1', '\uBA38\uB9AC\uB97C \uC7A1'], tags: ['head grab'] },
+  { triggers: ['\uC785\uC5D0 \uB123', '\uC785\uC5D0 \uB123\uC740'], tags: ['fellatio'] },
+  { triggers: ['\uC815\uC561', '\uD750\uB974\uB294', '\uD750\uB974\uB294 \uC815\uC561'], tags: ['explicit', 'cum', 'cumdrip'] },
+  { triggers: ['\uC9C0\uCCD0\uC11C', '\uC4F0\uB7EC\uC9C4'], tags: ['after sex', 'lying'] },
+  { triggers: ['\uC5C9\uB369\uC774 \uB4E4\uACE0', '\uC5C9\uB369\uC774\uB97C \uB4E4'], tags: ['ass focus'] },
+  { triggers: ['\uC785 \uD2C0\uC5B4\uB9C9', '\uC785\uC744 \uD2C0\uC5B4\uB9C9'], tags: ['hand over mouth'] },
+  { triggers: ['\uD314 \uB4A4\uB85C \uBD99\uC7A1', '\uBD99\uC7A1\uD78C \uD314'], tags: ['restrained', 'arms behind back'] },
+  { triggers: ['\uCE68\uB300 \uC704', '\uCE68\uB300\uC5D0'], tags: ['bedroom', 'bed'] },
+  { triggers: ['\uC6B0\uB294 \uC5BC\uAD74', '\uC6B8\uBD80\uC9D6'], tags: ['crying', 'tears'] }
 ];
 
 function applyDraftRuleSet(description, tags) {
@@ -597,6 +621,7 @@ function createMockGeneration(project, scene, imagePath, imageUri, settings = {}
       baseNegativePrompt: scene.baseNegativePrompt || scene.negativePrompt,
       characterPromptsText: scene.characterPromptsText || '',
       characterNegativePromptsText: scene.characterNegativePromptsText || '',
+      characterPositionsText: scene.characterPositionsText || '',
       mode: 'mock',
       settings: generationSettings
     },
@@ -619,6 +644,7 @@ function createMockGeneration(project, scene, imagePath, imageUri, settings = {}
       baseNegativePrompt: scene.baseNegativePrompt || scene.negativePrompt,
       characterPromptsText: scene.characterPromptsText || '',
       characterNegativePromptsText: scene.characterNegativePromptsText || '',
+      characterPositionsText: scene.characterPositionsText || '',
       seed: generationSettings.seed || 0,
       model: generationSettings.model,
       sampler: generationSettings.sampler,
@@ -664,6 +690,7 @@ function createGenerationRecord(project, scene, imageRecords, settings = {}, mod
       baseNegativePrompt: scene.baseNegativePrompt || scene.negativePrompt,
       characterPromptsText: scene.characterPromptsText || '',
       characterNegativePromptsText: scene.characterNegativePromptsText || '',
+      characterPositionsText: scene.characterPositionsText || '',
       seed: record.seed || generationSettings.seed || 0,
       model: generationSettings.model,
       sampler: generationSettings.sampler,
@@ -690,6 +717,7 @@ function createGenerationRecord(project, scene, imageRecords, settings = {}, mod
       baseNegativePrompt: scene.baseNegativePrompt || scene.negativePrompt,
       characterPromptsText: scene.characterPromptsText || '',
       characterNegativePromptsText: scene.characterNegativePromptsText || '',
+      characterPositionsText: scene.characterPositionsText || '',
       mode,
       settings: generationSettings
     },
@@ -721,6 +749,7 @@ function createFailedGenerationRecord(project, scene, errorMessage, settings = {
       baseNegativePrompt: scene.baseNegativePrompt || scene.negativePrompt,
       characterPromptsText: scene.characterPromptsText || '',
       characterNegativePromptsText: scene.characterNegativePromptsText || '',
+      characterPositionsText: scene.characterPositionsText || '',
       mode,
       settings: {
         ...defaultGenerationSettings,

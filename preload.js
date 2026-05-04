@@ -6,6 +6,7 @@ const dongsanApi = {
   generateTags: (sceneId) => ipcRenderer.invoke('project:generateTags', sceneId),
   mockGenerate: (sceneId) => ipcRenderer.invoke('project:mockGenerate', sceneId),
   novelAiGenerate: (sceneId) => ipcRenderer.invoke('project:novelAiGenerate', sceneId),
+  cancelNovelAiGeneration: () => ipcRenderer.invoke('project:cancelNovelAiGeneration'),
   updateImage: (imageId, patch) => ipcRenderer.invoke('project:updateImage', imageId, patch),
   keepAndExportImage: (imageId) => ipcRenderer.invoke('project:keepAndExportImage', imageId),
   mockVariation: (imageId) => ipcRenderer.invoke('project:mockVariation', imageId),

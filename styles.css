@@ -44,10 +44,10 @@ button {
 .app-shell {
   display: grid;
   grid-template-columns:
-    clamp(220px, 15vw, 280px)
-    minmax(560px, 1fr)
+    clamp(210px, 14vw, 270px)
     clamp(260px, 18vw, 340px)
-    clamp(260px, 18vw, 340px);
+    minmax(520px, 1fr)
+    clamp(280px, 20vw, 360px);
   grid-template-rows: minmax(0, 1fr);
   height: 100dvh;
   overflow: hidden;
@@ -80,8 +80,8 @@ button {
   display: grid;
   align-content: start;
   gap: 14px;
-  border-right: 0;
-  border-left: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+  border-left: 0;
   padding: 18px;
   overflow: auto;
 }
@@ -590,9 +590,9 @@ textarea:focus {
 }
 
 .character-slot-header {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr minmax(120px, auto) auto;
   align-items: center;
-  justify-content: space-between;
   gap: 10px;
 }
 
@@ -608,6 +608,25 @@ textarea:focus {
 
 .character-slot-field span {
   color: var(--muted);
+}
+
+.character-slot-position-label {
+  display: grid;
+  gap: 4px;
+}
+
+.character-slot-position-label span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.character-slot-position {
+  min-height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--field);
+  color: var(--text);
+  padding: 6px 8px;
 }
 
 .character-slot .prompt-textarea {
@@ -683,6 +702,14 @@ textarea:focus {
 
 .final-prompt-textarea {
   min-height: 210px;
+}
+
+#promptHighlightPreview {
+  min-height: 210px;
+}
+
+#negativePromptHighlightPreview {
+  min-height: 130px;
 }
 
 .prompt-highlight-preview {
@@ -1079,24 +1106,32 @@ textarea:focus {
 
 @media (max-width: 1440px) {
   .app-shell {
-    grid-template-columns: clamp(210px, 18vw, 260px) minmax(520px, 1fr) clamp(280px, 24vw, 340px);
-    grid-template-rows: minmax(300px, 0.48fr) minmax(300px, 0.52fr);
+    grid-template-columns:
+      clamp(190px, 16vw, 230px)
+      clamp(220px, 19vw, 280px)
+      minmax(420px, 1fr)
+      clamp(240px, 22vw, 300px);
+    grid-template-rows: minmax(0, 1fr);
   }
 
   .sidebar,
-  .editor {
+  .character-panel,
+  .editor,
+  .queue-panel {
     grid-row: 1 / -1;
   }
 
-  .queue-panel {
-    grid-column: 3;
-    grid-row: 1;
-    border-bottom: 1px solid var(--line);
+  .character-panel {
+    grid-column: 2;
   }
 
-  .character-panel {
+  .editor {
     grid-column: 3;
-    grid-row: 2;
+  }
+
+  .queue-panel {
+    grid-column: 4;
+    border-bottom: 0;
   }
 
   .preview-console-grid {

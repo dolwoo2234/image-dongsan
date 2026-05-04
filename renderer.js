@@ -6,9 +6,12 @@ const state = {
   dirty: false,
   settingsDirty: false,
   generationInProgress: false,
+  generationCancelRequested: false,
   pinCharacterPrompt: false,
   pinnedCharacterPromptsText: '',
   pinnedCharacterNegativePromptsText: '',
+  pinnedCharacterPositionsText: '',
+  pendingCharacterPromptCarry: null,
   tagSearch: '',
   draftTags: [],
   draftNegativeTags: [],
@@ -55,6 +58,7 @@ const elements = {
   pinCharacterPromptToggle: document.querySelector('#pinCharacterPromptToggle'),
   characterPromptsInput: document.querySelector('#characterPromptsInput'),
   characterNegativePromptsInput: document.querySelector('#characterNegativePromptsInput'),
+  characterPositionsInput: document.querySelector('#characterPositionsInput'),
   characterSlots: document.querySelector('#characterSlots'),
   addCharacterButton: document.querySelector('#addCharacterButton'),
   characterPromptHighlightPreview: document.querySelector('#characterPromptHighlightPreview'),
@@ -103,6 +107,7 @@ const elements = {
   copyCharacterPresetButton: document.querySelector('#copyCharacterPresetButton'),
   insertCharacterPresetButton: document.querySelector('#insertCharacterPresetButton'),
   novelAiGenerateButton: document.querySelector('#novelAiGenerateButton'),
+  cancelGenerationButton: document.querySelector('#cancelGenerationButton'),
   generationRunCountInput: document.querySelector('#generationRunCountInput'),
   generationStatus: document.querySelector('#generationStatus'),
   queueList: document.querySelector('#queueList'),
@@ -252,6 +257,23 @@ function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+async function waitBetweenGenerationRuns(ms) {
+  const stepMs = 100;
+  let elapsed = 0;
+
+  while (elapsed < ms) {
+    if (state.generationCancelRequested) {
+      return false;
+    }
+
+    const delay = Math.min(stepMs, ms - elapsed);
+    await wait(delay);
+    elapsed += delay;
+  }
+
+  return !state.generationCancelRequested;
+}
+
 function getGenerationRunCount() {
   const count = Number.parseInt(elements.generationRunCountInput.value, 10);
 
@@ -357,6 +379,7 @@ function renderPromptHighlights() {
   elements.characterNegativePromptHighlightPreview.innerHTML = renderHighlightedText(characterNegativePrompt, query);
   elements.promptHighlightPreview.innerHTML = renderHighlightedText(prompt, query);
   elements.negativePromptHighlightPreview.innerHTML = renderHighlightedText(negativePrompt, query);
+  renderCharacterSlotHighlights(query);
 }
 
 function toggleNegativePromptPreview() {
@@ -374,26 +397,45 @@ function refreshPromptPreview() {
 
 function renderPromptPreviewForScene(scene) {
   const computed = getComputedPromptPreviews();
-  elements.promptInput.value = scene.prompt || computed.prompt;
-  elements.negativePromptInput.value = scene.negativePrompt || computed.negativePrompt;
+  elements.promptInput.value = computed.prompt;
+  elements.negativePromptInput.value = computed.negativePrompt;
   renderPromptHighlights();
 }
 
 function capturePinnedCharacterPrompts() {
   state.pinnedCharacterPromptsText = elements.characterPromptsInput.value;
   state.pinnedCharacterNegativePromptsText = elements.characterNegativePromptsInput.value;
+  state.pinnedCharacterPositionsText = elements.characterPositionsInput.value;
+}
+
+function releaseCharacterPromptPinForSceneChange() {
+  if (!state.pinCharacterPrompt) {
+    return;
+  }
+
+  capturePinnedCharacterPrompts();
+  state.pendingCharacterPromptCarry = {
+    prompt: state.pinnedCharacterPromptsText,
+    negativePrompt: state.pinnedCharacterNegativePromptsText,
+    positions: state.pinnedCharacterPositionsText
+  };
+  state.pinCharacterPrompt = false;
+  elements.pinCharacterPromptToggle.checked = false;
 }
 
 function getCharacterPromptSlots() {
   const prompts = elements.characterPromptsInput.value.split('\n');
   const negativePrompts = elements.characterNegativePromptsInput.value.split('\n');
+  const positions = elements.characterPositionsInput.value.split('\n');
   const promptCount = elements.characterPromptsInput.value.trim() ? prompts.length : 0;
   const negativePromptCount = elements.characterNegativePromptsInput.value.trim() ? negativePrompts.length : 0;
-  const count = Math.max(promptCount, negativePromptCount, 1);
+  const positionCount = elements.characterPositionsInput.value.trim() ? positions.length : 0;
+  const count = Math.max(promptCount, negativePromptCount, positionCount, 1);
 
   return Array.from({ length: count }, (_item, index) => ({
     prompt: (prompts[index] || '').trim(),
-    negativePrompt: (negativePrompts[index] || '').trim()
+    negativePrompt: (negativePrompts[index] || '').trim(),
+    position: (positions[index] || 'auto').trim() || 'auto'
   }));
 }
 
@@ -406,7 +448,8 @@ function renumberCharacterSlots() {
 function syncCharacterInputsFromSlots() {
   const slots = Array.from(elements.characterSlots.querySelectorAll('.character-slot')).map((slot) => ({
     prompt: slot.querySelector('.character-slot-prompt').value.trim(),
-    negativePrompt: slot.querySelector('.character-slot-negative').value.trim()
+    negativePrompt: slot.querySelector('.character-slot-negative').value.trim(),
+    position: slot.querySelector('.character-slot-position').value
   }));
   const lastFilledIndex = slots.reduce((lastIndex, slot, index) => (
     slot.prompt || slot.negativePrompt ? index : lastIndex
@@ -415,13 +458,28 @@ function syncCharacterInputsFromSlots() {
 
   elements.characterPromptsInput.value = activeSlots.map((slot) => slot.prompt).join('\n');
   elements.characterNegativePromptsInput.value = activeSlots.map((slot) => slot.negativePrompt).join('\n');
+  elements.characterPositionsInput.value = activeSlots.map((slot) => slot.position || 'auto').join('\n');
 
   if (state.pinCharacterPrompt) {
     capturePinnedCharacterPrompts();
   }
 }
 
-function createCharacterPromptSlot(prompt = '', negativePrompt = '') {
+function renderCharacterSlotHighlights(query) {
+  elements.characterSlots.querySelectorAll('.character-slot').forEach((slot) => {
+    const promptInput = slot.querySelector('.character-slot-prompt');
+    const negativeInput = slot.querySelector('.character-slot-negative');
+    const promptHighlight = slot.querySelector('.character-slot-prompt-highlight');
+    const negativeHighlight = slot.querySelector('.character-slot-negative-highlight');
+
+    promptHighlight.classList.toggle('is-empty', !promptInput.value.trim());
+    negativeHighlight.classList.toggle('is-empty', !negativeInput.value.trim());
+    promptHighlight.innerHTML = renderHighlightedText(promptInput.value, query);
+    negativeHighlight.innerHTML = renderHighlightedText(negativeInput.value, query);
+  });
+}
+
+function createCharacterPromptSlot(prompt = '', negativePrompt = '', position = 'auto') {
   const slot = document.createElement('article');
   slot.className = 'character-slot';
 
@@ -436,6 +494,32 @@ function createCharacterPromptSlot(prompt = '', negativePrompt = '') {
   removeButton.type = 'button';
   removeButton.textContent = '삭제';
 
+  const positionLabel = document.createElement('label');
+  positionLabel.className = 'character-slot-position-label';
+  const positionTitle = document.createElement('span');
+  positionTitle.textContent = '위치';
+  const positionSelect = document.createElement('select');
+  positionSelect.className = 'character-slot-position';
+  [
+    ['auto', '자동'],
+    ['left', '왼쪽'],
+    ['center', '가운데'],
+    ['right', '오른쪽'],
+    ['top', '위쪽'],
+    ['bottom', '아래쪽'],
+    ['top-left', '왼쪽 위'],
+    ['top-right', '오른쪽 위'],
+    ['bottom-left', '왼쪽 아래'],
+    ['bottom-right', '오른쪽 아래']
+  ].forEach(([value, label]) => {
+    const option = document.createElement('option');
+    option.value = value;
+    option.textContent = label;
+    positionSelect.appendChild(option);
+  });
+  positionSelect.value = position;
+  positionLabel.append(positionTitle, positionSelect);
+
   const promptLabel = document.createElement('label');
   promptLabel.className = 'character-slot-field';
   const promptTitle = document.createElement('span');
@@ -445,7 +529,9 @@ function createCharacterPromptSlot(prompt = '', negativePrompt = '') {
   promptInput.rows = 4;
   promptInput.value = prompt;
   promptInput.placeholder = '1girl, solo, looking back';
-  promptLabel.append(promptTitle, promptInput);
+  const promptHighlight = document.createElement('div');
+  promptHighlight.className = 'prompt-highlight-preview compact-highlight-preview character-slot-prompt-highlight';
+  promptLabel.append(promptTitle, promptInput, promptHighlight);
 
   const negativeLabel = document.createElement('label');
   negativeLabel.className = 'character-slot-field';
@@ -456,10 +542,16 @@ function createCharacterPromptSlot(prompt = '', negativePrompt = '') {
   negativeInput.rows = 3;
   negativeInput.value = negativePrompt;
   negativeInput.placeholder = 'bad anatomy';
-  negativeLabel.append(negativeTitle, negativeInput);
+  const negativeHighlight = document.createElement('div');
+  negativeHighlight.className = 'prompt-highlight-preview compact-highlight-preview character-slot-negative-highlight';
+  negativeLabel.append(negativeTitle, negativeInput, negativeHighlight);
 
-  [promptInput, negativeInput].forEach((input) => {
-    input.addEventListener('input', () => {
+  [
+    [promptInput, 'input'],
+    [negativeInput, 'input'],
+    [positionSelect, 'change']
+  ].forEach(([input, eventName]) => {
+    input.addEventListener(eventName, () => {
       syncCharacterInputsFromSlots();
       setDirty(true);
       refreshPromptPreview();
@@ -479,7 +571,7 @@ function createCharacterPromptSlot(prompt = '', negativePrompt = '') {
     refreshPromptPreview();
   });
 
-  header.append(title, removeButton);
+  header.append(title, positionLabel, removeButton);
   slot.append(header, promptLabel, negativeLabel);
   return slot;
 }
@@ -487,22 +579,28 @@ function createCharacterPromptSlot(prompt = '', negativePrompt = '') {
 function renderCharacterPromptSlots() {
   elements.characterSlots.innerHTML = '';
   getCharacterPromptSlots().forEach((slot) => {
-    elements.characterSlots.appendChild(createCharacterPromptSlot(slot.prompt, slot.negativePrompt));
+    elements.characterSlots.appendChild(createCharacterPromptSlot(slot.prompt, slot.negativePrompt, slot.position));
   });
   renumberCharacterSlots();
 }
 
 function getSceneCharacterPrompts(scene) {
+  if (state.pendingCharacterPromptCarry) {
+    return state.pendingCharacterPromptCarry;
+  }
+
   if (state.pinCharacterPrompt) {
     return {
       prompt: state.pinnedCharacterPromptsText,
-      negativePrompt: state.pinnedCharacterNegativePromptsText
+      negativePrompt: state.pinnedCharacterNegativePromptsText,
+      positions: state.pinnedCharacterPositionsText
     };
   }
 
   return {
     prompt: scene.characterPromptsText || '',
-    negativePrompt: scene.characterNegativePromptsText || ''
+    negativePrompt: scene.characterNegativePromptsText || '',
+    positions: scene.characterPositionsText || ''
   };
 }
 
@@ -619,6 +717,10 @@ function renderSceneList() {
     body.append(title, description);
     item.append(body, status);
     item.addEventListener('click', () => {
+      if (scene.id !== state.selectedSceneId) {
+        releaseCharacterPromptPinForSceneChange();
+      }
+
       state.selectedSceneId = scene.id;
       state.selectedImageId = null;
       setDirty(false);
@@ -767,6 +869,7 @@ function renderQueueAndGallery() {
   }
 
   elements.novelAiGenerateButton.disabled = !scene || !state.secretStatus?.hasApiKey || state.generationInProgress;
+  elements.cancelGenerationButton.disabled = !state.generationInProgress || state.generationCancelRequested;
   elements.queueList.innerHTML = '';
   elements.galleryList.innerHTML = '';
 
@@ -861,19 +964,23 @@ function renderSceneForm() {
   const characterPrompts = getSceneCharacterPrompts(scene);
   elements.characterPromptsInput.value = characterPrompts.prompt;
   elements.characterNegativePromptsInput.value = characterPrompts.negativePrompt;
+  elements.characterPositionsInput.value = characterPrompts.positions;
   renderCharacterPromptSlots();
   state.draftTags = uniqueTags(scene.tags || []);
   state.draftNegativeTags = uniqueTags(scene.negativeTags || []);
-  const promptScene = state.pinCharacterPrompt
+  const usesCarriedCharacterPrompts = Boolean(state.pendingCharacterPromptCarry || state.pinCharacterPrompt);
+  const promptScene = usesCarriedCharacterPrompts
     ? {
       ...scene,
       prompt: '',
       negativePrompt: '',
       characterPromptsText: characterPrompts.prompt,
-      characterNegativePromptsText: characterPrompts.negativePrompt
+      characterNegativePromptsText: characterPrompts.negativePrompt,
+      characterPositionsText: characterPrompts.positions
     }
     : scene;
   renderPromptPreviewForScene(promptScene);
+  state.pendingCharacterPromptCarry = null;
   renderTagChips();
   renderWarnings(scene);
   renderQueueAndGallery();
@@ -1158,9 +1265,10 @@ function appendLineValue(currentValue, value) {
 
 function appendCharacterPromptPair(prompt, negativePrompt) {
   const slots = getCharacterPromptSlots().filter((slot) => slot.prompt || slot.negativePrompt);
-  slots.push({ prompt, negativePrompt });
+  slots.push({ prompt, negativePrompt, position: 'auto' });
   elements.characterPromptsInput.value = slots.map((slot) => slot.prompt).join('\n');
   elements.characterNegativePromptsInput.value = slots.map((slot) => slot.negativePrompt).join('\n');
+  elements.characterPositionsInput.value = slots.map((slot) => slot.position || 'auto').join('\n');
 }
 
 function insertCharacterPreset() {
@@ -1209,6 +1317,7 @@ function buildSceneFromForm(scene, statusOverride) {
   const baseNegativePrompt = state.settings?.baseNegativePrompt || '';
   const characterPromptsText = elements.characterPromptsInput.value.trim();
   const characterNegativePromptsText = elements.characterNegativePromptsInput.value.trim();
+  const characterPositionsText = elements.characterPositionsInput.value.trim();
   const combinedPrompt = buildCombinedPrompt(basePrompt, tags, characterPromptsText);
   const combinedNegativePrompt = buildCombinedPrompt(baseNegativePrompt, negativeTags, characterNegativePromptsText);
   const prompt = elements.promptInput.value.trim() || combinedPrompt;
@@ -1224,6 +1333,7 @@ function buildSceneFromForm(scene, statusOverride) {
     baseNegativePrompt,
     characterPromptsText,
     characterNegativePromptsText,
+    characterPositionsText,
     prompt,
     negativePrompt,
     status: statusOverride || (scene.status === 'needs_review' ? 'reviewed' : scene.status)
@@ -1320,9 +1430,15 @@ async function novelAiGenerateSelectedScene() {
 
   try {
     state.generationInProgress = true;
+    state.generationCancelRequested = false;
     renderQueueAndGallery();
 
     for (let index = 0; index < runCount; index += 1) {
+      if (state.generationCancelRequested) {
+        setGenerationStatus('idle', `씬 생성 중단됨 (${index}/${runCount} 완료)`);
+        break;
+      }
+
       setGenerationStatus('running', `NovelAI 생성 중... (${index + 1}/${runCount})`);
       state.project = await window.dongsan.novelAiGenerate(scene.id);
       state.selectedSceneId = scene.id;
@@ -1332,12 +1448,28 @@ async function novelAiGenerateSelectedScene() {
 
       if (index < runCount - 1) {
         setGenerationStatus('running', `다음 생성까지 0.5초 대기 중... (${index + 1}/${runCount} 완료)`);
-        await wait(500);
+        const shouldContinue = await waitBetweenGenerationRuns(500);
+
+        if (!shouldContinue) {
+          setGenerationStatus('idle', `씬 생성 중단됨 (${index + 1}/${runCount} 완료)`);
+          break;
+        }
       }
     }
 
-    setGenerationStatus('done', `NovelAI 연속 생성 완료 (${runCount}/${runCount})`);
+    if (!state.generationCancelRequested) {
+      setGenerationStatus('done', `NovelAI 연속 생성 완료 (${runCount}/${runCount})`);
+    }
   } catch (error) {
+    if (String(error.message || '').includes('canceled')) {
+      setGenerationStatus('idle', '씬 생성이 중단되었습니다.');
+      state.project = await window.dongsan.loadProject();
+      state.selectedSceneId = scene.id;
+      setDirty(false);
+      render();
+      return;
+    }
+
     elements.projectStatus.textContent = error.message;
     setGenerationStatus('error', error.message);
     state.project = await window.dongsan.loadProject();
@@ -1346,6 +1478,7 @@ async function novelAiGenerateSelectedScene() {
     render();
   } finally {
     state.generationInProgress = false;
+    state.generationCancelRequested = false;
     renderQueueAndGallery();
   }
 }
@@ -1428,9 +1561,15 @@ async function novelAiVariationFromSelectedImage() {
     await persistSettingsIfDirty();
     const sceneOverride = await persistScene(scene, 'prompt_approved');
     state.generationInProgress = true;
+    state.generationCancelRequested = false;
     renderQueueAndGallery();
 
     for (let index = 0; index < runCount; index += 1) {
+      if (state.generationCancelRequested) {
+        setGenerationStatus('idle', `씬 생성 중단됨 (${index}/${runCount} 완료)`);
+        break;
+      }
+
       setGenerationStatus('running', `해당 프롬프트로 재생성 중... (${index + 1}/${runCount})`);
       state.project = await window.dongsan.novelAiVariation(image.id, sceneOverride);
       const sceneImages = state.project.images.filter((item) => item.sceneId === image.sceneId);
@@ -1439,12 +1578,26 @@ async function novelAiVariationFromSelectedImage() {
 
       if (index < runCount - 1) {
         setGenerationStatus('running', `다음 재생성까지 0.5초 대기 중... (${index + 1}/${runCount} 완료)`);
-        await wait(500);
+        const shouldContinue = await waitBetweenGenerationRuns(500);
+
+        if (!shouldContinue) {
+          setGenerationStatus('idle', `씬 생성 중단됨 (${index + 1}/${runCount} 완료)`);
+          break;
+        }
       }
     }
 
-    setGenerationStatus('done', `프롬프트 재생성 완료 (${runCount}/${runCount})`);
+    if (!state.generationCancelRequested) {
+      setGenerationStatus('done', `프롬프트 재생성 완료 (${runCount}/${runCount})`);
+    }
   } catch (error) {
+    if (String(error.message || '').includes('canceled')) {
+      setGenerationStatus('idle', '씬 생성이 중단되었습니다.');
+      state.project = await window.dongsan.loadProject();
+      render();
+      return;
+    }
+
     const message = error.message?.includes("No handler registered for 'project:novelAiVariation'")
       ? '프롬프트 재생성 기능이 현재 실행 중인 앱에 없습니다. 앱을 완전히 종료한 뒤 다시 실행하세요.'
       : error.message;
@@ -1454,6 +1607,7 @@ async function novelAiVariationFromSelectedImage() {
     render();
   } finally {
     state.generationInProgress = false;
+    state.generationCancelRequested = false;
     renderQueueAndGallery();
   }
 }
@@ -1472,6 +1626,7 @@ async function loadSelectedImagePromptToEditor() {
     baseNegativePrompt: metadata.baseNegativePrompt || scene.baseNegativePrompt || '',
     characterPromptsText: metadata.characterPromptsText || scene.characterPromptsText || '',
     characterNegativePromptsText: metadata.characterNegativePromptsText || scene.characterNegativePromptsText || '',
+    characterPositionsText: metadata.characterPositionsText || scene.characterPositionsText || '',
     prompt: metadata.prompt || scene.prompt || '',
     negativePrompt: metadata.negativePrompt || scene.negativePrompt || '',
     status: 'prompt_approved'
@@ -1519,6 +1674,7 @@ function organizeTagsForSelectedScene() {
   elements.descriptionInput,
   elements.characterPromptsInput,
   elements.characterNegativePromptsInput,
+  elements.characterPositionsInput,
 ].forEach((element) => {
   element.addEventListener('input', () => setDirty(true));
 });
@@ -1606,6 +1762,19 @@ elements.generateTagsButton.addEventListener('click', generateTagsForSelectedSce
 elements.organizeTagsButton.addEventListener('click', organizeTagsForSelectedScene);
 elements.approvePromptButton.addEventListener('click', approvePromptForSelectedScene);
 elements.novelAiGenerateButton.addEventListener('click', novelAiGenerateSelectedScene);
+elements.cancelGenerationButton.addEventListener('click', () => {
+  if (!state.generationInProgress) {
+    return;
+  }
+
+  state.generationCancelRequested = true;
+  elements.cancelGenerationButton.disabled = true;
+  setGenerationStatus('idle', '씬 생성 중단 요청 중...');
+
+  if (typeof window.dongsan.cancelNovelAiGeneration === 'function') {
+    window.dongsan.cancelNovelAiGeneration().catch(() => {});
+  }
+});
 elements.toggleNegativePromptButton.addEventListener('click', toggleNegativePromptPreview);
 elements.keepImageButton.addEventListener('click', keepAndExportSelectedImage);
 elements.rejectImageButton.addEventListener('click', rejectSelectedImage);
