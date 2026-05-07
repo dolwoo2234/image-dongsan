@@ -164,8 +164,8 @@ function testGuideTagOrderingAndExpandedCues() {
   const ordered = orderPromptTags(['blush', 'market_street', '1boy', 'walking', 'side view']);
   assert.deepStrictEqual(ordered, ['1boy', 'side view', 'market street', 'walking', 'blush']);
 
-  const weightedOrdered = orderPromptTags(['blush', '1.5::looking back::', '-1::breast focus::', '1girl']);
-  assert.deepStrictEqual(weightedOrdered, ['1girl', '1.5::looking back::', 'blush', '-1::breast focus::']);
+  const weightedOrdered = orderPromptTags(['blush', '1.5::looking back::', '-1::breasts::', '1girl']);
+  assert.deepStrictEqual(weightedOrdered, ['1girl', '1.5::looking back::', 'blush', '-1::breasts::']);
 
   const draft = generateDraftTags([
     '화가 난 준철이 정면을 응시합니다.',
@@ -209,7 +209,7 @@ function testRenaSachonDraftTags() {
     'hands behind back',
     'hair flip',
     'holding hands',
-    'breast focus',
+    'breasts',
     'table',
     'drinking',
     'bed',
@@ -262,6 +262,84 @@ function testRenaSachonNsfwDraftTags() {
   });
 }
 
+function testFocusCompositionDraftTags() {
+  const draft = generateDraftTags([
+    '확대 / 1인칭 / 다중 시점 / 정면에서 / 등 뒤에서',
+    '45도 / 대각선 / 거꾸로 / 위에서 - 더 높이 / 밑에서',
+    '옆에서 / 옆에서 - 완전히 옆 / 옆에서 - 한쪽 얼굴만 보임 / 뒤에서',
+    '1인칭 - 손 / 1인칭 - 출입문 / 백합 소용돌이',
+    '엿보기 - 가슴 / 엿보기 - 팬티'
+  ].join('\n'));
+
+  [
+    'pov',
+    'multiple views',
+    'straight-on',
+    'facing away',
+    'three quarter view',
+    'dutch angle',
+    'upside-down',
+    'from above',
+    'high up',
+    'from below',
+    'from side',
+    'facing to the side',
+    'profile',
+    'from behind',
+    'pov hands',
+    'pov doorway',
+    'rotational symmetry',
+    'downblouse',
+    'downpants'
+  ].forEach((tag) => {
+    assert.ok(draft.tags.includes(tag), `Expected ${tag} in ${draft.tags.join(', ')}`);
+  });
+}
+
+function testEmbraceAndSexCompositionDraftTags() {
+  const draft = generateDraftTags([
+    '\uC5EC\uC790\uAC00 \uB0A8\uC790 \uC640\uB77D \uB04C\uC5B4\uC548\uC740 \uBAA8\uC2B5, \uB0A8\uC790 \uAC00\uC2B4\uD31D\uB9CC \uBCF4\uC5EC\uB3C4 \uB429\uB2C8\uB2E4.',
+    '\uC0AC\uC774\uB4DC \uD0A4\uC2A4, \uC5BC\uAD74 \uD074\uB85C\uC988\uC5C5.',
+    '\uB300\uB538 \uD074\uB85C\uC988\uC5C5, \uD314\uC774\uB791 \uD398\uB2C8\uC2A4\uB9CC \uB098\uC640\uB3C4 \uAD1C\uCC2E\uC544\uC694.',
+    '\uC5EC\uC790\uAC00 \uB0A8\uC790 \uADC0\uC5D0 \uB300\uACE0 \uB9D0\uD558\uB294 \uC0C1\uD0DC, \uB0A8\uC790 \uB4B7\uD1B5\uC218\uB9CC \uBCF4\uC774\uAC8C.',
+    '\uBD84\uD560\uCEF7, \uC5EC\uC790\uB294 \uADF8 \uC704\uC5D0 \uD0C0\uC788\uACE0 \uC624\uB978\uCABD\uC5D0 \uB300\uB538\uD558\uACE0 \uC788\uB294 \uC190.',
+    '\uC5EC\uC790 \uBAB8 \uB2E4 \uBCF4\uC774\uAC8C.',
+    '\uC5EC\uC790\uAC00 \uD074\uB9AC \uC790\uADF9\uD558\uBA74\uC11C \uC720\uD639\uD558\uB294 \uD3EC\uC988.',
+    '\uD6C4\uBC30\uC704, \uC5EC\uC790\uB294 \uB124 \uBC1C \uAE30\uAE30 \uC790\uC138, \uB4A4\uB3CC\uC544\uBCF4\uBA74\uC11C \uB9D0\uD558\uAE30, \uC5C9\uB369\uC774 \uC798 \uBCF4\uC774\uAC8C.'
+  ].join('\n'));
+
+  [
+    'hug',
+    'male torso',
+    'cropped torso',
+    'kissing',
+    'from side',
+    'hand job',
+    'hands on penis',
+    'penis',
+    'whispering',
+    'whisper to ear',
+    'from behind',
+    'cropped face',
+    'multiple views',
+    'full body',
+    'straddling',
+    'girl on top',
+    'clitoris',
+    'seductive',
+    'doggystyle',
+    'on all fours',
+    'looking back',
+    'ass focus'
+  ].forEach((tag) => {
+    assert.ok(draft.tags.includes(tag), `Expected ${tag} in ${draft.tags.join(', ')}`);
+  });
+
+  ['close-up', 'breast focus', 'looking at another'].forEach((tag) => {
+    assert.strictEqual(draft.tags.includes(tag), false, `Did not expect ${tag} in ${draft.tags.join(', ')}`);
+  });
+}
+
 function testCustomTagDictionaryRules() {
   const rules = parseTagDictionary([
     '■ 얼굴 - 감정',
@@ -276,7 +354,7 @@ function testCustomTagDictionaryRules() {
   const applied = applyCustomTagRules('아이얀이 준철을 바라보며 윙크를 날립니다.', rules);
   assert.ok(applied.tags.includes('wink'));
   assert.ok(applied.tags.includes('one eye closed'));
-  assert.ok(applied.tags.includes('looking at another'));
+  assert.strictEqual(applied.tags.includes('looking at another'), false);
   assert.ok(applied.tags.includes(';d'));
 }
 
@@ -358,6 +436,8 @@ testKoreanActionCameraTags();
 testGuideTagOrderingAndExpandedCues();
 testRenaSachonDraftTags();
 testRenaSachonNsfwDraftTags();
+testFocusCompositionDraftTags();
+testEmbraceAndSexCompositionDraftTags();
 testCustomTagDictionaryRules();
 testMockGeneration();
 testFailedGeneration();

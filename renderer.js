@@ -208,11 +208,11 @@ function uniqueTags(tags) {
 
 const promptTagOrder = [
   ['1girl', '1boy', 'multiple girls', 'solo'],
-  ['cowboy shot', 'bust shot', 'upper body', 'close-up', 'wide shot', 'side view', 'from side', 'from above', 'from below', 'pov', 'dutch angle', 'looking at another', 'looking at viewer', 'looking back'],
+  ['cowboy shot', 'bust shot', 'upper body', 'full body', 'wide shot', 'side view', 'from side', 'from above', 'from below', 'pov', 'dutch angle', 'looking at viewer', 'looking back'],
   ['indoors', 'outdoors', 'bedroom', 'bed', 'table', 'school', 'classroom', 'market street', 'city street', 'forest', 'night', 'sunset', 'rain'],
-  ['standing', 'walking', 'sitting', 'kneeling', 'lying', 'leaning forward', 'arms around shoulders', 'holding hands', 'waving', 'hands behind back', 'hair flip', 'pointing', 'wink', 'whispering', 'background crowd'],
+  ['standing', 'walking', 'sitting', 'kneeling', 'lying', 'leaning forward', 'arms around shoulders', 'holding hands', 'waving', 'hands behind back', 'hair flip', 'pointing', 'wink', 'whispering', 'whisper to ear', 'background crowd'],
   ['smile', 'angry', 'glaring', 'scared', 'surprised', 'embarrassed', 'drunk', 'blush', 'tears'],
-  ['breasts', 'breast focus', 'ass focus', 'cropped torso', 'face out of frame', 'cropped face', 'highly detailed'],
+  ['breasts', 'ass focus', 'cropped torso', 'face out of frame', 'cropped face', 'highly detailed'],
   ['holding phone', 'smartphone', 'drinking', 'undressing', 'covering self']
 ];
 
@@ -447,7 +447,50 @@ function getCharacterPromptSlots() {
 function renumberCharacterSlots() {
   elements.characterSlots.querySelectorAll('.character-slot').forEach((slot, index) => {
     slot.querySelector('.character-slot-title').textContent = `Character ${index + 1}`;
+    slot.dataset.index = String(index);
   });
+}
+
+function finishCharacterSlotReorder() {
+  elements.characterSlots.querySelectorAll('.character-slot').forEach((slot) => {
+    slot.classList.remove('dragging');
+  });
+  renumberCharacterSlots();
+  syncCharacterInputsFromSlots();
+  setDirty(true);
+  refreshPromptPreview();
+}
+
+function getCharacterSlotAfterDrag(container, y) {
+  const slots = Array.from(container.querySelectorAll('.character-slot:not(.dragging)'));
+
+  return slots.reduce((closest, child) => {
+    const box = child.getBoundingClientRect();
+    const offset = y - box.top - (box.height / 2);
+
+    if (offset < 0 && offset > closest.offset) {
+      return { offset, element: child };
+    }
+
+    return closest;
+  }, { offset: Number.NEGATIVE_INFINITY, element: null }).element;
+}
+
+function handleCharacterSlotDragOver(event) {
+  event.preventDefault();
+  const draggingSlot = elements.characterSlots.querySelector('.character-slot.dragging');
+
+  if (!draggingSlot) {
+    return;
+  }
+
+  const afterElement = getCharacterSlotAfterDrag(elements.characterSlots, event.clientY);
+
+  if (afterElement) {
+    elements.characterSlots.insertBefore(draggingSlot, afterElement);
+  } else {
+    elements.characterSlots.appendChild(draggingSlot);
+  }
 }
 
 function syncCharacterInputsFromSlots() {
@@ -490,6 +533,13 @@ function createCharacterPromptSlot(prompt = '', negativePrompt = '', position = 
 
   const title = document.createElement('strong');
   title.className = 'character-slot-title';
+
+  const dragHandle = document.createElement('button');
+  dragHandle.className = 'ghost-button compact-button character-slot-drag-handle';
+  dragHandle.type = 'button';
+  dragHandle.textContent = '↕';
+  dragHandle.title = '드래그해서 캐릭터 순서 변경';
+  dragHandle.draggable = true;
 
   const removeButton = document.createElement('button');
   removeButton.className = 'ghost-button compact-button character-slot-remove';
@@ -573,7 +623,14 @@ function createCharacterPromptSlot(prompt = '', negativePrompt = '', position = 
     refreshPromptPreview();
   });
 
-  header.append(title, positionLabel, removeButton);
+  dragHandle.addEventListener('dragstart', (event) => {
+    slot.classList.add('dragging');
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', slot.dataset.index || '');
+  });
+  dragHandle.addEventListener('dragend', finishCharacterSlotReorder);
+
+  header.append(dragHandle, title, positionLabel, removeButton);
   slot.append(header, promptLabel, negativeLabel);
   return slot;
 }
@@ -1482,6 +1539,25 @@ function buildSettingsPayload() {
   return payload;
 }
 
+function applyImportedSettings(settings) {
+  const cleanedSettings = Object.fromEntries(
+    Object.entries(settings || {}).filter(([, value]) => value !== undefined && value !== null && value !== '')
+  );
+
+  state.settings = {
+    ...(state.settings || {}),
+    ...cleanedSettings,
+    provider: 'novelai'
+  };
+}
+
+async function saveImportedSettings() {
+  const result = await window.dongsan.saveSettings({ settings: state.settings });
+  state.settings = result.settings;
+  state.secretStatus = result.secretStatus;
+  state.settingsDirty = false;
+}
+
 async function saveSettings(event, options = {}) {
   if (event) {
     event.preventDefault();
@@ -2099,6 +2175,52 @@ async function loadSelectedImagePromptToEditor() {
   render();
 }
 
+async function applyImageMetadataToEditor(payload) {
+  const metadata = payload?.metadata || {};
+  const scene = getSelectedScene();
+
+  applyImportedSettings(payload?.settings || metadata);
+  await saveImportedSettings();
+
+  if (scene) {
+    const nextScene = {
+      ...scene,
+      basePrompt: metadata.basePrompt || metadata.prompt || scene.basePrompt || '',
+      baseNegativePrompt: metadata.baseNegativePrompt || metadata.negativePrompt || scene.baseNegativePrompt || '',
+      characterPromptsText: metadata.characterPromptsText || scene.characterPromptsText || '',
+      characterNegativePromptsText: metadata.characterNegativePromptsText || scene.characterNegativePromptsText || '',
+      characterPositionsText: metadata.characterPositionsText || scene.characterPositionsText || '',
+      prompt: metadata.prompt || scene.prompt || '',
+      negativePrompt: metadata.negativePrompt || scene.negativePrompt || '',
+      status: 'prompt_approved'
+    };
+
+    state.project = await window.dongsan.saveScene(nextScene);
+    state.selectedSceneId = scene.id;
+    setDirty(false);
+  }
+
+  render();
+}
+
+async function importDroppedPngMetadata(file) {
+  const filePath = file?.path || window.dongsan.getPathForFile?.(file);
+
+  if (!filePath || !String(filePath).toLowerCase().endsWith('.png')) {
+    setGenerationStatus('error', 'PNG 이미지 파일만 드롭할 수 있습니다.');
+    return;
+  }
+
+  try {
+    setGenerationStatus('running', 'PNG 생성 세팅 읽는 중...');
+    const payload = await window.dongsan.readImageMetadata(filePath);
+    await applyImageMetadataToEditor(payload);
+    setGenerationStatus('done', 'PNG 생성 세팅을 불러왔습니다.');
+  } catch (error) {
+    setGenerationStatus('error', error.message);
+  }
+}
+
 function addTagFromInput(input, target) {
   const tags = input.value
     .split(/[,\n]/)
@@ -2163,6 +2285,7 @@ elements.addCharacterButton.addEventListener('click', () => {
   elements.characterSlots.appendChild(createCharacterPromptSlot());
   renumberCharacterSlots();
 });
+elements.characterSlots.addEventListener('dragover', handleCharacterSlotDragOver);
 
 elements.carryCharacterToNextSceneButton.addEventListener('click', carryCharacterPromptsToNextScene);
 
@@ -2275,6 +2398,22 @@ elements.insertCharacterPresetButton.addEventListener('click', insertCharacterPr
 elements.sceneForm.addEventListener('submit', saveSelectedScene);
 elements.addTagButton.addEventListener('click', () => addTagFromInput(elements.tagInput, 'positive'));
 elements.addNegativeTagButton.addEventListener('click', () => addTagFromInput(elements.negativeTagInput, 'negative'));
+
+window.addEventListener('dragover', (event) => {
+  event.preventDefault();
+  event.dataTransfer.dropEffect = 'copy';
+});
+
+window.addEventListener('drop', (event) => {
+  event.preventDefault();
+  const file = Array.from(event.dataTransfer.files || []).find((item) => (
+    String(item?.name || item?.path || '').toLowerCase().endsWith('.png')
+  ));
+
+  if (file) {
+    importDroppedPngMetadata(file);
+  }
+});
 
 if (typeof window.dongsan.onGenerationStatus === 'function') {
   window.dongsan.onGenerationStatus((payload) => {

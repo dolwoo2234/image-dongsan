@@ -1,4 +1,4 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 const dongsanApi = {
   loadProject: () => ipcRenderer.invoke('project:load'),
@@ -8,6 +8,8 @@ const dongsanApi = {
   novelAiGenerate: (sceneId) => ipcRenderer.invoke('project:novelAiGenerate', sceneId),
   cancelNovelAiGeneration: () => ipcRenderer.invoke('project:cancelNovelAiGeneration'),
   updateImage: (imageId, patch) => ipcRenderer.invoke('project:updateImage', imageId, patch),
+  readImageMetadata: (imagePath) => ipcRenderer.invoke('project:readImageMetadata', imagePath),
+  getPathForFile: (file) => webUtils.getPathForFile(file),
   keepAndExportImage: (imageId) => ipcRenderer.invoke('project:keepAndExportImage', imageId),
   mockVariation: (imageId) => ipcRenderer.invoke('project:mockVariation', imageId),
   novelAiVariation: (imageId, sceneOverride) => ipcRenderer.invoke('project:novelAiVariation', imageId, sceneOverride),

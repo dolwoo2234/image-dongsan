@@ -4,6 +4,7 @@ const fs = require('fs/promises');
 const path = require('path');
 const { pathToFileURL } = require('url');
 const { promisify } = require('util');
+const zlib = require('zlib');
 const extractZip = require('extract-zip');
 const packageData = require('./package.json');
 const {
@@ -509,12 +510,12 @@ function getPromptTagSortLabel(tag) {
 
 const promptTagOrder = [
   ['1girl', '1boy', 'multiple girls', 'solo'],
-  ['cowboy shot', 'bust shot', 'upper body', 'close-up', 'wide shot', 'side view', 'from side', 'from above', 'from below', 'pov', 'dutch angle', 'looking at another', 'looking at viewer', 'looking back'],
+  ['cowboy shot', 'bust shot', 'upper body', 'full body', 'wide shot', 'side view', 'from side', 'from above', 'from below', 'pov', 'dutch angle', 'looking at viewer', 'looking back'],
   ['indoors', 'outdoors', 'bedroom', 'bed', 'table', 'school', 'classroom', 'market street', 'city street', 'forest', 'night', 'sunset', 'rain'],
-  ['standing', 'walking', 'sitting', 'kneeling', 'lying', 'leaning forward', 'arms around shoulders', 'holding hands', 'waving', 'hands behind back', 'hair flip', 'pointing', 'wink', 'whispering', 'background crowd'],
+  ['standing', 'walking', 'sitting', 'kneeling', 'lying', 'leaning forward', 'arms around shoulders', 'holding hands', 'waving', 'hands behind back', 'hair flip', 'pointing', 'wink', 'whispering', 'whisper to ear', 'background crowd'],
   ['smile', 'angry', 'glaring', 'scared', 'surprised', 'embarrassed', 'drunk', 'blush', 'tears'],
-  ['breasts', 'breast focus', 'ass focus', 'cropped torso', 'face out of frame', 'cropped face', 'highly detailed'],
-  ['explicit', 'sex', 'vaginal', 'pussy', 'pussy focus', 'spread legs', 'fingering', 'clitoris', 'breast sucking', 'breast grab', 'kissing', 'saliva', 'doggystyle', 'mating press', 'missionary', 'fellatio', 'cum', 'cumdrip', 'after sex', 'restrained', 'hand over mouth', 'head grab'],
+  ['breasts', 'ass focus', 'cropped torso', 'face out of frame', 'cropped face', 'highly detailed'],
+  ['explicit', 'sex', 'vaginal', 'pussy', 'pussy focus', 'spread legs', 'fingering', 'clitoris', 'breast sucking', 'breast grab', 'kissing', 'saliva', 'hand job', 'hands on penis', 'doggystyle', 'mating press', 'missionary', 'fellatio', 'cum', 'cumdrip', 'after sex', 'restrained', 'hand over mouth', 'head grab'],
   ['holding phone', 'smartphone', 'drinking', 'undressing', 'covering self']
 ];
 
@@ -554,7 +555,7 @@ const renaSachonDraftRules = [
   { triggers: ['\uC190 \uB4A4\uB85C', '\uB4A4\uB85C \uAF2C\uACE0'], tags: ['hands behind back'] },
   { triggers: ['\uBA38\uB9AC\uCE74\uB77D \uB118\uAE30', '\uBA38\uB9AC \uB118\uAE30'], tags: ['hair flip'] },
   { triggers: ['\uC190 \uC7A1', '\uC190\uC7A1', '\uAE4D\uC9C0'], tags: ['holding hands'] },
-  { triggers: ['\uAC00\uC2B4', 'breast'], tags: ['breasts', 'breast focus'] },
+  { triggers: ['\uAC00\uC2B4', 'breast'], tags: ['breasts'] },
   { triggers: ['\uC5C9\uB369\uC774'], tags: ['ass focus'] },
   { triggers: ['\uBC25\uC0C1', 'table', '\uC220\uC0C1'], tags: ['table'] },
   { triggers: ['\uC220 \uB9C8\uC2DC', '\uAC74\uBC30', '\uB9C8\uC2DC\uB294'], tags: ['drinking'] },
@@ -563,7 +564,8 @@ const renaSachonDraftRules = [
   { triggers: ['\uB204\uC6B4', '\uB204\uC6CC'], tags: ['lying'] },
   { triggers: ['\uC8FC\uC800\uC549', '\uC549\uC544', '\uC790\uB9AC\uC5D0 \uC549'], tags: ['sitting'] },
   { triggers: ['\uBB34\uB98E', '\uAFC7\uC740'], tags: ['kneeling'] },
-  { triggers: ['\uD074\uB85C\uC988\uC5C5'], tags: ['close-up'] },
+  { triggers: ['\uD074\uB85C\uC988\uC5C5'], tags: [] },
+  { triggers: ['\uBAB8 \uB2E4 \uBCF4\uC774\uAC8C', '\uBAB8\uC774 \uB2E4 \uBCF4\uC774\uAC8C', '\uC804\uC2E0', 'full body'], tags: ['full body'] },
   { triggers: ['\uC0C1\uCCB4'], tags: ['upper body'] },
   { triggers: ['\uC5BC\uAD74 \uBCF4\uC774\uC9C0 \uC54A\uAC8C', '\uC5BC\uAD74\uBCF4\uC774\uC9C0 \uC54A\uAC8C'], tags: ['face out of frame', 'cropped face'] },
   { triggers: ['\uB2F9\uD669', '\uB180\uB78C', '\uC7A0 \uAE6C'], tags: ['surprised'] },
@@ -573,12 +575,13 @@ const renaSachonDraftRules = [
   { triggers: ['\uB0A8\uC790 \uC190\uB9CC', 'pov hand only'], tags: ['pov hands'] },
   { triggers: ['\uAC77\uB294', '\uC6C0\uC9C1\uC774\uB294', '\uC6C0\uC9C1\uC784'], tags: ['walking'] },
   { triggers: ['pussy focus', '\uBCF4\uC9C0'], tags: ['explicit', 'pussy', 'pussy focus'] },
-  { triggers: ['\uC131\uAE30 \uD074\uB85C\uC988\uC5C5'], tags: ['explicit', 'pussy', 'pussy focus', 'close-up'] },
+  { triggers: ['\uC131\uAE30 \uD074\uB85C\uC988\uC5C5'], tags: ['explicit', 'pussy', 'pussy focus'] },
   { triggers: ['\uC190\uAC00\uB77D', '\uD551\uAC70\uB9C1', 'fingering'], tags: ['explicit', 'fingering'] },
+  { triggers: ['\uB300\uB538', '\uC190\uC73C\uB85C \uD398\uB2C8\uC2A4', '\uD398\uB2C8\uC2A4 \uB9CC\uC9C0', 'handjob', 'hand job'], tags: ['explicit', 'hand job', 'hands on penis'] },
   { triggers: ['\uB2E4\uB9AC \uBC8C\uB9B0', '\uB2E4\uB9AC\uB97C \uBC8C\uB9B0'], tags: ['spread legs'] },
   { triggers: ['\uD074\uB9AC', '\uD074\uB9AC\uD1A0\uB9AC\uC2A4', 'clitoris'], tags: ['explicit', 'clitoris'] },
-  { triggers: ['\uAC00\uC2B4 \uBE68', '\uAC00\uC2B4 \uBE60', '\uC720\uB450 \uBE68'], tags: ['explicit', 'breast sucking', 'breast focus'] },
-  { triggers: ['\uAC00\uC2B4 \uC7A1', '\uAC00\uC2B4 \uC7A1\uAE30'], tags: ['breast grab', 'breast focus'] },
+  { triggers: ['\uAC00\uC2B4 \uBE68', '\uAC00\uC2B4 \uBE60', '\uC720\uB450 \uBE68'], tags: ['explicit', 'breast sucking'] },
+  { triggers: ['\uAC00\uC2B4 \uC7A1', '\uAC00\uC2B4 \uC7A1\uAE30'], tags: ['breast grab'] },
   { triggers: ['\uD0A4\uC2A4', 'kiss'], tags: ['kissing'] },
   { triggers: ['\uAC8C\uAC78\uC2A4\uB7FD', '\uB098\uB20C\uC11C'], tags: ['saliva'] },
   { triggers: ['\uC0BD\uC785', '\uD53C\uC2A4\uD1A4', '\uBC15\uAE30', '\uD37D\uD37D'], tags: ['explicit', 'sex', 'vaginal'] },
@@ -674,8 +677,8 @@ function generateDraftTags(description) {
     addTag(tags, 'forest');
   }
 
-  if (hasAny(text, ['close-up', 'close up', '\uD074\uB85C\uC988\uC5C5'])) {
-    addTag(tags, 'close-up');
+  if (hasAny(text, ['\uBAB8 \uB2E4 \uBCF4\uC774\uAC8C', '\uBAB8\uC774 \uB2E4 \uBCF4\uC774\uAC8C', '\uC804\uC2E0', 'full body'])) {
+    addTag(tags, 'full body');
   }
 
   if (hasAny(text, ['cowboy shot', '\uBB34\uB98E', '\uD5C8\uBC85\uC9C0'])) {
@@ -743,8 +746,9 @@ function generateDraftTags(description) {
     addTag(tags, 'sitting');
   }
 
-  if (hasAny(text, ['whisper', 'murmur', '\uC218\uADFC', '\uC6C5\uC131'])) {
+  if (hasAny(text, ['whisper', 'murmur', '\uC218\uADFC', '\uC6C5\uC131', '\uADC0\uC18D\uB9D0'])) {
     addTag(tags, 'whispering');
+    addTag(tags, 'whisper to ear');
     addTag(tags, 'background crowd');
   }
 
@@ -758,10 +762,6 @@ function generateDraftTags(description) {
 
   if (hasAny(text, ['\uC5BC\uAD74\uC744 \uB4E4\uC774\uBC00', '\uB4E4\uC774\uBC00', 'leaning forward'])) {
     addTag(tags, 'leaning forward');
-  }
-
-  if (hasAny(text, ['looking at', '\uBCF4\uBA70', '\uBC14\uB77C\uBCF4', '\uCCD0\uB2E4\uBCF4'])) {
-    addTag(tags, 'looking at another');
   }
 
   if (hasAny(text, ['\uC5EC\uC790\uB4E4', '\uC5EC\uC131\uB4E4'])) {
@@ -1192,6 +1192,180 @@ function normalizeNovelAiSampler(sampler) {
   return samplerMap[normalized] || sampler || 'k_euler_ancestral';
 }
 
+function denormalizeNovelAiSampler(sampler) {
+  const normalized = String(sampler || '').trim().toLowerCase();
+  const samplerMap = {
+    k_euler_ancestral: 'Euler Ancestral',
+    k_euler: 'Euler',
+    k_dpmpp_2m: 'DPM++ 2M'
+  };
+
+  return samplerMap[normalized] || sampler || '';
+}
+
+function isPngBuffer(buffer) {
+  return buffer.length > 8
+    && buffer[0] === 0x89
+    && buffer[1] === 0x50
+    && buffer[2] === 0x4e
+    && buffer[3] === 0x47
+    && buffer[4] === 0x0d
+    && buffer[5] === 0x0a
+    && buffer[6] === 0x1a
+    && buffer[7] === 0x0a;
+}
+
+function parsePngTextChunks(buffer) {
+  if (!isPngBuffer(buffer)) {
+    throw new Error('PNG 파일만 지원합니다.');
+  }
+
+  const chunks = {};
+  const imageInfo = {};
+  let offset = 8;
+
+  while (offset + 12 <= buffer.length) {
+    const length = buffer.readUInt32BE(offset);
+    const type = buffer.toString('ascii', offset + 4, offset + 8);
+    const dataStart = offset + 8;
+    const dataEnd = dataStart + length;
+
+    if (dataEnd > buffer.length) {
+      break;
+    }
+
+    const data = buffer.subarray(dataStart, dataEnd);
+
+    if (type === 'IHDR' && data.length >= 8) {
+      imageInfo.width = data.readUInt32BE(0);
+      imageInfo.height = data.readUInt32BE(4);
+    } else if (type === 'tEXt') {
+      const separator = data.indexOf(0);
+
+      if (separator > -1) {
+        const key = data.subarray(0, separator).toString('latin1');
+        chunks[key] = data.subarray(separator + 1).toString('utf8');
+      }
+    } else if (type === 'zTXt') {
+      const separator = data.indexOf(0);
+
+      if (separator > -1 && data.length > separator + 2) {
+        const key = data.subarray(0, separator).toString('latin1');
+        const compressed = data.subarray(separator + 2);
+        chunks[key] = zlib.inflateSync(compressed).toString('utf8');
+      }
+    } else if (type === 'iTXt') {
+      const firstSeparator = data.indexOf(0);
+
+      if (firstSeparator > -1 && data.length > firstSeparator + 2) {
+        const key = data.subarray(0, firstSeparator).toString('utf8');
+        const compressionFlag = data[firstSeparator + 1];
+        const compressionMethod = data[firstSeparator + 2];
+        let cursor = firstSeparator + 3;
+
+        for (let part = 0; part < 2; part += 1) {
+          const nextSeparator = data.indexOf(0, cursor);
+          cursor = nextSeparator > -1 ? nextSeparator + 1 : data.length;
+        }
+
+        const textData = data.subarray(cursor);
+        chunks[key] = compressionFlag === 1 && compressionMethod === 0
+          ? zlib.inflateSync(textData).toString('utf8')
+          : textData.toString('utf8');
+      }
+    }
+
+    offset = dataEnd + 4;
+
+    if (type === 'IEND') {
+      break;
+    }
+  }
+
+  return { chunks, imageInfo };
+}
+
+function parseJsonMaybe(value) {
+  try {
+    return JSON.parse(value);
+  } catch (_error) {
+    return null;
+  }
+}
+
+function formatCharacterPosition(center) {
+  if (!center || typeof center.x !== 'number' || typeof center.y !== 'number') {
+    return 'auto';
+  }
+
+  return `${Number(center.x.toFixed(3))},${Number(center.y.toFixed(3))}`;
+}
+
+function modelFromNovelAiSource(source) {
+  const normalized = String(source || '').toLowerCase();
+
+  if (normalized.includes('v4.5')) {
+    return 'nai-diffusion-4-5-full';
+  }
+
+  if (normalized.includes('v4')) {
+    return 'nai-diffusion-4-full';
+  }
+
+  if (normalized.includes('v3')) {
+    return 'nai-diffusion-3';
+  }
+
+  return '';
+}
+
+function normalizeNovelAiPngMetadata(comment, chunks, imageInfo) {
+  const promptCaption = comment?.v4_prompt?.caption || {};
+  const negativeCaption = comment?.v4_negative_prompt?.caption || {};
+  const characterPrompts = Array.isArray(promptCaption.char_captions)
+    ? promptCaption.char_captions
+    : [];
+  const characterNegativePrompts = Array.isArray(negativeCaption.char_captions)
+    ? negativeCaption.char_captions
+    : [];
+  const prompt = String(comment?.prompt || promptCaption.base_caption || chunks.Description || '').trim();
+  const negativePrompt = String(comment?.uc || negativeCaption.base_caption || '').trim();
+  const model = String(comment?.model || modelFromNovelAiSource(chunks.Source) || '').trim();
+
+  return {
+    metadata: {
+      prompt,
+      negativePrompt,
+      basePrompt: String(promptCaption.base_caption || prompt).trim(),
+      baseNegativePrompt: String(negativeCaption.base_caption || negativePrompt).trim(),
+      characterPromptsText: characterPrompts.map((item) => String(item?.char_caption || '').trim()).join('\n'),
+      characterNegativePromptsText: characterNegativePrompts.map((item) => String(item?.char_caption || '').trim()).join('\n'),
+      characterPositionsText: characterPrompts.map((item) => formatCharacterPosition(item?.centers?.[0])).join('\n'),
+      seed: comment?.seed ?? '',
+      model,
+      sampler: denormalizeNovelAiSampler(comment?.sampler || ''),
+      steps: comment?.steps ?? '',
+      scale: comment?.scale ?? '',
+      cfgRescale: comment?.cfg_rescale ?? '',
+      noiseSchedule: comment?.noise_schedule || '',
+      width: comment?.width || imageInfo.width || '',
+      height: comment?.height || imageInfo.height || ''
+    },
+    settings: {
+      provider: 'novelai',
+      ...(model ? { model } : {}),
+      ...(comment?.width || imageInfo.width ? { width: Number(comment?.width || imageInfo.width) } : {}),
+      ...(comment?.height || imageInfo.height ? { height: Number(comment?.height || imageInfo.height) } : {}),
+      ...(comment?.steps ? { steps: Number(comment.steps) } : {}),
+      ...(comment?.scale ? { scale: Number(comment.scale) } : {}),
+      ...(comment?.sampler ? { sampler: denormalizeNovelAiSampler(comment.sampler) } : {}),
+      ...(comment?.cfg_rescale !== undefined ? { cfgRescale: Number(comment.cfg_rescale) } : {}),
+      ...(comment?.noise_schedule ? { noiseSchedule: comment.noise_schedule } : {}),
+      ...(comment?.seed !== undefined ? { seed: String(comment.seed) } : {})
+    }
+  };
+}
+
 async function saveNovelAiResponse(responseBuffer, scene, settings, options = {}) {
   const paths = await ensureProjectDirs();
   const sceneImageDir = path.join(paths.imagesDir, scene.id);
@@ -1474,6 +1648,51 @@ ipcMain.handle('project:updateImage', async (_event, imageId, patch) => {
   };
 
   return writeProject(project);
+});
+
+ipcMain.handle('project:readImageMetadata', async (_event, imagePath) => {
+  const normalizedPath = path.normalize(String(imagePath || ''));
+
+  if (!normalizedPath || path.extname(normalizedPath).toLowerCase() !== '.png') {
+    throw new Error('PNG 이미지 파일만 불러올 수 있습니다.');
+  }
+
+  const project = await readProject();
+  const existingImage = (project.images || []).find((image) => (
+    image.path && path.normalize(image.path).toLowerCase() === normalizedPath.toLowerCase()
+  ));
+
+  if (existingImage?.metadata) {
+    return {
+      source: 'project',
+      metadata: existingImage.metadata,
+      settings: {
+        provider: 'novelai',
+        model: existingImage.metadata.model,
+        width: existingImage.metadata.width,
+        height: existingImage.metadata.height,
+        steps: existingImage.metadata.steps,
+        scale: existingImage.metadata.scale,
+        sampler: existingImage.metadata.sampler,
+        cfgRescale: existingImage.metadata.cfgRescale,
+        noiseSchedule: existingImage.metadata.noiseSchedule,
+        seed: existingImage.metadata.seed
+      }
+    };
+  }
+
+  const buffer = await fs.readFile(normalizedPath);
+  const { chunks, imageInfo } = parsePngTextChunks(buffer);
+  const comment = parseJsonMaybe(chunks.Comment);
+
+  if (!comment) {
+    throw new Error('PNG 안에서 NovelAI 생성 메타데이터를 찾지 못했습니다.');
+  }
+
+  return {
+    source: chunks.Software || 'png',
+    ...normalizeNovelAiPngMetadata(comment, chunks, imageInfo)
+  };
 });
 
 function makeExportFilename(project, image) {

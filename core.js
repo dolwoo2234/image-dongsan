@@ -225,13 +225,13 @@ function getPromptTagSortLabel(tag) {
 
 const promptTagOrder = [
   ['1girl', '1boy', 'multiple girls', 'solo'],
-  ['cowboy shot', 'bust shot', 'upper body', 'close-up', 'wide shot', 'side view', 'from side', 'from above', 'from below', 'pov', 'dutch angle', 'looking at another', 'looking at viewer', 'looking back'],
+  ['cowboy shot', 'bust shot', 'upper body', 'full body', 'wide shot', 'pov', 'pov hands', 'pov doorway', 'multiple views', 'straight-on', 'facing away', 'three quarter view', 'dutch angle', 'upside-down', 'from above', 'high up', 'from below', 'side view', 'from side', 'facing to the side', 'profile', 'from behind', 'looking at viewer', 'looking back'],
   ['indoors', 'outdoors', 'bedroom', 'bed', 'table', 'school', 'classroom', 'market street', 'city street', 'forest', 'night', 'sunset', 'rain'],
-  ['standing', 'walking', 'sitting', 'kneeling', 'lying', 'leaning forward', 'arms around shoulders', 'holding hands', 'waving', 'hands behind back', 'hair flip', 'pointing', 'wink', 'whispering', 'background crowd'],
+  ['standing', 'walking', 'sitting', 'kneeling', 'lying', 'leaning forward', 'arms around shoulders', 'hug', 'holding hands', 'waving', 'hands behind back', 'hair flip', 'pointing', 'straddling', 'girl on top', 'on all fours', 'wink', 'whispering', 'whisper to ear', 'talking', 'background crowd'],
   ['smile', 'angry', 'glaring', 'scared', 'surprised', 'embarrassed', 'drunk', 'blush', 'tears'],
-  ['breasts', 'breast focus', 'ass focus', 'cropped torso', 'face out of frame', 'cropped face', 'highly detailed'],
-  ['explicit', 'sex', 'vaginal', 'pussy', 'pussy focus', 'spread legs', 'fingering', 'clitoris', 'breast sucking', 'breast grab', 'kissing', 'saliva', 'doggystyle', 'mating press', 'missionary', 'fellatio', 'cum', 'cumdrip', 'after sex', 'restrained', 'hand over mouth', 'head grab'],
-  ['holding phone', 'smartphone', 'drinking', 'undressing', 'covering self']
+  ['breasts', 'ass focus', 'cropped torso', 'male torso', 'face out of frame', 'cropped face', 'ear', 'thighs', 'highly detailed'],
+  ['explicit', 'sex', 'vaginal', 'pussy', 'pussy focus', 'spread legs', 'fingering', 'clitoris', 'breast sucking', 'breast grab', 'kissing', 'saliva', 'hand job', 'hands on penis', 'penis', 'ear licking', 'licking', 'doggystyle', 'mating press', 'missionary', 'fellatio', 'cum', 'cumdrip', 'after sex', 'restrained', 'hand over mouth', 'head grab', 'seductive'],
+  ['holding phone', 'smartphone', 'drinking', 'undressing', 'covering self', 'rotational symmetry', 'downblouse', 'downpants']
 ];
 
 const promptTagRank = promptTagOrder.reduce((acc, group, groupIndex) => {
@@ -258,9 +258,25 @@ function orderPromptTags(tags) {
 }
 
 const renaSachonDraftRules = [
-  { triggers: ['from below', '\uC544\uB798\uC5D0\uC11C', '\uB85C\uC6B0\uC575\uAE00'], tags: ['from below'] },
+  { triggers: ['1인칭', '일인칭', 'pov'], tags: ['pov'] },
+  { triggers: ['다중 시점', '여러 시점', 'multiple views'], tags: ['multiple views'] },
+  { triggers: ['정면에서', '정면 구도', 'straight-on', 'straight on'], tags: ['straight-on'] },
+  { triggers: ['등 뒤에서', '등뒤에서', 'facing away'], tags: ['facing away'] },
+  { triggers: ['45도', '45 도', 'three quarter view', '3/4 view'], tags: ['three quarter view'] },
+  { triggers: ['대각선', 'dutch angle'], tags: ['dutch angle'] },
+  { triggers: ['거꾸로', '상하반전', 'upside-down', 'upside down'], tags: ['upside-down'] },
+  { triggers: ['위에서 - 더 높이', '더 높이', '아주 위에서', 'high up'], tags: ['high up'] },
+  { triggers: ['옆에서 - 완전히 옆', '완전히 옆', 'facing to the side'], tags: ['from side', 'facing to the side'] },
+  { triggers: ['옆에서 - 한쪽 얼굴만 보임', '한쪽 얼굴만 보임', '프로필', 'profile'], tags: ['from side', 'profile'] },
+  { triggers: ['뒤에서', 'from behind'], tags: ['from behind'] },
+  { triggers: ['1인칭 - 손', '1인칭 손', 'pov hands'], tags: ['pov hands'] },
+  { triggers: ['1인칭 - 출입문', '1인칭 출입문', 'pov doorway'], tags: ['pov doorway'] },
+  { triggers: ['백합 소용돌이', 'rotational symmetry'], tags: ['rotational symmetry'] },
+  { triggers: ['엿보기 - 가슴', '엿보기 가슴', 'downblouse'], tags: ['downblouse'] },
+  { triggers: ['엿보기 - 팬티', '엿보기 팬티', 'downpants'], tags: ['downpants'] },
+  { triggers: ['from below', '밑에서', '\uC544\uB798\uC5D0\uC11C', '\uB85C\uC6B0\uC575\uAE00'], tags: ['from below'] },
   { triggers: ['from above', '\uC704\uC5D0\uC11C', '\uB0B4\uB824\uB2E4', '\uC815\uC218\uB9AC'], tags: ['from above'] },
-  { triggers: ['from side', 'side view', '\uCE21\uBA74'], tags: ['from side', 'side view'] },
+  { triggers: ['from side', 'side view', '옆에서', '\uCE21\uBA74'], tags: ['from side', 'side view'] },
   { triggers: ['pov', '\uB0A8\uC790 \uC2DC\uC810', '\uB0A8\uC790\uAC00 \uC704\uC5D0\uC11C', '\uD558\uC774\uC575\uAE00'], tags: ['pov'] },
   { triggers: ['\uB300\uAC01\uC120', '\uB300\uAC01\uC120\uC774\uC5B4\uB3C4'], tags: ['dutch angle'] },
   { triggers: ['\uD654\uBA74 \uBC14\uB77C\uBCF4', '\uCE74\uBA54\uB77C \uBC14\uB77C', 'looking at viewer'], tags: ['looking at viewer'] },
@@ -270,7 +286,7 @@ const renaSachonDraftRules = [
   { triggers: ['\uC190 \uB4A4\uB85C', '\uB4A4\uB85C \uAF2C\uACE0'], tags: ['hands behind back'] },
   { triggers: ['\uBA38\uB9AC\uCE74\uB77D \uB118\uAE30', '\uBA38\uB9AC \uB118\uAE30'], tags: ['hair flip'] },
   { triggers: ['\uC190 \uC7A1', '\uC190\uC7A1', '\uAE4D\uC9C0'], tags: ['holding hands'] },
-  { triggers: ['\uAC00\uC2B4', 'breast'], tags: ['breasts', 'breast focus'] },
+  { triggers: ['\uAC00\uC2B4', 'breast'], tags: ['breasts'] },
   { triggers: ['\uC5C9\uB369\uC774'], tags: ['ass focus'] },
   { triggers: ['\uBC25\uC0C1', 'table', '\uC220\uC0C1'], tags: ['table'] },
   { triggers: ['\uC220 \uB9C8\uC2DC', '\uAC74\uBC30', '\uB9C8\uC2DC\uB294'], tags: ['drinking'] },
@@ -279,7 +295,8 @@ const renaSachonDraftRules = [
   { triggers: ['\uB204\uC6B4', '\uB204\uC6CC'], tags: ['lying'] },
   { triggers: ['\uC8FC\uC800\uC549', '\uC549\uC544', '\uC790\uB9AC\uC5D0 \uC549'], tags: ['sitting'] },
   { triggers: ['\uBB34\uB98E', '\uAFC7\uC740'], tags: ['kneeling'] },
-  { triggers: ['\uD074\uB85C\uC988\uC5C5'], tags: ['close-up'] },
+  { triggers: ['\uD074\uB85C\uC988\uC5C5'], tags: [] },
+  { triggers: ['\uBAB8 \uB2E4 \uBCF4\uC774\uAC8C', '\uBAB8\uC774 \uB2E4 \uBCF4\uC774\uAC8C', '\uC804\uC2E0', 'full body'], tags: ['full body'] },
   { triggers: ['\uC0C1\uCCB4'], tags: ['upper body'] },
   { triggers: ['\uC5BC\uAD74 \uBCF4\uC774\uC9C0 \uC54A\uAC8C', '\uC5BC\uAD74\uBCF4\uC774\uC9C0 \uC54A\uAC8C'], tags: ['face out of frame', 'cropped face'] },
   { triggers: ['\uB2F9\uD669', '\uB180\uB78C', '\uC7A0 \uAE6C'], tags: ['surprised'] },
@@ -287,14 +304,26 @@ const renaSachonDraftRules = [
   { triggers: ['\uC637 \uD6CC\uB801', '\uBC97\uACA8', '\uB0B4\uB824\uC694'], tags: ['undressing'] },
   { triggers: ['\uBAB8\uC744 \uAC00\uB9AC', '\uC785 \uD2C0\uC5B4\uB9C9'], tags: ['covering self'] },
   { triggers: ['\uB0A8\uC790 \uC190\uB9CC', 'pov hand only'], tags: ['pov hands'] },
+  { triggers: ['\uC640\uB77D \uB04C\uC5B4\uC548', '\uC548\uACA8 \uC788\uB294', '\uC548\uACE0 \uC788\uB294', '\uB04C\uC5B4\uC548\uACE0'], tags: ['hug'] },
+  { triggers: ['\uAC00\uC2B4\uD31D', '\uB0A8\uC790 \uAC00\uC2B4\uD31D', '\uC5B4\uAE68 \uC815\uB3C4\uB9CC'], tags: ['male torso', 'cropped torso'] },
+  { triggers: ['\uB0A8\uC790 \uB4B7\uD1B5\uC218', '\uB4B7\uD1B5\uC218\uB9CC'], tags: ['from behind', 'cropped face'] },
+  { triggers: ['\uC0AC\uC774\uB4DC \uD0A4\uC2A4', 'side kiss'], tags: ['kissing', 'from side'] },
+  { triggers: ['\uADC0\uC5D0 \uB300\uACE0 \uB9D0', '\uADC0\uC5D0 \uB300\uACE0 \uB9D0\uD558', '\uADC0\uC5D0 \uB300\uACE0 \uC18D\uC0AD', '\uADC0\uC18D\uB9D0'], tags: ['whispering', 'whisper to ear'] },
+  { triggers: ['\uADC0\uC5D0 \uB300\uACE0 \uB9AC\uD0B9', '\uADC0 \uB9AC\uD0B9', 'ear licking'], tags: ['ear licking', 'licking', 'ear'] },
   { triggers: ['\uAC77\uB294', '\uC6C0\uC9C1\uC774\uB294', '\uC6C0\uC9C1\uC784'], tags: ['walking'] },
   { triggers: ['pussy focus', '\uBCF4\uC9C0'], tags: ['explicit', 'pussy', 'pussy focus'] },
-  { triggers: ['\uC131\uAE30 \uD074\uB85C\uC988\uC5C5'], tags: ['explicit', 'pussy', 'pussy focus', 'close-up'] },
+  { triggers: ['\uC131\uAE30 \uD074\uB85C\uC988\uC5C5'], tags: ['explicit', 'pussy', 'pussy focus'] },
   { triggers: ['\uC190\uAC00\uB77D', '\uD551\uAC70\uB9C1', 'fingering'], tags: ['explicit', 'fingering'] },
+  { triggers: ['\uB300\uB538', '\uC190\uC73C\uB85C \uD398\uB2C8\uC2A4', '\uD398\uB2C8\uC2A4 \uB9CC\uC9C0', 'handjob', 'hand job'], tags: ['explicit', 'hand job', 'hands on penis'] },
+  { triggers: ['\uD398\uB2C8\uC2A4', 'penis'], tags: ['explicit', 'penis'] },
+  { triggers: ['\uD5C8\uBC85\uC9C0', '\uD5C8\uBC85\uC9C0\uAE4C\uC9C0'], tags: ['thighs'] },
+  { triggers: ['\uC11C \uC788\uB294', '\uC11C\uC788\uB294', '\uC11C \uC788\uB294 \uB290\uB08C'], tags: ['standing'] },
+  { triggers: ['\uBD84\uD560\uCEF7', '\uBD84\uD560 \uCEF7', '\uD654\uBA74\uBD84\uD560'], tags: ['multiple views'] },
+  { triggers: ['\uC704\uC5D0 \uD0C0\uC788', '\uC704\uC5D0 \uC62C\uB77C\uD0C0', '\uC62C\uB77C\uD0C0 \uC788'], tags: ['straddling', 'girl on top'] },
   { triggers: ['\uB2E4\uB9AC \uBC8C\uB9B0', '\uB2E4\uB9AC\uB97C \uBC8C\uB9B0'], tags: ['spread legs'] },
   { triggers: ['\uD074\uB9AC', '\uD074\uB9AC\uD1A0\uB9AC\uC2A4', 'clitoris'], tags: ['explicit', 'clitoris'] },
-  { triggers: ['\uAC00\uC2B4 \uBE68', '\uAC00\uC2B4 \uBE60', '\uC720\uB450 \uBE68'], tags: ['explicit', 'breast sucking', 'breast focus'] },
-  { triggers: ['\uAC00\uC2B4 \uC7A1', '\uAC00\uC2B4 \uC7A1\uAE30'], tags: ['breast grab', 'breast focus'] },
+  { triggers: ['\uAC00\uC2B4 \uBE68', '\uAC00\uC2B4 \uBE60', '\uC720\uB450 \uBE68'], tags: ['explicit', 'breast sucking'] },
+  { triggers: ['\uAC00\uC2B4 \uC7A1', '\uAC00\uC2B4 \uC7A1\uAE30'], tags: ['breast grab'] },
   { triggers: ['\uD0A4\uC2A4', 'kiss'], tags: ['kissing'] },
   { triggers: ['\uAC8C\uAC78\uC2A4\uB7FD', '\uB098\uB20C\uC11C'], tags: ['saliva'] },
   { triggers: ['\uC0BD\uC785', '\uD53C\uC2A4\uD1A4', '\uBC15\uAE30', '\uD37D\uD37D'], tags: ['explicit', 'sex', 'vaginal'] },
@@ -302,6 +331,7 @@ const renaSachonDraftRules = [
   { triggers: ['\uAD50\uBC30 \uD504\uB808\uC2A4', '\uAD50\uBC30\uD504\uB808\uC2A4'], tags: ['explicit', 'sex', 'mating press', 'missionary'] },
   { triggers: ['\uCE21\uC704'], tags: ['explicit', 'sex', 'side view'] },
   { triggers: ['\uD3A0\uB77C'], tags: ['explicit', 'fellatio'] },
+  { triggers: ['\uD1A0\uD0B9', '\uB9D0\uD558\uAE30', '\uB9D0\uD558\uB294'], tags: ['talking'] },
   { triggers: ['\uBA38\uB9AC \uC7A1', '\uBA38\uB9AC\uB97C \uC7A1'], tags: ['head grab'] },
   { triggers: ['\uC785\uC5D0 \uB123', '\uC785\uC5D0 \uB123\uC740'], tags: ['fellatio'] },
   { triggers: ['\uC815\uC561', '\uD750\uB974\uB294', '\uD750\uB974\uB294 \uC815\uC561'], tags: ['explicit', 'cum', 'cumdrip'] },
@@ -310,6 +340,8 @@ const renaSachonDraftRules = [
   { triggers: ['\uC785 \uD2C0\uC5B4\uB9C9', '\uC785\uC744 \uD2C0\uC5B4\uB9C9'], tags: ['hand over mouth'] },
   { triggers: ['\uD314 \uB4A4\uB85C \uBD99\uC7A1', '\uBD99\uC7A1\uD78C \uD314'], tags: ['restrained', 'arms behind back'] },
   { triggers: ['\uCE68\uB300 \uC704', '\uCE68\uB300\uC5D0'], tags: ['bedroom', 'bed'] },
+  { triggers: ['\uB124 \uBC1C \uAE30\uAE30', '\uB124\uBC1C\uAE30\uAE30', '\uB124 \uBC1C\uB85C', 'on all fours'], tags: ['on all fours'] },
+  { triggers: ['\uC720\uD639\uD558\uB294', '\uC720\uD639\uD558\uB294 \uD3EC\uC988'], tags: ['seductive'] },
   { triggers: ['\uC6B0\uB294 \uC5BC\uAD74', '\uC6B8\uBD80\uC9D6'], tags: ['crying', 'tears'] }
 ];
 
@@ -382,14 +414,9 @@ function parseTagDictionary(text) {
 
 const builtInSemanticTagRules = [
   {
-    label: '윙크',
-    triggers: ['윙크', 'wink', '한쪽 눈'],
+    label: 'wink',
+    triggers: ['wink', '\uC719\uD06C', '\uD55C\uCABD \uB208'],
     tags: ['wink', 'one eye closed']
-  },
-  {
-    label: '바라봄',
-    triggers: ['바라보', '쳐다보', '보며', '시선'],
-    tags: ['looking at another']
   },
   {
     label: '정면 응시',
@@ -490,8 +517,8 @@ function generateDraftTags(description) {
     addTag(tags, 'forest');
   }
 
-  if (hasAny(text, ['close-up', 'close up', '\uD074\uB85C\uC988\uC5C5'])) {
-    addTag(tags, 'close-up');
+  if (hasAny(text, ['\uBAB8 \uB2E4 \uBCF4\uC774\uAC8C', '\uBAB8\uC774 \uB2E4 \uBCF4\uC774\uAC8C', '\uC804\uC2E0', 'full body'])) {
+    addTag(tags, 'full body');
   }
 
   if (hasAny(text, ['cowboy shot', '\uBB34\uB98E', '\uD5C8\uBC85\uC9C0'])) {
@@ -559,8 +586,9 @@ function generateDraftTags(description) {
     addTag(tags, 'sitting');
   }
 
-  if (hasAny(text, ['whisper', 'murmur', '\uC218\uADFC', '\uC6C5\uC131'])) {
+  if (hasAny(text, ['whisper', 'murmur', '\uC218\uADFC', '\uC6C5\uC131', '\uADC0\uC18D\uB9D0'])) {
     addTag(tags, 'whispering');
+    addTag(tags, 'whisper to ear');
     addTag(tags, 'background crowd');
   }
 
@@ -574,10 +602,6 @@ function generateDraftTags(description) {
 
   if (hasAny(text, ['\uC5BC\uAD74\uC744 \uB4E4\uC774\uBC00', '\uB4E4\uC774\uBC00', 'leaning forward'])) {
     addTag(tags, 'leaning forward');
-  }
-
-  if (hasAny(text, ['looking at', '\uBCF4\uBA70', '\uBC14\uB77C\uBCF4', '\uCCD0\uB2E4\uBCF4'])) {
-    addTag(tags, 'looking at another');
   }
 
   if (hasAny(text, ['\uC5EC\uC790\uB4E4', '\uC5EC\uC131\uB4E4'])) {
