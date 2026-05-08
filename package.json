@@ -1,7 +1,7 @@
 {
   "name": "dongsan",
   "productName": "Dongsan",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Dongsan scene prompt and NovelAI desktop viewer",
   "main": "index.js",
   "scripts": {

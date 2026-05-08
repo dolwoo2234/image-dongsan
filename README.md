@@ -6,10 +6,11 @@ Dongsan is an Electron desktop workbench for importing scene-description TXT fil
 
 처음 설치하는 사람은 Git 명령어를 직접 입력하지 않아도 됩니다.
 
-1. Git for Windows를 설치합니다: https://git-scm.com/download/win
-2. Node.js LTS를 설치합니다: https://nodejs.org/
-3. `install-dongsan.bat` 파일을 원하는 설치 폴더에 둡니다.
-4. `install-dongsan.bat`을 더블클릭합니다.
+1. `install-dongsan.bat` 파일을 원하는 설치 폴더에 둡니다.
+2. `install-dongsan.bat`을 더블클릭합니다.
+3. Git for Windows나 Node.js LTS가 없으면 `winget`으로 자동 설치를 먼저 시도합니다.
+4. 자동 설치가 안 되는 PC에서는 설치 페이지가 자동으로 열립니다.
+5. Git/Node 설치가 끝났는데 앱이 바로 이어서 실행되지 않으면 `install-dongsan.bat`을 다시 더블클릭합니다.
 
 배치파일은 아래 명령을 자동으로 순서대로 실행합니다.
 
