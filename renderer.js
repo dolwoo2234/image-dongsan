@@ -1003,8 +1003,9 @@ function createEmptyPanel(text) {
   return panel;
 }
 
-function renderSceneForm() {
+function renderSceneForm(options = {}) {
   const scene = getSelectedScene();
+  const preserveDirtyForm = Boolean(options.preserveDirtyForm && state.dirty);
 
   if (!scene) {
     elements.sceneTitle.textContent = 'Load a TXT file';
@@ -1028,6 +1029,11 @@ function renderSceneForm() {
   const scenes = state.project?.scenes || [];
   const sceneIndex = scenes.findIndex((item) => item.id === scene.id);
   elements.carryCharacterToNextSceneButton.disabled = sceneIndex === -1 || sceneIndex >= scenes.length - 1;
+  if (preserveDirtyForm) {
+    renderQueueAndGallery();
+    return;
+  }
+
   elements.sceneNoInput.value = scene.sceneNo || '';
   elements.descriptionInput.value = scene.description || '';
   const characterPrompts = getSceneCharacterPrompts(scene);
@@ -1464,11 +1470,11 @@ function getLatestJobResultImageId(sceneId, mode = null) {
   return latestJob?.resultImageIds?.[0] || null;
 }
 
-function render() {
+function render(options = {}) {
   renderProjectMeta();
   renderSettings();
   renderSceneList();
-  renderSceneForm();
+  renderSceneForm(options);
   if (!getSelectedScene()) {
     renderQueueAndGallery();
   }
@@ -1947,11 +1953,15 @@ async function mockGenerateSelectedScene() {
 
   try {
     setGenerationStatus('running', '테스트 이미지 생성 중...');
-    state.project = await window.dongsan.mockGenerate(scene.id);
+    const nextProject = await window.dongsan.mockGenerate(scene.id);
+    const preserveDirtyForm = state.dirty;
+    state.project = nextProject;
     state.selectedSceneId = scene.id;
     selectLatestSceneImage(scene.id);
-    setDirty(false);
-    render();
+    if (!preserveDirtyForm) {
+      setDirty(false);
+    }
+    render({ preserveDirtyForm });
     setGenerationStatus('done', '테스트 이미지 생성 완료');
   } catch (error) {
     setGenerationStatus('error', error.message);
@@ -1978,11 +1988,15 @@ async function novelAiGenerateSelectedScene() {
       }
 
       setGenerationStatus('running', `현재 씬 저장 후 생성 중... (${index + 1}/${runCount})`);
-      state.project = await window.dongsan.novelAiGenerate(scene.id);
+      const nextProject = await window.dongsan.novelAiGenerate(scene.id);
+      const preserveDirtyForm = state.dirty;
+      state.project = nextProject;
       state.selectedSceneId = scene.id;
       selectLatestSceneImage(scene.id);
-      setDirty(false);
-      render();
+      if (!preserveDirtyForm) {
+        setDirty(false);
+      }
+      render({ preserveDirtyForm });
 
       if (index < runCount - 1) {
         setGenerationStatus('running', `다음 생성까지 0.5초 대기 중... (${index + 1}/${runCount} 완료)`);
@@ -2109,10 +2123,12 @@ async function novelAiVariationFromSelectedImage() {
       }
 
       setGenerationStatus('running', `해당 프롬프트로 재생성 중... (${index + 1}/${runCount})`);
-      state.project = await window.dongsan.novelAiVariation(image.id, sceneOverride);
+      const nextProject = await window.dongsan.novelAiVariation(image.id, sceneOverride);
+      const preserveDirtyForm = state.dirty;
+      state.project = nextProject;
       const sceneImages = state.project.images.filter((item) => item.sceneId === image.sceneId);
       state.selectedImageId = sceneImages[sceneImages.length - 1]?.id || image.id;
-      render();
+      render({ preserveDirtyForm });
 
       if (index < runCount - 1) {
         setGenerationStatus('running', `다음 재생성까지 0.5초 대기 중... (${index + 1}/${runCount} 완료)`);
@@ -2179,11 +2195,13 @@ async function novelAiInpaintSelectedImage() {
     state.generationCancelRequested = false;
     renderQueueAndGallery();
     setGenerationStatus('running', '인페인트 생성 중...');
-    state.project = await window.dongsan.novelAiInpaint(image.id, sceneOverride, maskDataUrl, strength);
+    const nextProject = await window.dongsan.novelAiInpaint(image.id, sceneOverride, maskDataUrl, strength);
+    const preserveDirtyForm = state.dirty;
+    state.project = nextProject;
     state.selectedImageId = getLatestJobResultImageId(image.sceneId, 'novelai-inpaint') || image.id;
     state.inpaintOpen = false;
     clearInpaintMask();
-    render();
+    render({ preserveDirtyForm });
     setGenerationStatus('done', '인페인트 생성 완료');
   } catch (error) {
     if (String(error.message || '').includes('canceled')) {
