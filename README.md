@@ -2,6 +2,39 @@
 
 Dongsan is an Electron desktop workbench for importing scene-description TXT files, drafting Danbooru-style tags, editing NovelAI prompts, generating images, and reviewing scene images.
 
+## Install First
+
+처음 설치하는 사람은 Git 명령어를 직접 입력하지 않아도 됩니다.
+
+1. Git for Windows를 설치합니다: https://git-scm.com/download/win
+2. Node.js LTS를 설치합니다: https://nodejs.org/
+3. `install-dongsan.bat` 파일을 원하는 설치 폴더에 둡니다.
+4. `install-dongsan.bat`을 더블클릭합니다.
+
+배치파일은 아래 명령을 자동으로 순서대로 실행합니다.
+
+```bash
+git clone https://github.com/dolwoo2234/image-dongsan.git
+cd image-dongsan
+npm install
+npm start
+```
+
+이미 `image-dongsan` 폴더가 있으면 먼저 `git pull --ff-only`로 최신 버전을 받은 뒤 앱을 실행합니다.
+
+설치가 끝난 뒤에는 `image-dongsan` 폴더 안의 `run.bat`을 더블클릭해서 실행할 수 있습니다.
+
+### Manual Install
+
+직접 명령어를 입력할 수 있는 사용자는 아래 방식으로 설치해도 됩니다.
+
+```bash
+git clone https://github.com/dolwoo2234/image-dongsan.git
+cd image-dongsan
+npm install
+npm start
+```
+
 ## Preview
 
 ![Dongsan app UI](docs/beginner-guide/view.png)
@@ -23,15 +56,6 @@ Dongsan is an Electron desktop workbench for importing scene-description TXT fil
 ![Repeat workflow tips](docs/beginner-guide/06-repeat-workflow.svg)
 
 More guide files are available in [docs/beginner-guide](docs/beginner-guide/README.md).
-
-## Install
-
-```bash
-git clone https://github.com/dolwoo2234/image-dongsan.git
-cd image-dongsan
-npm install
-npm start
-```
 
 On Windows, users can also double-click `run.bat`. It checks for Node.js/npm, installs dependencies when `node_modules` is missing, and then starts Electron.
 
@@ -60,3 +84,8 @@ After a successful update, Dongsan restarts automatically.
 
 - Made `run.bat` install dependencies automatically when Electron is missing.
 - Added clearer Windows run instructions for cloned/downloaded copies.
+
+### v1.0.6
+
+- Added `install-dongsan.bat` for one-click Windows clone, install, and start.
+- Moved install instructions near the top of the README for first-time users.
