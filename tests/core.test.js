@@ -340,6 +340,61 @@ function testEmbraceAndSexCompositionDraftTags() {
   });
 }
 
+function testSecondSequenceCompositionDraftTags() {
+  const draft = generateDraftTags([
+    '\uB450 \uC190 \uC7A1\uACE0 \uD6C4\uBC30\uC704 \uD53C\uC2A4\uD1A4, \uBA38\uB9AC \uD754\uB4E4\uB9AC\uB294 \uAC83\uC774 \uBCF4\uC774\uAC8C, from below.',
+    '\uD6C4\uBC30\uC704 \uC0C1\uD0DC\uC5D0\uC11C \uAF2C\uB9AC \uC7A1\uACE0 \uC0AC\uC774\uB4DC\uBDF0, \uC2DC\uC624\uD6C4\uD0A4 \uB098\uC62C \uB54C \uACE0\uAC1C \uC816\uD788\uAE30.',
+    '\uD654\uBA74\uC0C1 \uB300\uAC01\uC120\uC73C\uB85C \uC704\uCE58, \uB4A4\uB3CC\uC544 \uC788\uB294 \uC0C1\uD0DC, \uAF2C\uB9AC \uD30C\uB974\uB974.',
+    '\uC5EC\uC790\uAC00 \uB0A8\uC790\uD55C\uD14C \uC644\uC804\uD788 \uC548\uACA8\uC788\uACE0 \uC5B4\uAE68\uC5D0 \uC190 \uB450\uB974\uAE30, \uB0A8\uC790\uB294 \uC5EC\uC790 \uC5C9\uB369\uC774 \uC704\uC5D0 \uC190.',
+    '\uB0A8\uC790\uB294 \uC695\uC870 \uC548\uC5D0 \uC788\uACE0 \uC5EC\uC790\uAC00 \uD654\uC7A5\uC2E4 \uBB38 \uC5F4\uBA74 \uB124\uBC1C\uAE30\uAE30 \uC790\uC138\uB85C \uBB34\uB98E\uAFC7\uACE0 \uC788\uB294 \uC0C1\uD0DC.',
+    '\uB0A8\uC790 \uADC0 \uAC00\uAE4C\uC774 \uC5EC\uC790 \uD0B9\uD0B9.',
+    '\uBA38\uB9AC \uB9DE\uB300\uACE0 \uC548\uACA8\uC788\uB294 \uAD50\uAC10\uD3EC\uC988.',
+    'from above, \uD398\uB2C8\uC2A4\uB9CC \uBCF4\uC774\uAC8C \uD30C\uC774\uC988\uB9AC.',
+    '\uAC00\uC2B4\uC5D0 \uC815\uC561 \uBAA8\uC5EC\uC788\uB294 \uC0C1\uD0DC, \uAC00\uC2B4 \uC2A4\uC2A4\uB85C \uC7A1\uACE0 \uD754\uB4E4\uC5B4\uC694, from below.',
+    '\uB0A8\uC790 \uB204\uC6CC\uC788\uACE0 \uC5EC\uC790\uAC00 \uC0C1\uCCB4 \uC219\uC774\uACE0 \uC5C9\uB369\uC774 \uB4E4\uACE0 \uC788\uB294 \uC0C1\uD0DC, \uAE30\uC2B9\uC704.',
+    '\uD654\uBA74\uC73C\uB85C \uD314\uC744 \uBED7\uC740 \uC0C1\uD0DC, \uAE30\uC2B9\uC704 \uB0A8\uC790 \uC2DC\uC810.',
+    '\uB300\uBA74\uC88C\uC704, \uD0A4\uC2A4, \uC11C\uB85C \uB9C8\uC8FC\uBCF4\uACE0 \uC788\uB294 \uC0C1\uD0DC.',
+    '\uC5EC\uC790 \uD314\uC744 \uB0A8\uC790 \uBAA9 \uC8FC\uBCC0\uBD80\uB97C \uB450\uB974\uACE0, \uB0A8\uC790 \uC591 \uC190\uC740 \uC5EC\uC131\uC758 \uD5C8\uBC85\uC9C0\uC5D0 \uB450\uACE0 \uBC1C\uADF8\uB808.'
+  ].join('\n'));
+
+  [
+    'holding hands',
+    'doggystyle',
+    'head shaking',
+    'tail',
+    'tail grab',
+    'tail wagging',
+    'female ejaculation',
+    'head tilt',
+    'dutch angle',
+    'hug',
+    'arms around shoulders',
+    'hand on another\'s ass',
+    'bathroom',
+    'bathtub',
+    'open door',
+    'on all fours',
+    'kneeling',
+    'ear',
+    'sniffing',
+    'forehead-to-forehead',
+    'paizuri',
+    'penis',
+    'cum on breasts',
+    'breast grab',
+    'cowgirl position',
+    'reaching towards viewer',
+    'pov',
+    'sitting on lap',
+    'facing another',
+    'arms around neck',
+    'hand on thigh',
+    'thighs'
+  ].forEach((tag) => {
+    assert.ok(draft.tags.includes(tag), `Expected ${tag} in ${draft.tags.join(', ')}`);
+  });
+}
+
 function testCustomTagDictionaryRules() {
   const rules = parseTagDictionary([
     '■ 얼굴 - 감정',
@@ -438,6 +493,7 @@ testRenaSachonDraftTags();
 testRenaSachonNsfwDraftTags();
 testFocusCompositionDraftTags();
 testEmbraceAndSexCompositionDraftTags();
+testSecondSequenceCompositionDraftTags();
 testCustomTagDictionaryRules();
 testMockGeneration();
 testFailedGeneration();

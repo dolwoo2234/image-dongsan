@@ -511,12 +511,12 @@ function getPromptTagSortLabel(tag) {
 const promptTagOrder = [
   ['1girl', '1boy', 'multiple girls', 'solo'],
   ['cowboy shot', 'bust shot', 'upper body', 'full body', 'wide shot', 'side view', 'from side', 'from above', 'from below', 'pov', 'dutch angle', 'looking at viewer', 'looking back'],
-  ['indoors', 'outdoors', 'bedroom', 'bed', 'table', 'school', 'classroom', 'market street', 'city street', 'forest', 'night', 'sunset', 'rain'],
-  ['standing', 'walking', 'sitting', 'kneeling', 'lying', 'leaning forward', 'arms around shoulders', 'holding hands', 'waving', 'hands behind back', 'hair flip', 'pointing', 'wink', 'whispering', 'whisper to ear', 'background crowd'],
+  ['indoors', 'outdoors', 'bedroom', 'bathroom', 'bathtub', 'open door', 'bed', 'table', 'school', 'classroom', 'market street', 'city street', 'forest', 'night', 'sunset', 'rain'],
+  ['standing', 'walking', 'sitting', 'kneeling', 'lying', 'leaning forward', 'arms around shoulders', 'arms around neck', 'hug', 'holding hands', 'waving', 'hands behind back', 'hair flip', 'pointing', 'straddling', 'girl on top', 'cowgirl position', 'sitting on lap', 'on all fours', 'head tilt', 'head shaking', 'wink', 'whispering', 'whisper to ear', 'sniffing', 'background crowd'],
   ['smile', 'angry', 'glaring', 'scared', 'surprised', 'embarrassed', 'drunk', 'blush', 'tears'],
-  ['breasts', 'ass focus', 'cropped torso', 'face out of frame', 'cropped face', 'highly detailed'],
-  ['explicit', 'sex', 'vaginal', 'pussy', 'pussy focus', 'spread legs', 'fingering', 'clitoris', 'breast sucking', 'breast grab', 'kissing', 'saliva', 'hand job', 'hands on penis', 'doggystyle', 'mating press', 'missionary', 'fellatio', 'cum', 'cumdrip', 'after sex', 'restrained', 'hand over mouth', 'head grab'],
-  ['holding phone', 'smartphone', 'drinking', 'undressing', 'covering self']
+  ['breasts', 'ass focus', 'cropped torso', 'face out of frame', 'cropped face', 'ear', 'thighs', 'tail', 'tail grab', 'tail wagging', 'hand on another\'s ass', 'hand on thigh', 'highly detailed'],
+  ['explicit', 'sex', 'vaginal', 'pussy', 'pussy focus', 'spread legs', 'fingering', 'clitoris', 'breast sucking', 'breast grab', 'breast press', 'nipple stimulation', 'kissing', 'saliva', 'hand job', 'hands on penis', 'doggystyle', 'cowgirl position', 'paizuri', 'mating press', 'missionary', 'fellatio', 'cum', 'cumdrip', 'cum on breasts', 'female ejaculation', 'after sex', 'restrained', 'hand over mouth', 'head grab'],
+  ['holding phone', 'smartphone', 'drinking', 'undressing', 'covering self', 'forehead-to-forehead', 'facing another', 'reaching towards viewer']
 ];
 
 const promptTagRank = promptTagOrder.reduce((acc, group, groupIndex) => {
@@ -555,12 +555,19 @@ const renaSachonDraftRules = [
   { triggers: ['\uC190 \uB4A4\uB85C', '\uB4A4\uB85C \uAF2C\uACE0'], tags: ['hands behind back'] },
   { triggers: ['\uBA38\uB9AC\uCE74\uB77D \uB118\uAE30', '\uBA38\uB9AC \uB118\uAE30'], tags: ['hair flip'] },
   { triggers: ['\uC190 \uC7A1', '\uC190\uC7A1', '\uAE4D\uC9C0'], tags: ['holding hands'] },
+  { triggers: ['\uB450 \uC190 \uC7A1', '\uB450\uC190 \uC7A1', '\uC591\uC190 \uC7A1'], tags: ['holding hands'] },
   { triggers: ['\uAC00\uC2B4', 'breast'], tags: ['breasts'] },
   { triggers: ['\uC5C9\uB369\uC774'], tags: ['ass focus'] },
+  { triggers: ['\uAF2C\uB9AC'], tags: ['tail'] },
+  { triggers: ['\uAF2C\uB9AC \uC7A1', '\uAF2C\uB9AC\uC7A1'], tags: ['tail', 'tail grab'] },
+  { triggers: ['\uAF2C\uB9AC \uD30C\uB974\uB974', '\uAF2C\uB9AC \uC0B4\uB791', '\uC0B4\uB791\uC0B4\uB791'], tags: ['tail', 'tail wagging'] },
   { triggers: ['\uBC25\uC0C1', 'table', '\uC220\uC0C1'], tags: ['table'] },
   { triggers: ['\uC220 \uB9C8\uC2DC', '\uAC74\uBC30', '\uB9C8\uC2DC\uB294'], tags: ['drinking'] },
   { triggers: ['\uCDE8\uD55C', '\uCDE8\uD574', '\uCDE8\uD55C\uD45C\uC815', '\uD5E4\uB871\uD5E4\uB871', '\uBE44\uD2C0\uBE44\uD2C0'], tags: ['drunk', 'blush'] },
   { triggers: ['\uCE68\uB300'], tags: ['bedroom', 'bed'] },
+  { triggers: ['\uD654\uC7A5\uC2E4'], tags: ['bathroom'] },
+  { triggers: ['\uC695\uC870'], tags: ['bathroom', 'bathtub'] },
+  { triggers: ['\uBB38 \uC5F4', '\uBB38\uC5F4', '\uC5F4\uBA74', 'open door'], tags: ['open door'] },
   { triggers: ['\uB204\uC6B4', '\uB204\uC6CC'], tags: ['lying'] },
   { triggers: ['\uC8FC\uC800\uC549', '\uC549\uC544', '\uC790\uB9AC\uC5D0 \uC549'], tags: ['sitting'] },
   { triggers: ['\uBB34\uB98E', '\uAFC7\uC740'], tags: ['kneeling'] },
@@ -573,31 +580,52 @@ const renaSachonDraftRules = [
   { triggers: ['\uC637 \uD6CC\uB801', '\uBC97\uACA8', '\uB0B4\uB824\uC694'], tags: ['undressing'] },
   { triggers: ['\uBAB8\uC744 \uAC00\uB9AC', '\uC785 \uD2C0\uC5B4\uB9C9'], tags: ['covering self'] },
   { triggers: ['\uB0A8\uC790 \uC190\uB9CC', 'pov hand only'], tags: ['pov hands'] },
+  { triggers: ['\uC640\uB77D \uB04C\uC5B4\uC548', '\uC548\uACA8 \uC788\uB294', '\uC548\uACE0 \uC788\uB294', '\uB04C\uC5B4\uC548\uACE0', '\uC548\uACA8\uC788', '\uC644\uC804\uD788 \uC548\uACA8', '\uBC00\uCC29'], tags: ['hug'] },
+  { triggers: ['\uAC00\uC2B4 \uBC00\uCC29', '\uAC00\uC2B4\uBC00\uCC29'], tags: ['breast press', 'hug'] },
+  { triggers: ['\uC5B4\uAE68\uC5D0 \uC190', '\uC5B4\uAE68\uC5D0 \uC190 \uB450\uB974', '\uC5B4\uAE68\uC5D0 \uC190\uB450\uB974'], tags: ['arms around shoulders'] },
+  { triggers: ['\uBAA9 \uC8FC\uBCC0\uBD80\uB97C \uB450\uB974', '\uBAA9\uC5D0 \uD314', '\uBAA9 \uC8FC\uBCC0'], tags: ['arms around neck'] },
+  { triggers: ['\uBA38\uB9AC \uB9DE\uB300', '\uBA38\uB9AC\uB9DE\uB300', '\uAD50\uAC10\uD3EC\uC988'], tags: ['forehead-to-forehead', 'hug'] },
+  { triggers: ['\uC5C9\uB369\uC774 \uC704\uC5D0 \uC190', '\uC5C9\uB369\uC774 \uC7A1', '\uC5C9\uB369\uC774\uB97C \uC7A1'], tags: ['hand on another\'s ass'] },
+  { triggers: ['\uD5C8\uBC85\uC9C0\uC5D0 \uB450', '\uD5C8\uBC85\uC9C0\uC5D0 \uC190'], tags: ['hand on thigh', 'thighs'] },
+  { triggers: ['\uADC0 \uAC00\uAE4C\uC774', '\uADC0\uAC00\uAE4C\uC774', '\uD0B9\uD0B9', '\uB0C4\uC0C8 \uB9E1', '\uB0C4\uC0C8\uB9E1', 'sniff'], tags: ['ear', 'sniffing'] },
   { triggers: ['\uAC77\uB294', '\uC6C0\uC9C1\uC774\uB294', '\uC6C0\uC9C1\uC784'], tags: ['walking'] },
   { triggers: ['pussy focus', '\uBCF4\uC9C0'], tags: ['explicit', 'pussy', 'pussy focus'] },
   { triggers: ['\uC131\uAE30 \uD074\uB85C\uC988\uC5C5'], tags: ['explicit', 'pussy', 'pussy focus'] },
   { triggers: ['\uC190\uAC00\uB77D', '\uD551\uAC70\uB9C1', 'fingering'], tags: ['explicit', 'fingering'] },
   { triggers: ['\uB300\uB538', '\uC190\uC73C\uB85C \uD398\uB2C8\uC2A4', '\uD398\uB2C8\uC2A4 \uB9CC\uC9C0', 'handjob', 'hand job'], tags: ['explicit', 'hand job', 'hands on penis'] },
+  { triggers: ['\uD398\uB2C8\uC2A4\uB9CC \uBCF4\uC774', '\uD398\uB2C8\uC2A4\uB9CC'], tags: ['explicit', 'penis', 'cropped torso'] },
+  { triggers: ['\uD30C\uC774\uC988\uB9AC', 'paizuri'], tags: ['explicit', 'paizuri', 'penis', 'breasts'] },
   { triggers: ['\uB2E4\uB9AC \uBC8C\uB9B0', '\uB2E4\uB9AC\uB97C \uBC8C\uB9B0'], tags: ['spread legs'] },
+  { triggers: ['\uAE30\uC2B9\uC704'], tags: ['explicit', 'sex', 'cowgirl position', 'girl on top'] },
+  { triggers: ['\uB300\uBA74 \uC88C\uC704', '\uB300\uBA74\uC88C\uC704'], tags: ['explicit', 'sex', 'sitting', 'sitting on lap', 'facing another'] },
   { triggers: ['\uD074\uB9AC', '\uD074\uB9AC\uD1A0\uB9AC\uC2A4', 'clitoris'], tags: ['explicit', 'clitoris'] },
   { triggers: ['\uAC00\uC2B4 \uBE68', '\uAC00\uC2B4 \uBE60', '\uC720\uB450 \uBE68'], tags: ['explicit', 'breast sucking'] },
-  { triggers: ['\uAC00\uC2B4 \uC7A1', '\uAC00\uC2B4 \uC7A1\uAE30'], tags: ['breast grab'] },
+  { triggers: ['\uAC00\uC2B4 \uC7A1', '\uAC00\uC2B4 \uC7A1\uAE30', '\uC2A4\uC2A4\uB85C \uC7A1'], tags: ['breast grab'] },
+  { triggers: ['nipple \uAD34\uB86D', '\uB2C8\uD50C \uAD34\uB86D', '\uC720\uB450 \uAD34\uB86D'], tags: ['nipple stimulation'] },
   { triggers: ['\uD0A4\uC2A4', 'kiss'], tags: ['kissing'] },
   { triggers: ['\uAC8C\uAC78\uC2A4\uB7FD', '\uB098\uB20C\uC11C'], tags: ['saliva'] },
   { triggers: ['\uC0BD\uC785', '\uD53C\uC2A4\uD1A4', '\uBC15\uAE30', '\uD37D\uD37D'], tags: ['explicit', 'sex', 'vaginal'] },
+  { triggers: ['\uBA38\uB9AC \uD754\uB4E4', '\uBA38\uB9AC\uAC00 \uD754\uB4E4', '\uB4E4\uC369\uB4E4\uC369'], tags: ['head shaking'] },
   { triggers: ['\uD6C4\uBC30\uC704', '\uB4A4\uB85C \uBC15\uAE30'], tags: ['explicit', 'sex', 'doggystyle', 'from behind'] },
   { triggers: ['\uAD50\uBC30 \uD504\uB808\uC2A4', '\uAD50\uBC30\uD504\uB808\uC2A4'], tags: ['explicit', 'sex', 'mating press', 'missionary'] },
   { triggers: ['\uCE21\uC704'], tags: ['explicit', 'sex', 'side view'] },
   { triggers: ['\uD3A0\uB77C'], tags: ['explicit', 'fellatio'] },
   { triggers: ['\uBA38\uB9AC \uC7A1', '\uBA38\uB9AC\uB97C \uC7A1'], tags: ['head grab'] },
   { triggers: ['\uC785\uC5D0 \uB123', '\uC785\uC5D0 \uB123\uC740'], tags: ['fellatio'] },
+  { triggers: ['\uC2DC\uC624\uD6C4\uD0A4', '\uC2DC\uC624\uD6C4\uD0A4 \uC0AC\uC6B4\uB4DC'], tags: ['explicit', 'female ejaculation'] },
+  { triggers: ['\uACE0\uAC1C \uC816\uD788', '\uACE0\uAC1C\uC816\uD788'], tags: ['head tilt'] },
   { triggers: ['\uC815\uC561', '\uD750\uB974\uB294', '\uD750\uB974\uB294 \uC815\uC561'], tags: ['explicit', 'cum', 'cumdrip'] },
+  { triggers: ['\uAC00\uC2B4\uC5D0 \uC815\uC561', '\uAC00\uC2B4\uC5D0 \uC815\uC561 \uBAA8\uC5EC', '\uAC00\uC2B4\uC5D0 \uBAA8\uC5EC'], tags: ['explicit', 'cum', 'cum on breasts'] },
   { triggers: ['\uC9C0\uCCD0\uC11C', '\uC4F0\uB7EC\uC9C4'], tags: ['after sex', 'lying'] },
   { triggers: ['\uC5C9\uB369\uC774 \uB4E4\uACE0', '\uC5C9\uB369\uC774\uB97C \uB4E4'], tags: ['ass focus'] },
   { triggers: ['\uC785 \uD2C0\uC5B4\uB9C9', '\uC785\uC744 \uD2C0\uC5B4\uB9C9'], tags: ['hand over mouth'] },
   { triggers: ['\uD314 \uB4A4\uB85C \uBD99\uC7A1', '\uBD99\uC7A1\uD78C \uD314'], tags: ['restrained', 'arms behind back'] },
   { triggers: ['\uCE68\uB300 \uC704', '\uCE68\uB300\uC5D0'], tags: ['bedroom', 'bed'] },
   { triggers: ['\uC6B0\uB294 \uC5BC\uAD74', '\uC6B8\uBD80\uC9D6'], tags: ['crying', 'tears'] }
+  ,
+  { triggers: ['\uB124 \uBC1C \uAE30\uAE30', '\uB124\uBC1C\uAE30\uAE30', '\uB124 \uBC1C\uB85C', 'on all fours'], tags: ['on all fours'] },
+  { triggers: ['\uD314\uC744 \uBED7', '\uD654\uBA74\uC73C\uB85C \uD314', '\uD654\uBA74\uC73C\uB85C \uD314\uC744'], tags: ['reaching towards viewer'] },
+  { triggers: ['\uB9C8\uC8FC\uBCF4', '\uC11C\uB85C \uBC14\uB77C', '\uB9C8\uC8FC\uBCF4\uACE0'], tags: ['facing another'] }
 ];
 
 function applyDraftRuleSet(description, tags) {
@@ -908,6 +936,70 @@ ipcMain.handle('project:saveScene', async (_event, scene) => {
     ...scene,
     updatedAt: now
   };
+
+  return writeProject(project);
+});
+
+function getNextManualSceneNo(scenes) {
+  const numbers = scenes
+    .map((scene) => Number.parseInt(String(scene.sceneNo || '').match(/\d+/)?.[0] || '', 10))
+    .filter((number) => Number.isFinite(number));
+  const nextNumber = numbers.length > 0 ? Math.max(...numbers) + 1 : scenes.length + 1;
+
+  return String(nextNumber).padStart(2, '0');
+}
+
+ipcMain.handle('project:addScene', async (_event, afterSceneId = null) => {
+  const project = await readProject();
+  const now = new Date().toISOString();
+  const insertIndex = afterSceneId
+    ? project.scenes.findIndex((scene) => scene.id === afterSceneId) + 1
+    : project.scenes.length;
+  const safeInsertIndex = insertIndex > 0 ? insertIndex : project.scenes.length;
+  const sceneNo = getNextManualSceneNo(project.scenes);
+  const scene = {
+    id: `scene-manual-${Date.now()}`,
+    sceneNo,
+    description: '',
+    rawText: `#${sceneNo}`,
+    status: 'imported',
+    tags: [],
+    negativeTags: [],
+    prompt: '',
+    negativePrompt: '',
+    basePrompt: '',
+    baseNegativePrompt: '',
+    characterPromptsText: '',
+    characterNegativePromptsText: '',
+    characterPositionsText: '',
+    parserWarnings: [],
+    userLockedTags: [],
+    createdAt: now,
+    updatedAt: now
+  };
+
+  project.scenes.splice(safeInsertIndex, 0, scene);
+  project.updatedAt = now;
+  const nextProject = await writeProject(project);
+
+  return {
+    project: nextProject,
+    sceneId: scene.id
+  };
+});
+
+ipcMain.handle('project:deleteScene', async (_event, sceneId) => {
+  const project = await readProject();
+  const index = project.scenes.findIndex((scene) => scene.id === sceneId);
+
+  if (index === -1) {
+    throw new Error(`Scene not found: ${sceneId}`);
+  }
+
+  project.scenes.splice(index, 1);
+  project.generationJobs = (project.generationJobs || []).filter((job) => job.sceneId !== sceneId);
+  project.images = (project.images || []).filter((image) => image.sceneId !== sceneId);
+  project.updatedAt = new Date().toISOString();
 
   return writeProject(project);
 });

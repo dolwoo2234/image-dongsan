@@ -27,6 +27,8 @@ const state = {
 
 const elements = {
   importButton: document.querySelector('#importButton'),
+  addSceneButton: document.querySelector('#addSceneButton'),
+  deleteSceneButton: document.querySelector('#deleteSceneButton'),
   sceneCount: document.querySelector('#sceneCount'),
   projectStatus: document.querySelector('#projectStatus'),
   sceneList: document.querySelector('#sceneList'),
@@ -209,11 +211,12 @@ function uniqueTags(tags) {
 const promptTagOrder = [
   ['1girl', '1boy', 'multiple girls', 'solo'],
   ['cowboy shot', 'bust shot', 'upper body', 'full body', 'wide shot', 'side view', 'from side', 'from above', 'from below', 'pov', 'dutch angle', 'looking at viewer', 'looking back'],
-  ['indoors', 'outdoors', 'bedroom', 'bed', 'table', 'school', 'classroom', 'market street', 'city street', 'forest', 'night', 'sunset', 'rain'],
-  ['standing', 'walking', 'sitting', 'kneeling', 'lying', 'leaning forward', 'arms around shoulders', 'holding hands', 'waving', 'hands behind back', 'hair flip', 'pointing', 'wink', 'whispering', 'whisper to ear', 'background crowd'],
+  ['indoors', 'outdoors', 'bedroom', 'bathroom', 'bathtub', 'open door', 'bed', 'table', 'school', 'classroom', 'market street', 'city street', 'forest', 'night', 'sunset', 'rain'],
+  ['standing', 'walking', 'sitting', 'kneeling', 'lying', 'leaning forward', 'arms around shoulders', 'arms around neck', 'hug', 'holding hands', 'waving', 'hands behind back', 'hair flip', 'pointing', 'straddling', 'girl on top', 'cowgirl position', 'sitting on lap', 'on all fours', 'head tilt', 'head shaking', 'wink', 'whispering', 'whisper to ear', 'sniffing', 'background crowd'],
   ['smile', 'angry', 'glaring', 'scared', 'surprised', 'embarrassed', 'drunk', 'blush', 'tears'],
-  ['breasts', 'ass focus', 'cropped torso', 'face out of frame', 'cropped face', 'highly detailed'],
-  ['holding phone', 'smartphone', 'drinking', 'undressing', 'covering self']
+  ['breasts', 'ass focus', 'cropped torso', 'face out of frame', 'cropped face', 'ear', 'thighs', 'tail', 'tail grab', 'tail wagging', 'hand on another\'s ass', 'hand on thigh', 'highly detailed'],
+  ['explicit', 'sex', 'vaginal', 'pussy', 'pussy focus', 'spread legs', 'fingering', 'clitoris', 'breast sucking', 'breast grab', 'breast press', 'nipple stimulation', 'kissing', 'saliva', 'hand job', 'hands on penis', 'doggystyle', 'cowgirl position', 'paizuri', 'mating press', 'missionary', 'fellatio', 'cum', 'cumdrip', 'cum on breasts', 'female ejaculation', 'after sex', 'restrained', 'hand over mouth', 'head grab'],
+  ['holding phone', 'smartphone', 'drinking', 'undressing', 'covering self', 'forehead-to-forehead', 'facing another', 'reaching towards viewer']
 ];
 
 const promptTagRank = promptTagOrder.reduce((acc, group, groupIndex) => {
@@ -659,6 +662,7 @@ function renderProjectMeta() {
   const scenes = state.project?.scenes || [];
   elements.sceneCount.textContent = `${scenes.length}개 씬`;
   elements.projectStatus.textContent = state.project?.sourceFile ? '불러온 프로젝트' : '불러온 프로젝트 없음';
+  elements.deleteSceneButton.disabled = !getSelectedScene();
 }
 
 function renderSettings() {
@@ -1506,6 +1510,58 @@ async function importText() {
   }
 }
 
+async function addScene() {
+  const selectedScene = getSelectedScene();
+
+  try {
+    if (selectedScene) {
+      await persistScene(selectedScene);
+    } else {
+      await persistSettingsIfDirty();
+    }
+
+    const result = await window.dongsan.addScene(state.selectedSceneId);
+    state.project = result.project;
+    state.selectedSceneId = result.sceneId;
+    state.selectedImageId = null;
+    setDirty(false);
+    render();
+    setGenerationStatus('done', '씬을 추가했습니다.');
+  } catch (error) {
+    console.error(error);
+    setGenerationStatus('error', `씬 추가 실패: ${error.message}`);
+  }
+}
+
+async function deleteSelectedScene() {
+  const scene = getSelectedScene();
+
+  if (!scene) {
+    return;
+  }
+
+  const scenes = state.project?.scenes || [];
+  const sceneIndex = scenes.findIndex((item) => item.id === scene.id);
+  const confirmed = window.confirm(`Scene ${scene.sceneNo}을 삭제할까요?\n연결된 생성 기록은 목록에서 함께 제거됩니다.`);
+
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+    state.project = await window.dongsan.deleteScene(scene.id);
+    const nextScenes = state.project?.scenes || [];
+    state.selectedSceneId = nextScenes[Math.min(sceneIndex, nextScenes.length - 1)]?.id || null;
+    state.selectedImageId = null;
+    setDirty(false);
+    render();
+    setGenerationStatus('done', `Scene ${scene.sceneNo}을 삭제했습니다.`);
+  } catch (error) {
+    console.error(error);
+    setGenerationStatus('error', `씬 삭제 실패: ${error.message}`);
+  }
+}
+
 function readSettingsFromForm() {
   return {
     provider: 'mock',
@@ -2331,6 +2387,8 @@ elements.apiKeyInput.addEventListener('input', () => {
 });
 
 elements.importButton.addEventListener('click', importText);
+elements.addSceneButton.addEventListener('click', addScene);
+elements.deleteSceneButton.addEventListener('click', deleteSelectedScene);
 elements.generateTagsButton.addEventListener('click', generateTagsForSelectedScene);
 elements.organizeTagsButton.addEventListener('click', organizeTagsForSelectedScene);
 elements.approvePromptButton.addEventListener('click', approvePromptForSelectedScene);
