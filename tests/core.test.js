@@ -231,7 +231,6 @@ function testRenaSachonNsfwDraftTags() {
   ].join('\n'));
 
   [
-    'explicit',
     'pussy',
     'pussy focus',
     'fingering',
@@ -328,7 +327,7 @@ function testEmbraceAndSexCompositionDraftTags() {
     'clitoris',
     'seductive',
     'doggystyle',
-    'on all fours',
+    'all fours',
     'looking back',
     'ass focus'
   ].forEach((tag) => {
@@ -350,6 +349,7 @@ function testSecondSequenceCompositionDraftTags() {
     '\uB0A8\uC790 \uADC0 \uAC00\uAE4C\uC774 \uC5EC\uC790 \uD0B9\uD0B9.',
     '\uBA38\uB9AC \uB9DE\uB300\uACE0 \uC548\uACA8\uC788\uB294 \uAD50\uAC10\uD3EC\uC988.',
     'from above, \uD398\uB2C8\uC2A4\uB9CC \uBCF4\uC774\uAC8C \uD30C\uC774\uC988\uB9AC.',
+    '\uC816\uAF2D\uC9C0 \uB9CC\uC9C0\uAE30, \uC720\uB450 \uAD34\uB86D.',
     '\uAC00\uC2B4\uC5D0 \uC815\uC561 \uBAA8\uC5EC\uC788\uB294 \uC0C1\uD0DC, \uAC00\uC2B4 \uC2A4\uC2A4\uB85C \uC7A1\uACE0 \uD754\uB4E4\uC5B4\uC694, from below.',
     '\uB0A8\uC790 \uB204\uC6CC\uC788\uACE0 \uC5EC\uC790\uAC00 \uC0C1\uCCB4 \uC219\uC774\uACE0 \uC5C9\uB369\uC774 \uB4E4\uACE0 \uC788\uB294 \uC0C1\uD0DC, \uAE30\uC2B9\uC704.',
     '\uD654\uBA74\uC73C\uB85C \uD314\uC744 \uBED7\uC740 \uC0C1\uD0DC, \uAE30\uC2B9\uC704 \uB0A8\uC790 \uC2DC\uC810.',
@@ -373,19 +373,22 @@ function testSecondSequenceCompositionDraftTags() {
     'bathroom',
     'bathtub',
     'open door',
-    'on all fours',
+    'all fours',
     'kneeling',
     'ear',
     'sniffing',
     'forehead-to-forehead',
     'paizuri',
     'penis',
+    'nipple flick',
+    'hand on nipple',
     'cum on breasts',
     'breast grab',
     'cowgirl position',
     'reaching towards viewer',
     'pov',
     'sitting on lap',
+    'upright straddle',
     'facing another',
     'arms around neck',
     'hand on thigh',
@@ -393,6 +396,67 @@ function testSecondSequenceCompositionDraftTags() {
   ].forEach((tag) => {
     assert.ok(draft.tags.includes(tag), `Expected ${tag} in ${draft.tags.join(', ')}`);
   });
+
+  assert.strictEqual(draft.tags.includes('explicit'), false);
+}
+
+function testHeartDeliveryServiceDraftTags() {
+  const draft = generateDraftTags([
+    '\uC5F4\uB9B0 \uBB38, \uD604\uAD00\uC5D0 \uC11C\uC788\uB294 \uC5EC\uC790, \uBC14\uAE65\uD48D\uACBD, \uBB38 \uBC16\uC5D0\uC11C \uBB34\uD45C\uC815\uD558\uAC8C \uC11C \uC788\uB294 \uC5EC\uC790.',
+    '\uBB34\uB98E\uAFC7\uACE0 \uBC29\uC11D\uC5D0 \uC549\uC544\uC788\uB294 \uC0C1\uD0DC, \uC606\uC5D0 \uC11C\uB958\uAC00\uBC29, \uC885\uC774\uBB49\uCE58 \uB4E4\uACE0 \uC788\uC5B4\uC694, \uC885\uC774 \uBC14\uB77C\uBCF4\uB294 \uC911, \uB0A8\uC790 \uC2DC\uC810.',
+    '\uC885\uC774 \uB4E4\uACE0\uC788\uAE30, \uD654\uBA74 \uBC14\uB77C\uBCF4\uAE30, \uBC18\uCE21\uBA74, \uD5C8\uBC85\uC9C0 \uC704\uC8FC\uB85C \uBCF4\uC774\uAC8C \uC544\uB798\uC5D0\uC11C \uC62C\uB824\uB2E4\uBCF8 below.',
+    '\uC704\uC5D0\uC11C \uBC14\uB77C\uBCF8 \uB098\uCCB4, \uBB34\uB98E \uAFC7\uACE0 \uBC29\uC11D\uC5D0 \uC549\uC544\uC788\uC74C.',
+    '\uAC00\uC2B4 \uD074\uB85C\uC988\uC5C5, \uC5BC\uAD74 \uB098\uC62C \uD544\uC694\uC5C6\uC774 \uAC00\uC2B4\uB9CC.',
+    '\uB0A8\uC790 \uD558\uCCB4\uB9CC \uBC97\uACA8\uB193\uC740 \uC0C1\uD0DC, \uC5EC\uC790\uB294 \uB098\uCCB4.',
+    '\uC5EC\uC790 \uB4A4\uC5D0\uC11C \uBC14\uB77C\uBCF4\uB294 \uAC01\uB3C4, \uB300\uB538\uC911.',
+    '\uB300\uB538, \uC704\uC5D0\uC11C \uBCF8 \uAC01\uB3C4, \uADC0 \uADFC\uCC98\uC5D0\uC11C \uC774\uC5B4\uB9AC\uD0B9.',
+    '\uBC18\uCE21\uBA74 \uC704\uCE58, \uC5EC\uC790\uAC00 \uB0A8\uC790\uD55C\uD14C \uAE30\uB300\uC11C \uB300\uB538, \uADC0 \uADFC\uCC98\uC5D0\uC11C \uB300\uD654.',
+    '\uB0A8\uC790\uAC00 \uC5EC\uC790 \uBAB8 \uC774\uACF3\uC800\uACF3 \uBE60\uB294\uC911, \uAC00\uC2B4 \uC704\uC8FC, \uB364\uB364\uD558\uAC8C \uBC1B\uC544\uB4E4\uC774\uB294 \uB290\uB08C.',
+    '\uC5EC\uC790 \uD558\uCCB4 \uD074\uB85C\uC988\uC5C5, \uB0A8\uC790 \uC190\uAC00\uB77D\uC73C\uB85C \uD551\uAC70\uB9C1.'
+  ].join('\n'));
+
+  [
+    'open door',
+    'entrance',
+    'doorway',
+    'outdoors',
+    'standing',
+    'expressionless',
+    'kneeling',
+    'sitting',
+    'cushion',
+    'briefcase',
+    'paper',
+    'document',
+    'holding paper',
+    'pov',
+    'looking at viewer',
+    'three quarter view',
+    'thighs',
+    'from below',
+    'from above',
+    'nude',
+    'breasts',
+    'cropped torso',
+    'face out of frame',
+    'lower body',
+    'bottomless',
+    'partially undressed',
+    'from behind',
+    'hand job',
+    'hands on penis',
+    'ear licking',
+    'licking',
+    'leaning on person',
+    'whispering',
+    'whisper to ear',
+    'breast sucking',
+    'fingering'
+  ].forEach((tag) => {
+    assert.ok(draft.tags.includes(tag), `Expected ${tag} in ${draft.tags.join(', ')}`);
+  });
+
+  assert.strictEqual(draft.tags.includes('explicit'), false);
 }
 
 function testCustomTagDictionaryRules() {
@@ -494,6 +558,7 @@ testRenaSachonNsfwDraftTags();
 testFocusCompositionDraftTags();
 testEmbraceAndSexCompositionDraftTags();
 testSecondSequenceCompositionDraftTags();
+testHeartDeliveryServiceDraftTags();
 testCustomTagDictionaryRules();
 testMockGeneration();
 testFailedGeneration();

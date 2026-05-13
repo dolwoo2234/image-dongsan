@@ -211,12 +211,12 @@ function uniqueTags(tags) {
 const promptTagOrder = [
   ['1girl', '1boy', 'multiple girls', 'solo'],
   ['cowboy shot', 'bust shot', 'upper body', 'full body', 'wide shot', 'side view', 'from side', 'from above', 'from below', 'pov', 'dutch angle', 'looking at viewer', 'looking back'],
-  ['indoors', 'outdoors', 'bedroom', 'bathroom', 'bathtub', 'open door', 'bed', 'table', 'school', 'classroom', 'market street', 'city street', 'forest', 'night', 'sunset', 'rain'],
-  ['standing', 'walking', 'sitting', 'kneeling', 'lying', 'leaning forward', 'arms around shoulders', 'arms around neck', 'hug', 'holding hands', 'waving', 'hands behind back', 'hair flip', 'pointing', 'straddling', 'girl on top', 'cowgirl position', 'sitting on lap', 'on all fours', 'head tilt', 'head shaking', 'wink', 'whispering', 'whisper to ear', 'sniffing', 'background crowd'],
-  ['smile', 'angry', 'glaring', 'scared', 'surprised', 'embarrassed', 'drunk', 'blush', 'tears'],
-  ['breasts', 'ass focus', 'cropped torso', 'face out of frame', 'cropped face', 'ear', 'thighs', 'tail', 'tail grab', 'tail wagging', 'hand on another\'s ass', 'hand on thigh', 'highly detailed'],
-  ['explicit', 'sex', 'vaginal', 'pussy', 'pussy focus', 'spread legs', 'fingering', 'clitoris', 'breast sucking', 'breast grab', 'breast press', 'nipple stimulation', 'kissing', 'saliva', 'hand job', 'hands on penis', 'doggystyle', 'cowgirl position', 'paizuri', 'mating press', 'missionary', 'fellatio', 'cum', 'cumdrip', 'cum on breasts', 'female ejaculation', 'after sex', 'restrained', 'hand over mouth', 'head grab'],
-  ['holding phone', 'smartphone', 'drinking', 'undressing', 'covering self', 'forehead-to-forehead', 'facing another', 'reaching towards viewer']
+  ['indoors', 'outdoors', 'entrance', 'doorway', 'bedroom', 'bathroom', 'bathtub', 'open door', 'bed', 'table', 'school', 'classroom', 'market street', 'city street', 'forest', 'night', 'sunset', 'rain'],
+  ['standing', 'walking', 'sitting', 'kneeling', 'lying', 'leaning forward', 'leaning on person', 'arms around shoulders', 'arms around neck', 'hug', 'holding hands', 'holding paper', 'waving', 'hands behind back', 'hair flip', 'pointing', 'straddling', 'girl on top', 'cowgirl position', 'sitting on lap', 'upright straddle', 'all fours', 'head tilt', 'head shaking', 'wink', 'whispering', 'whisper to ear', 'sniffing', 'background crowd'],
+  ['smile', 'expressionless', 'angry', 'glaring', 'scared', 'surprised', 'embarrassed', 'drunk', 'blush', 'tears'],
+  ['breasts', 'ass focus', 'lower body', 'cropped torso', 'face out of frame', 'cropped face', 'ear', 'thighs', 'tail', 'tail grab', 'tail wagging', 'hand on another\'s ass', 'hand on thigh', 'highly detailed'],
+  ['sex', 'vaginal', 'pussy', 'pussy focus', 'spread legs', 'fingering', 'clitoris', 'breast sucking', 'breast grab', 'breast press', 'nipple flick', 'hand on nipple', 'kissing', 'saliva', 'hand job', 'hands on penis', 'ear licking', 'licking', 'nude', 'bottomless', 'partially undressed', 'doggystyle', 'cowgirl position', 'paizuri', 'mating press', 'missionary', 'fellatio', 'cum', 'cumdrip', 'cum on breasts', 'female ejaculation', 'after sex', 'restrained', 'hand over mouth', 'head grab'],
+  ['paper', 'document', 'briefcase', 'cushion', 'holding phone', 'smartphone', 'drinking', 'undressing', 'covering self', 'forehead-to-forehead', 'facing another', 'reaching towards viewer']
 ];
 
 const promptTagRank = promptTagOrder.reduce((acc, group, groupIndex) => {
@@ -1787,9 +1787,21 @@ function appendLineValue(currentValue, value) {
   return lines.join('\n');
 }
 
+function normalizeCharacterPresetSlotText(value) {
+  return String(value || '')
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .join(' ');
+}
+
 function appendCharacterPromptPair(prompt, negativePrompt) {
   const slots = getCharacterPromptSlots().filter((slot) => slot.prompt || slot.negativePrompt);
-  slots.push({ prompt, negativePrompt, position: 'auto' });
+  slots.push({
+    prompt: normalizeCharacterPresetSlotText(prompt),
+    negativePrompt: normalizeCharacterPresetSlotText(negativePrompt),
+    position: 'auto'
+  });
   elements.characterPromptsInput.value = slots.map((slot) => slot.prompt).join('\n');
   elements.characterNegativePromptsInput.value = slots.map((slot) => slot.negativePrompt).join('\n');
   elements.characterPositionsInput.value = slots.map((slot) => slot.position || 'auto').join('\n');

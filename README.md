@@ -72,6 +72,12 @@ git pull --ff-only
 
 After a successful update, Dongsan restarts automatically.
 
+### v1.0.10
+
+- Added more general Danbooru drafting rules from the Heart Delivery Service scene set.
+- Removed automatic `explicit` drafting and refined pose/body/action tags.
+- Fixed character preset insertion so multi-line presets stay in one character slot.
+
 ### v1.0.2
 
 - Reworked the main layout into scene list, global/character presets, editor, and settings/gallery columns.
