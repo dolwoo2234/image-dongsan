@@ -72,6 +72,13 @@ git pull --ff-only
 
 After a successful update, Dongsan restarts automatically.
 
+### v1.0.12
+
+- Added PNG drop choices: open as I2I, open as inpaint, or import prompt only.
+- Added Image2Image generation with Strength and Noise controls.
+- Added a green 2.2-second highlight for newly imported prompt fields and newly added tag chips.
+- Imported PNG files can now be copied into the current scene gallery as source images.
+
 ### v1.0.11
 
 - Added tag target assignment for draft tags: scene, Character 1, Character 2, and later character slots.
@@ -85,6 +92,16 @@ After a successful update, Dongsan restarts automatically.
 - Removed automatic `explicit` drafting and refined pose/body/action tags.
 - Fixed character preset insertion so multi-line presets stay in one character slot.
 
+### v1.0.6
+
+- Added `install-dongsan.bat` for one-click Windows clone, install, and start.
+- Moved install instructions near the top of the README for first-time users.
+
+### v1.0.3
+
+- Made `run.bat` install dependencies automatically when Electron is missing.
+- Added clearer Windows run instructions for cloned/downloaded copies.
+
 ### v1.0.2
 
 - Reworked the main layout into scene list, global/character presets, editor, and settings/gallery columns.
@@ -93,13 +110,3 @@ After a successful update, Dongsan restarts automatically.
 - Added a scene generation cancel button.
 - Changed NovelAI 429 retry handling to retry 8 times at 1-second intervals.
 - Expanded Danbooru tag drafting for the NSFW Rena Sachon scene set.
-
-### v1.0.3
-
-- Made `run.bat` install dependencies automatically when Electron is missing.
-- Added clearer Windows run instructions for cloned/downloaded copies.
-
-### v1.0.6
-
-- Added `install-dongsan.bat` for one-click Windows clone, install, and start.
-- Moved install instructions near the top of the README for first-time users.

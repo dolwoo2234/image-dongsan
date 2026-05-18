@@ -1236,6 +1236,16 @@ function normalizeInpaintStrength(value) {
   return Math.min(Math.max(numberValue, 0), 1);
 }
 
+function normalizeImageToImageNoise(value) {
+  const numberValue = Number(value);
+
+  if (!Number.isFinite(numberValue)) {
+    return 0;
+  }
+
+  return Math.min(Math.max(numberValue, 0), 1);
+}
+
 function getNovelAiInpaintModel(model) {
   const normalized = String(model || '').trim();
 
@@ -1267,6 +1277,26 @@ function buildNovelAiInpaintPayload(scene, settings, sourceImageBase64, maskBase
   payload.parameters.extra_noise_seed = payload.parameters.seed;
   payload.parameters.add_original_image = false;
   payload.parameters.noise = 0;
+  payload.parameters.n_samples = 1;
+
+  return payload;
+}
+
+function buildNovelAiImageToImagePayload(scene, settings, sourceImageBase64, strength, noise) {
+  const payload = buildNovelAiPayload(scene, settings);
+  const normalizedStrength = normalizeInpaintStrength(strength);
+  const normalizedNoise = normalizeImageToImageNoise(noise);
+
+  payload.action = 'img2img';
+  payload.parameters.image = sourceImageBase64;
+  payload.parameters.strength = normalizedStrength;
+  payload.parameters.img2img = {
+    strength: normalizedStrength,
+    color_correct: true
+  };
+  payload.parameters.noise = normalizedNoise;
+  payload.parameters.extra_noise_seed = payload.parameters.seed;
+  payload.parameters.add_original_image = false;
   payload.parameters.n_samples = 1;
 
   return payload;
@@ -1898,6 +1928,69 @@ async function generateWithNovelAiInpaint(project, scene, image, maskDataUrl, st
   }, 'novelai-inpaint');
 }
 
+async function generateWithNovelAiImageToImage(project, scene, image, strength, noise, settingsOverride = null, webContents = null) {
+  const settings = {
+    ...defaultGenerationSettings,
+    ...(image.metadata || {}),
+    ...(project.settings || {}),
+    ...(settingsOverride || {}),
+    provider: 'novelai',
+    seed: ''
+  };
+
+  if (image.metadata?.width && image.metadata?.height) {
+    settings.width = image.metadata.width;
+    settings.height = image.metadata.height;
+  }
+
+  const apiKey = await readApiKey();
+
+  if (!apiKey) {
+    throw new Error('NovelAI API key is not stored.');
+  }
+
+  const sourceImageBase64 = await fs.readFile(image.path, 'base64');
+  const endpoint = settings.endpoint || defaultGenerationSettings.endpoint;
+  const i2iStrength = normalizeInpaintStrength(strength);
+  const i2iNoise = normalizeImageToImageNoise(noise);
+  activeNovelAiAbortController = new AbortController();
+  let responseBuffer;
+
+  try {
+    responseBuffer = await requestNovelAiGeneration(
+      endpoint,
+      apiKey,
+      buildNovelAiImageToImagePayload(scene, settings, sourceImageBase64, i2iStrength, i2iNoise),
+      {
+        signal: activeNovelAiAbortController.signal,
+        onAttempt: ({ attempt, maxAttempts, requestTimeoutMs }) => {
+          webContents?.send('generation:status', {
+            status: 'running',
+            message: `NovelAI i2i request sent... (${attempt}/${maxAttempts}, timeout ${Math.round(requestTimeoutMs / 1000)}s)`
+          });
+        },
+        onRetry: ({ retryAttempt, maxRetries, retryDelayMs, reason }) => {
+          webContents?.send('generation:status', {
+            status: 'running',
+            message: `NovelAI 429 ${reason}. Retrying in ${retryDelayMs / 1000}s... (${retryAttempt}/${maxRetries})`
+          });
+        }
+      }
+    );
+  } finally {
+    activeNovelAiAbortController = null;
+  }
+
+  const imageRecords = await saveNovelAiResponse(responseBuffer, scene, settings, { maxImages: 1 });
+  return createGenerationRecord(project, scene, imageRecords, {
+    ...settings,
+    mode: 'novelai-i2i',
+    sourceImageId: image.id,
+    i2iStrength,
+    i2iNoise
+  }, 'novelai-i2i');
+}
+
 ipcMain.handle('project:mockGenerate', async (_event, sceneId) => {
   const project = await readProject();
   const scene = project.scenes.find((item) => item.id === sceneId);
@@ -1990,6 +2083,59 @@ ipcMain.handle('project:readImageMetadata', async (_event, imagePath) => {
   return {
     source: chunks.Software || 'png',
     ...normalizeNovelAiPngMetadata(comment, chunks, imageInfo)
+  };
+});
+
+ipcMain.handle('project:importImageForScene', async (_event, sceneId, imagePath, metadata = {}) => {
+  const normalizedPath = path.normalize(String(imagePath || ''));
+
+  if (!normalizedPath || path.extname(normalizedPath).toLowerCase() !== '.png') {
+    throw new Error('Only PNG images can be imported.');
+  }
+
+  const project = await readProject();
+  const scene = project.scenes.find((item) => item.id === sceneId);
+
+  if (!scene) {
+    throw new Error(`Scene not found: ${sceneId}`);
+  }
+
+  const paths = await ensureProjectDirs();
+  const sceneImageDir = path.join(paths.imagesDir, scene.id);
+  await fs.mkdir(sceneImageDir, { recursive: true });
+
+  const now = new Date().toISOString();
+  const timestamp = Date.now();
+  const originalName = path.basename(normalizedPath, path.extname(normalizedPath)).replace(/[^\w.-]+/g, '-');
+  const finalPath = path.join(sceneImageDir, `${timestamp}-import-${originalName || 'image'}.png`);
+  await fs.copyFile(normalizedPath, finalPath);
+
+  const imageId = `imported-${timestamp}`;
+  const image = {
+    id: imageId,
+    sceneId: scene.id,
+    jobId: 'imported-image',
+    path: finalPath,
+    uri: pathToFileURL(finalPath).toString(),
+    metadata: {
+      ...(metadata || {}),
+      importedFrom: normalizedPath
+    },
+    favorite: false,
+    status: 'candidate',
+    note: '가져온 PNG',
+    createdAt: now
+  };
+
+  const nextProject = {
+    ...normalizeProject(project),
+    images: [...(project.images || []), image],
+    updatedAt: now
+  };
+
+  return {
+    project: await writeProject(nextProject),
+    imageId
   };
 });
 
@@ -2164,6 +2310,64 @@ ipcMain.handle('project:novelAiVariation', async (event, imageId, sceneOverride 
     }
 
     const failedProject = createFailedGenerationRecord(project, variationScene, error.message, settings, 'novelai-variation');
+    await writeProject(failedProject);
+    throw error;
+  }
+});
+
+ipcMain.handle('project:novelAiImageToImage', async (event, imageId, sceneOverride = null, strength = 0.7, noise = 0) => {
+  const project = await readProject();
+  const image = project.images.find((item) => item.id === imageId);
+
+  if (!image) {
+    throw new Error(`Image not found: ${imageId}`);
+  }
+
+  const scene = project.scenes.find((item) => item.id === image.sceneId);
+
+  if (!scene) {
+    throw new Error(`Scene not found: ${image.sceneId}`);
+  }
+
+  const currentScene = sceneOverride && sceneOverride.id === scene.id
+    ? {
+      ...scene,
+      ...sceneOverride,
+      prompt: String(sceneOverride.prompt || '').trim() || scene.prompt || image.metadata?.prompt || '',
+      negativePrompt: String(sceneOverride.negativePrompt || '').trim() || scene.negativePrompt || image.metadata?.negativePrompt || ''
+    }
+    : scene;
+
+  const i2iScene = {
+    ...currentScene,
+    prompt: currentScene.prompt || image.metadata?.prompt,
+    negativePrompt: currentScene.negativePrompt || image.metadata?.negativePrompt,
+    basePrompt: currentScene.basePrompt || image.metadata?.basePrompt,
+    baseNegativePrompt: currentScene.baseNegativePrompt || image.metadata?.baseNegativePrompt,
+    characterPromptsText: currentScene.characterPromptsText || image.metadata?.characterPromptsText,
+    characterNegativePromptsText: currentScene.characterNegativePromptsText || image.metadata?.characterNegativePromptsText,
+    characterPositionsText: currentScene.characterPositionsText || image.metadata?.characterPositionsText,
+    status: 'prompt_approved'
+  };
+  const settings = {
+    ...defaultGenerationSettings,
+    ...(image.metadata || {}),
+    ...(project.settings || {}),
+    seed: '',
+    i2iStrength: normalizeInpaintStrength(strength),
+    i2iNoise: normalizeImageToImageNoise(noise),
+    sourceImageId: image.id
+  };
+
+  try {
+    const nextProject = await generateWithNovelAiImageToImage(project, i2iScene, image, strength, noise, settings, event.sender);
+    return writeProject(nextProject);
+  } catch (error) {
+    if (String(error.message || '').includes('canceled')) {
+      throw error;
+    }
+
+    const failedProject = createFailedGenerationRecord(project, i2iScene, error.message, settings, 'novelai-i2i');
     await writeProject(failedProject);
     throw error;
   }

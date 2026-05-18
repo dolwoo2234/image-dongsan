@@ -12,9 +12,13 @@ const state = {
   draftTags: [],
   draftTagAssignments: {},
   draftNegativeTags: [],
+  recentlyAddedTagKeys: new Set(),
+  recentlyAddedTagTimer: null,
   settings: null,
   secretStatus: null,
   updateInfo: null,
+  i2iOpen: false,
+  droppedPngImport: null,
   inpaintOpen: false,
   inpaintMode: 'brush',
   inpaintSourceImageId: null,
@@ -45,7 +49,14 @@ const elements = {
   rejectImageButton: document.querySelector('#rejectImageButton'),
   favoriteImageButton: document.querySelector('#favoriteImageButton'),
   novelAiVariationButton: document.querySelector('#novelAiVariationButton'),
+  novelAiI2IButton: document.querySelector('#novelAiI2IButton'),
   loadImagePromptButton: document.querySelector('#loadImagePromptButton'),
+  i2iPanel: document.querySelector('#i2iPanel'),
+  i2iStrengthInput: document.querySelector('#i2iStrengthInput'),
+  i2iStrengthValue: document.querySelector('#i2iStrengthValue'),
+  i2iNoiseInput: document.querySelector('#i2iNoiseInput'),
+  i2iNoiseValue: document.querySelector('#i2iNoiseValue'),
+  novelAiI2IGenerateButton: document.querySelector('#novelAiI2IGenerateButton'),
   inpaintPanel: document.querySelector('#inpaintPanel'),
   inpaintBaseImage: document.querySelector('#inpaintBaseImage'),
   inpaintMaskCanvas: document.querySelector('#inpaintMaskCanvas'),
@@ -130,7 +141,14 @@ const elements = {
   generationRunCountInput: document.querySelector('#generationRunCountInput'),
   generationStatus: document.querySelector('#generationStatus'),
   queueList: document.querySelector('#queueList'),
-  galleryList: document.querySelector('#galleryList')
+  galleryList: document.querySelector('#galleryList'),
+  dropImportDialog: document.querySelector('#dropImportDialog'),
+  dropImportPreviewImage: document.querySelector('#dropImportPreviewImage'),
+  dropImportCloseButton: document.querySelector('#dropImportCloseButton'),
+  dropImportI2IButton: document.querySelector('#dropImportI2IButton'),
+  dropImportInpaintButton: document.querySelector('#dropImportInpaintButton'),
+  dropImportPromptButton: document.querySelector('#dropImportPromptButton'),
+  dropImportMetaText: document.querySelector('#dropImportMetaText')
 };
 
 const statusLabels = {
@@ -893,6 +911,30 @@ function updateTagAssignmentAtIndex(index, nextTarget) {
   renderTagChips();
 }
 
+function getTagHighlightKey(target, tag) {
+  return `${target}:${normalizeTag(tag)}`;
+}
+
+function clearRecentlyAddedTags() {
+  state.recentlyAddedTagKeys.clear();
+  state.recentlyAddedTagTimer = null;
+  renderTagChips();
+}
+
+function markRecentlyAddedTags(target, tags) {
+  if (state.recentlyAddedTagTimer) {
+    clearTimeout(state.recentlyAddedTagTimer);
+  }
+
+  if (tags.length === 0) {
+    clearRecentlyAddedTags();
+    return;
+  }
+
+  state.recentlyAddedTagKeys = new Set(tags.map((tag) => getTagHighlightKey(target, tag)));
+  state.recentlyAddedTagTimer = setTimeout(clearRecentlyAddedTags, 2200);
+}
+
 function createChip(tag, index, target, isSearchMatch = false) {
   const parsed = parseWeightedTag(tag);
   const chip = document.createElement('div');
@@ -902,7 +944,8 @@ function createChip(tag, index, target, isSearchMatch = false) {
   const targetSelect = document.createElement('select');
   const removeButton = document.createElement('button');
 
-  chip.className = `tag-chip${isSearchMatch ? ' search-match' : ''}`;
+  const isRecentlyAdded = state.recentlyAddedTagKeys.has(getTagHighlightKey(target, tag));
+  chip.className = `tag-chip${isSearchMatch ? ' search-match' : ''}${isRecentlyAdded ? ' recently-added' : ''}`;
   name.className = 'tag-chip-name';
   name.textContent = parsed.label;
   name.title = tag;
@@ -1094,6 +1137,7 @@ function renderQueueAndGallery() {
       inpaintAction.addEventListener('click', (event) => {
         event.stopPropagation();
         state.selectedImageId = image.id;
+        state.i2iOpen = false;
         state.inpaintOpen = true;
         renderSelectedImage();
         renderQueueAndGallery();
@@ -1108,6 +1152,7 @@ function renderQueueAndGallery() {
       }
       card.addEventListener('click', () => {
         state.selectedImageId = image.id;
+        state.i2iOpen = false;
         state.inpaintOpen = false;
         renderSelectedImage();
         renderQueueAndGallery();
@@ -1535,12 +1580,23 @@ function getInpaintMaskDataUrl() {
   return outputCanvas.toDataURL('image/png');
 }
 
+function updateI2IControlLabels() {
+  if (elements.i2iStrengthValue && elements.i2iStrengthInput) {
+    elements.i2iStrengthValue.textContent = Number(elements.i2iStrengthInput.value || 0).toFixed(2);
+  }
+
+  if (elements.i2iNoiseValue && elements.i2iNoiseInput) {
+    elements.i2iNoiseValue.textContent = Number(elements.i2iNoiseInput.value || 0).toFixed(2);
+  }
+}
+
 function renderSelectedImage() {
   const image = getSelectedImage();
   const scene = getSelectedScene();
 
   if (!scene || !image) {
     elements.imageWorkbench.classList.add('hidden');
+    elements.i2iPanel?.classList.add('hidden');
     elements.inpaintPanel?.classList.add('hidden');
     elements.selectedPreviewImage.removeAttribute('src');
     return;
@@ -1557,10 +1613,17 @@ function renderSelectedImage() {
   elements.novelAiVariationButton.title = state.secretStatus?.hasApiKey
     ? 'Regenerate with the selected image prompt and settings'
     : 'Save a NovelAI API key first';
+  elements.novelAiI2IButton.disabled = !state.secretStatus?.hasApiKey;
+  elements.novelAiI2IButton.title = state.secretStatus?.hasApiKey
+    ? 'Open Image2Image controls for the selected image'
+    : 'Save a NovelAI API key first';
+  elements.novelAiI2IGenerateButton.disabled = !state.secretStatus?.hasApiKey;
   elements.novelAiInpaintButton.disabled = !state.secretStatus?.hasApiKey;
   elements.novelAiInpaintButton.title = state.secretStatus?.hasApiKey
     ? 'Paint a mask and regenerate only that area'
     : 'Save a NovelAI API key first';
+  elements.i2iPanel?.classList.toggle('hidden', !state.i2iOpen);
+  updateI2IControlLabels();
   if (state.inpaintOpen) {
     prepareInpaintCanvas(image);
   } else {
@@ -1574,6 +1637,8 @@ function renderSelectedImage() {
     `steps ${image.metadata?.steps ?? '-'}`,
     `scale ${image.metadata?.scale ?? '-'}`,
     image.metadata?.inpaintStrength !== undefined && image.metadata?.inpaintStrength !== '' ? `inpaint ${image.metadata.inpaintStrength}` : '',
+    image.metadata?.i2iStrength !== undefined && image.metadata?.i2iStrength !== '' ? `i2i ${image.metadata.i2iStrength}` : '',
+    image.metadata?.i2iNoise !== undefined && image.metadata?.i2iNoise !== '' ? `noise ${image.metadata.i2iNoise}` : '',
     image.metadata?.sampler,
     `seed ${image.metadata?.seed ?? '-'}`
   ].filter(Boolean).join(' / ');
@@ -1742,6 +1807,27 @@ async function saveImportedSettings() {
   state.settings = result.settings;
   state.secretStatus = result.secretStatus;
   state.settingsDirty = false;
+}
+
+function highlightPromptImportFields() {
+  const targets = [
+    elements.projectBasePromptInput,
+    elements.projectBaseNegativePromptInput,
+    elements.characterPromptsInput,
+    elements.characterNegativePromptsInput,
+    elements.characterPositionsInput,
+    elements.promptInput,
+    elements.negativePromptInput,
+    elements.promptHighlightPreview,
+    elements.characterPromptHighlightPreview,
+    elements.negativePromptHighlightPreview,
+    ...Array.from(elements.characterSlots?.querySelectorAll('textarea, select') || [])
+  ].filter(Boolean);
+
+  targets.forEach((target) => target.classList.add('metadata-import-highlight'));
+  window.setTimeout(() => {
+    targets.forEach((target) => target.classList.remove('metadata-import-highlight'));
+  }, 2200);
 }
 
 async function saveSettings(event, options = {}) {
@@ -2309,6 +2395,70 @@ async function novelAiVariationFromSelectedImage() {
   }
 }
 
+function openI2IForSelectedImage() {
+  const image = getSelectedImage();
+
+  if (!image) {
+    setGenerationStatus('error', 'I2I에 사용할 이미지를 먼저 선택하세요.');
+    return;
+  }
+
+  state.i2iOpen = true;
+  state.inpaintOpen = false;
+  renderSelectedImage();
+}
+
+async function novelAiI2ISelectedImage() {
+  const image = getSelectedImage();
+  const scene = getSelectedScene();
+
+  if (!image || !scene) {
+    setGenerationStatus('error', 'I2I에 사용할 이미지를 먼저 선택하세요.');
+    return;
+  }
+
+  if (typeof window.dongsan.novelAiImageToImage !== 'function') {
+    setGenerationStatus('error', 'I2I 기능이 현재 실행 중인 앱에 없습니다. 앱을 완전히 종료한 뒤 다시 실행하세요.');
+    return;
+  }
+
+  const strength = Math.min(Math.max(Number(elements.i2iStrengthInput.value) || 0.7, 0), 1);
+  const noise = Math.min(Math.max(Number(elements.i2iNoiseInput.value) || 0, 0), 1);
+
+  try {
+    await persistSettingsIfDirty();
+    const sceneOverride = await persistScene(scene, 'prompt_approved');
+    state.i2iOpen = false;
+    state.generationInProgress = true;
+    state.generationCancelRequested = false;
+    renderQueueAndGallery();
+    setGenerationStatus('running', `I2I 생성 중... (strength ${strength.toFixed(2)}, noise ${noise.toFixed(2)})`);
+    const nextProject = await window.dongsan.novelAiImageToImage(image.id, sceneOverride, strength, noise);
+    const preserveDirtyForm = state.dirty;
+    state.project = nextProject;
+    state.selectedImageId = getLatestJobResultImageId(image.sceneId, 'novelai-i2i') || image.id;
+    state.i2iOpen = false;
+    render({ preserveDirtyForm });
+    setGenerationStatus('done', 'I2I 생성 완료');
+  } catch (error) {
+    if (String(error.message || '').includes('canceled')) {
+      setGenerationStatus('idle', '이미지 생성이 중단되었습니다.');
+      state.project = await window.dongsan.loadProject();
+      render();
+      return;
+    }
+
+    elements.projectStatus.textContent = error.message;
+    setGenerationStatus('error', error.message);
+    state.project = await window.dongsan.loadProject();
+    render();
+  } finally {
+    state.generationInProgress = false;
+    state.generationCancelRequested = false;
+    renderQueueAndGallery();
+  }
+}
+
 async function novelAiInpaintSelectedImage() {
   const image = getSelectedImage();
   const scene = getSelectedScene();
@@ -2334,6 +2484,7 @@ async function novelAiInpaintSelectedImage() {
   try {
     await persistSettingsIfDirty();
     const sceneOverride = await persistScene(scene, 'prompt_approved');
+    state.i2iOpen = false;
     state.generationInProgress = true;
     state.generationCancelRequested = false;
     renderQueueAndGallery();
@@ -2393,11 +2544,19 @@ async function loadSelectedImagePromptToEditor() {
   render();
 }
 
-async function applyImageMetadataToEditor(payload) {
+async function applyImageMetadataToEditor(payload, options = {}) {
   const metadata = payload?.metadata || {};
   const scene = getSelectedScene();
 
-  applyImportedSettings(payload?.settings || metadata);
+  if (options.importGenerationSettings !== false) {
+    applyImportedSettings(payload?.settings || metadata);
+  }
+  if (metadata.basePrompt || metadata.prompt) {
+    state.settings.basePrompt = metadata.basePrompt || metadata.prompt;
+  }
+  if (metadata.baseNegativePrompt || metadata.negativePrompt) {
+    state.settings.baseNegativePrompt = metadata.baseNegativePrompt || metadata.negativePrompt;
+  }
   await saveImportedSettings();
 
   if (scene) {
@@ -2420,6 +2579,81 @@ async function applyImageMetadataToEditor(payload) {
   }
 
   render();
+
+  if (options.highlight) {
+    highlightPromptImportFields();
+  }
+}
+
+function closeDropImportDialog() {
+  if (state.droppedPngImport?.previewUrl) {
+    URL.revokeObjectURL(state.droppedPngImport.previewUrl);
+  }
+
+  state.droppedPngImport = null;
+  elements.dropImportDialog?.classList.add('hidden');
+  elements.dropImportPreviewImage?.removeAttribute('src');
+}
+
+function showDropImportDialog(importPayload) {
+  if (state.droppedPngImport?.previewUrl) {
+    URL.revokeObjectURL(state.droppedPngImport.previewUrl);
+  }
+
+  state.droppedPngImport = importPayload;
+  elements.dropImportPreviewImage.src = importPayload.previewUrl;
+  elements.dropImportMetaText.textContent = importPayload.payload?.metadata?.prompt
+    ? '메타데이터가 있는 PNG입니다. 원하는 방식으로 가져오세요.'
+    : '메타데이터를 찾았지만 프롬프트가 비어 있습니다.';
+  elements.dropImportDialog?.classList.remove('hidden');
+}
+
+async function importDroppedImageToCurrentScene(mode) {
+  const pending = state.droppedPngImport;
+  const scene = getSelectedScene();
+
+  if (!pending || !scene) {
+    setGenerationStatus('error', '먼저 씬을 선택한 뒤 PNG를 드롭하세요.');
+    return;
+  }
+
+  if (typeof window.dongsan.importImageForScene !== 'function') {
+    setGenerationStatus('error', 'PNG 이미지 가져오기 기능이 현재 실행 중인 앱에 없습니다. 앱을 완전히 종료한 뒤 다시 실행하세요.');
+    return;
+  }
+
+  try {
+    setGenerationStatus('running', mode === 'i2i' ? 'PNG를 I2I 소스로 가져오는 중...' : 'PNG를 인페인트 소스로 가져오는 중...');
+    await applyImageMetadataToEditor(pending.payload);
+    const result = await window.dongsan.importImageForScene(scene.id, pending.filePath, pending.payload?.metadata || {});
+    state.project = result.project;
+    state.selectedSceneId = scene.id;
+    state.selectedImageId = result.imageId;
+    state.i2iOpen = mode === 'i2i';
+    state.inpaintOpen = mode === 'inpaint';
+    closeDropImportDialog();
+    render();
+    setGenerationStatus('done', mode === 'i2i' ? 'I2I 소스 이미지 준비 완료' : '인페인트 소스 이미지 준비 완료');
+  } catch (error) {
+    setGenerationStatus('error', error.message);
+  }
+}
+
+async function importDroppedPromptOnly() {
+  const pending = state.droppedPngImport;
+
+  if (!pending) {
+    return;
+  }
+
+  try {
+    setGenerationStatus('running', 'PNG 프롬프트를 가져오는 중...');
+    await applyImageMetadataToEditor(pending.payload, { highlight: true, importGenerationSettings: false });
+    closeDropImportDialog();
+    setGenerationStatus('done', 'PNG 프롬프트를 가져왔습니다.');
+  } catch (error) {
+    setGenerationStatus('error', error.message);
+  }
 }
 
 async function importDroppedPngMetadata(file) {
@@ -2433,8 +2667,13 @@ async function importDroppedPngMetadata(file) {
   try {
     setGenerationStatus('running', 'PNG 생성 세팅 읽는 중...');
     const payload = await window.dongsan.readImageMetadata(filePath);
-    await applyImageMetadataToEditor(payload);
-    setGenerationStatus('done', 'PNG 생성 세팅을 불러왔습니다.');
+    showDropImportDialog({
+      filePath,
+      fileName: file?.name || filePath.split(/[\\/]/).pop() || 'image.png',
+      previewUrl: URL.createObjectURL(file),
+      payload
+    });
+    setGenerationStatus('idle', 'PNG 메타데이터를 읽었습니다. 가져올 방식을 선택하세요.');
   } catch (error) {
     setGenerationStatus('error', error.message);
   }
@@ -2451,10 +2690,14 @@ function addTagFromInput(input, target) {
   }
 
   if (target === 'positive') {
+    const previousTags = new Set(state.draftTags.map(normalizeTag));
     state.draftTags = orderPromptTags([...state.draftTags, ...tags]);
     state.draftTagAssignments = normalizeTagAssignments(state.draftTagAssignments, state.draftTags);
+    markRecentlyAddedTags(target, tags.filter((tag) => !previousTags.has(normalizeTag(tag)) && state.draftTags.includes(tag)));
   } else {
+    const previousTags = new Set(state.draftNegativeTags.map(normalizeTag));
     state.draftNegativeTags = orderPromptTags([...state.draftNegativeTags, ...tags]);
+    markRecentlyAddedTags(target, tags.filter((tag) => !previousTags.has(normalizeTag(tag)) && state.draftNegativeTags.includes(tag)));
   }
 
   input.value = '';
@@ -2581,6 +2824,10 @@ elements.rejectImageButton.addEventListener('click', rejectSelectedImage);
 elements.favoriteImageButton.addEventListener('click', toggleFavoriteSelectedImage);
 elements.saveImageNoteButton.addEventListener('click', saveSelectedImageNote);
 elements.novelAiVariationButton.addEventListener('click', novelAiVariationFromSelectedImage);
+elements.novelAiI2IButton.addEventListener('click', openI2IForSelectedImage);
+elements.novelAiI2IGenerateButton.addEventListener('click', novelAiI2ISelectedImage);
+elements.i2iStrengthInput.addEventListener('input', updateI2IControlLabels);
+elements.i2iNoiseInput.addEventListener('input', updateI2IControlLabels);
 elements.novelAiInpaintButton.addEventListener('click', novelAiInpaintSelectedImage);
 elements.inpaintBrushButton.addEventListener('click', () => setInpaintMode('brush'));
 elements.inpaintEraserButton.addEventListener('click', () => setInpaintMode('eraser'));
@@ -2594,6 +2841,15 @@ elements.inpaintMaskCanvas.addEventListener('pointermove', drawInpaintStroke);
 elements.inpaintMaskCanvas.addEventListener('pointerup', endInpaintStroke);
 elements.inpaintMaskCanvas.addEventListener('pointercancel', endInpaintStroke);
 elements.loadImagePromptButton.addEventListener('click', loadSelectedImagePromptToEditor);
+elements.dropImportCloseButton.addEventListener('click', closeDropImportDialog);
+elements.dropImportI2IButton.addEventListener('click', () => importDroppedImageToCurrentScene('i2i'));
+elements.dropImportInpaintButton.addEventListener('click', () => importDroppedImageToCurrentScene('inpaint'));
+elements.dropImportPromptButton.addEventListener('click', importDroppedPromptOnly);
+elements.dropImportDialog.addEventListener('click', (event) => {
+  if (event.target === elements.dropImportDialog) {
+    closeDropImportDialog();
+  }
+});
 
 document.querySelectorAll('[data-reject-reason]').forEach((button) => {
   button.addEventListener('click', async () => {

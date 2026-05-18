@@ -116,8 +116,29 @@
                   <button id="rejectImageButton" class="ghost-button compact-button" type="button">보류</button>
                   <button id="favoriteImageButton" class="ghost-button compact-button" type="button">즐겨찾기</button>
                   <button id="novelAiVariationButton" class="primary-button compact-button" type="button">해당 프롬프트로 재생성</button>
+                  <button id="novelAiI2IButton" class="primary-button compact-button" type="button">I2I 생성</button>
                   <button id="loadImagePromptButton" class="ghost-button compact-button" type="button">프롬프트 불러오기</button>
                 </div>
+                <section id="i2iPanel" class="i2i-panel hidden">
+                  <div class="i2i-panel-heading">
+                    <div>
+                      <p class="eyebrow">Image2Image</p>
+                      <h3>I2I</h3>
+                    </div>
+                    <span>선택 이미지를 전체적으로 변형</span>
+                  </div>
+                  <div class="i2i-controls">
+                    <label>
+                      <span>Strength <strong id="i2iStrengthValue">0.70</strong></span>
+                      <input id="i2iStrengthInput" type="range" min="0" max="1" step="0.05" value="0.7">
+                    </label>
+                    <label>
+                      <span>Noise <strong id="i2iNoiseValue">0.00</strong></span>
+                      <input id="i2iNoiseInput" type="range" min="0" max="1" step="0.05" value="0">
+                    </label>
+                    <button id="novelAiI2IGenerateButton" class="primary-button compact-button" type="button">I2I 생성</button>
+                  </div>
+                </section>
                 <section id="inpaintPanel" class="inpaint-panel hidden">
                   <div class="inpaint-toolbar">
                     <button id="inpaintBrushButton" class="primary-button compact-button" type="button">브러시</button>
@@ -383,6 +404,25 @@
       </aside>
 
     </main>
+
+    <section id="dropImportDialog" class="drop-import-dialog hidden" aria-modal="true" role="dialog">
+      <div class="drop-import-card">
+        <button id="dropImportCloseButton" class="drop-import-close" type="button" aria-label="닫기">×</button>
+        <div class="drop-import-copy">
+          <p class="eyebrow">PNG Import</p>
+          <h2>이 이미지로 무엇을 할까요?</h2>
+        </div>
+        <div class="drop-import-preview">
+          <img id="dropImportPreviewImage" alt="드롭한 PNG 미리보기">
+        </div>
+        <div class="drop-import-actions">
+          <button id="dropImportI2IButton" class="primary-button" type="button">I2I로</button>
+          <button id="dropImportInpaintButton" class="primary-button" type="button">인페로</button>
+          <button id="dropImportPromptButton" class="ghost-button" type="button">프롬프트만 가져오기</button>
+        </div>
+        <p id="dropImportMetaText" class="drop-import-meta">메타데이터가 있는 PNG입니다.</p>
+      </div>
+    </section>
 
     <script src="./renderer.js"></script>
   </body>

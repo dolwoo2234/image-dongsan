@@ -837,7 +837,11 @@ function createGenerationRecord(project, scene, imageRecords, settings = {}, mod
       cfgRescale: generationSettings.cfgRescale,
       noiseSchedule: generationSettings.noiseSchedule,
       width: generationSettings.width,
-      height: generationSettings.height
+      height: generationSettings.height,
+      sourceImageId: generationSettings.sourceImageId || '',
+      inpaintStrength: generationSettings.inpaintStrength ?? '',
+      i2iStrength: generationSettings.i2iStrength ?? '',
+      i2iNoise: generationSettings.i2iNoise ?? ''
     },
     favorite: false,
     status: 'candidate',
