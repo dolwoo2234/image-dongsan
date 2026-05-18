@@ -72,6 +72,13 @@ git pull --ff-only
 
 After a successful update, Dongsan restarts automatically.
 
+### v1.0.11
+
+- Added tag target assignment for draft tags: scene, Character 1, Character 2, and later character slots.
+- Routed scene/camera tags to the NovelAI base caption and character/action tags to the selected character caption.
+- Added more general Danbooru drafting rules from the latest scene-description sets.
+- Stopped generating default negative draft tags automatically.
+
 ### v1.0.10
 
 - Added more general Danbooru drafting rules from the Heart Delivery Service scene set.

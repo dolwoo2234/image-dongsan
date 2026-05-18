@@ -590,6 +590,10 @@ label {
   gap: 4px;
 }
 
+.tag-weight-controls.has-target {
+  grid-template-columns: 54px minmax(64px, auto) 24px;
+}
+
 .tag-weight-input {
   width: 54px;
   min-height: 24px;
@@ -675,6 +679,17 @@ textarea:focus {
   border-radius: 8px;
   background: rgba(12, 14, 19, 0.54);
   padding: 10px;
+}
+
+.tag-target-select {
+  min-height: 24px;
+  max-width: 82px;
+  border: 1px solid rgba(154, 164, 178, 0.25);
+  border-radius: 5px;
+  background: rgba(16, 18, 24, 0.58);
+  color: var(--text);
+  padding: 2px 4px;
+  font-size: 12px;
 }
 
 .character-slot.dragging {

@@ -9,6 +9,7 @@ const {
   parseTagDictionary,
   applyCustomTagRules,
   orderPromptTags,
+  normalizeTagAssignments,
   createMockGeneration
 } = require('../core');
 
@@ -130,7 +131,7 @@ function testDraftTags() {
   assert.ok(draft.tags.includes('rain'));
   assert.ok(draft.tags.includes('city street'));
   assert.ok(draft.tags.includes('night'));
-  assert.ok(draft.negativeTags.includes('bad anatomy'));
+  assert.deepStrictEqual(draft.negativeTags, []);
   assert.strictEqual(draft.tags.includes('best quality'), false);
   assert.strictEqual(draft.tags.includes('amazing quality'), false);
 }
@@ -459,6 +460,135 @@ function testHeartDeliveryServiceDraftTags() {
   assert.strictEqual(draft.tags.includes('explicit'), false);
 }
 
+function testBackViewCowgirlDraftTags() {
+  const draft = generateDraftTags([
+    '\uB4B7\uBAA8\uC2B5, \uC5C9\uB369\uC774 \uC798 \uBCF4\uC774\uAC8C \uD5C8\uBC85\uC9C0\uAE4C\uC9C0, \uC5C9\uB369\uC774 \uC4F0\uB2E4\uB4EC\uAE30 \uC88B\uC740 \uD3EC\uC988, \uAC77\uAE30 \uC88B\uC740 \uC790\uC138.',
+    '\uB204\uC6CC\uC788\uB294 \uB0A8\uC790 \uC2DC\uC810, \uC5EC\uC790\uAC00 \uD5C8\uB9AC \uC219\uC5EC\uC11C \uB0B4\uB824\uB2E4\uBD04.',
+    '\uC0C1\uCCB4 \uC77C\uC73C\uD0A8 \uC0C1\uD0DC, \uAC00\uC2B4 \uBC11\uC5D0\uC11C \uC798 \uBCF4\uC774\uAC8C.',
+    '\uB0A8\uC790 \uC704\uB85C \uC62C\uB77C\uD0C4 \uC0C1\uD0DC, \uAC00\uC2B4 \uBD80\uAC01, \uD314 \uD654\uBA74\uC73C\uB85C \uBED7\uC740 \uC0C1\uD0DC, \uB0A8\uC790\uC2DC\uC810 \uC0B4\uC9DD BELOW.',
+    '\uBC18\uCE21\uBA74\uC73C\uB85C \uBC14\uB77C\uBCF8 \uAC01\uB3C4, \uD398\uB2C8\uC2A4 \uD3EC\uCEE4\uC2A4, \uC5EC\uC790 \uC5BC\uAD74 \uB2E4 \uC548\uB098\uC640\uB3C4 \uB3FC\uC694.',
+    '\uD654\uBA74 \uAC00\uC6B4\uB370 \uD398\uB2C8\uC2A4, \uC5EC\uC790 \uB2E4\uB9AC \uBC8C\uB9AC\uACE0 \uB0A8\uC790 \uC704\uC5D0 \uC62C\uB77C\uD0C4 \uC0C1\uD0DC, FROM BELOW.',
+    '\uB300\uB538 \uD074\uB85C\uC988\uC5C5, \uD398\uB2C8\uC2A4 \uD3EC\uCEE4\uC2A4.',
+    '\uC0AC\uC774\uB4DC\uBDF0, \uC5EC\uC790 \uC62C\uB77C\uD0C4 \uC0C1\uD0DC, \uC190\uBC14\uB2E5\uC73C\uB85C \uADC0\uB450 \uC790\uADF9.',
+    '\uBC18\uCE21\uBA74\uC73C\uB85C \uB0A8\uC790 \uC704\uC5D0 \uC62C\uB77C\uD0C0\uC788\uACE0 \uB300\uB538\uC0C1\uD0DC, \uC5EC\uC790\uAC00 \uC0B4\uC9DD \uB0B4\uB824\uB2E4\uBCF4\uB294 \uB290\uB08C, \uAC00\uC18C\uB86D\uB2E4\uB294 \uD45C\uC815.',
+    '\uB300\uB538 \uBC1B\uB294 \uB0A8\uC790 \uBDF0, \uC5BC\uAD74 \uD3EC\uCEE4\uC2A4, \uAC00\uC2B4 \uC798 \uBCF4\uC774\uAC8C, \uC5EC\uC790\uB294 \uB0A8\uC790 \uC704\uC5D0 \uC5CE\uB4DC\uB9AC\uB4EF \uD5C8\uB9AC \uC219\uC778 \uC0C1\uD0DC.',
+    '\uB300\uB538\uD558\uB294 \uC190\uC744 \uB0A8\uC790\uAC00 \uC190\uC73C\uB85C \uB9C9\uACE0 \uC788\uB294\uB370 \uADF8 \uC190\uC5D0 \uACB0\uD63C\uBC18\uC9C0, \uD131\uAE4C\uC9C0\uB9CC \uBCF4\uC774\uACE0 \uB208\uC740 \uC548\uBCF4\uC5EC.',
+    '\uD600\uB85C \uD398\uB2C8\uC2A4 \uD565\uB294 \uC0C1\uD0DC, 69\uC790\uC138, \uC5EC\uC790 \uD398\uC774\uC2A4 + \uD398\uB2C8\uC2A4\uC5D0 \uD3EC\uCEE4\uC2A4, \uB0A8\uC790 \uB2E4\uB9AC \uC704\uC5D0 \uC190.',
+    '\uB300\uAC01\uC120\uBDF0, \uB0A8\uC790 \uC704\uC5D0 \uC5CE\uB4DC\uB9B0 \uC0C1\uD0DC\uC5D0\uC11C \uD30C\uC774\uC988\uB9AC, \uC5EC\uC790 \uC2DC\uC120\uBC29\uD5A5 \uB4A4\uB85C.',
+    '\uC0C1\uCCB4\uB9CC \uD0C8\uC758\uD55C \uC0C1\uD0DC\uC5D0\uC11C \uCE58\uB9C8 \uAC77\uACE0 \uD32C\uD2F0 \uC816\uD78C\uC0C1\uD0DC, \uC0BD\uC785 \uC804, \uD398\uB2C8\uC2A4\uB97C \uC5EC\uC790 \uC131\uAE30\uC5D0 \uBE44\uBE44\uC801, \uC5C9\uB369\uC774 \uD654\uBA74\uC5D0 \uBCF4\uC774\uACE0.',
+    '\uAE30\uC2B9\uC704, \uC0BD\uC785 \uD3EC\uCEE4\uC2A4, \uC5BC\uAD74 \uC548\uB098\uC640\uB3C4 \uB429\uB2C8\uB2E4.',
+    '\uAE30\uC2B9\uC704 \uBC11\uC5D0\uC11C \uBC14\uB77C\uBCF4\uB294 \uB290\uB08C, \uC5EC\uC790 \uAC00\uC2B4 \uC798 \uBCF4\uC774\uAC8C, \uC5EC\uC790\uAC00 \uB0A8\uC790 \uBA38\uB9AC\uCC44 \uC7A1\uACE0 \uC788\uC5B4\uC694, \uB0A8\uC790 \uB204\uC6CC\uC788\uC5B4\uC694.'
+  ].join('\n'));
+
+  [
+    'from behind',
+    'facing away',
+    'ass',
+    'ass focus',
+    'thighs',
+    'hand on another\'s ass',
+    'walking',
+    'pov',
+    'lying',
+    'bent over',
+    'leaning forward',
+    'looking down',
+    'underboob',
+    'upper body',
+    'sitting',
+    'straddling',
+    'girl on top',
+    'reaching towards viewer',
+    'from below',
+    'three quarter view',
+    'penis',
+    'penis focus',
+    'face out of frame',
+    'spread legs',
+    'from side',
+    'side view',
+    'glans',
+    'hand job',
+    'hands on penis',
+    'smirk',
+    'face focus',
+    'ring',
+    'wedding ring',
+    'cropped face',
+    'eyes out of frame',
+    'tongue',
+    'licking',
+    'licking penis',
+    'sixty-nine',
+    'hand on thigh',
+    'looking back',
+    'paizuri',
+    'topless',
+    'skirt lift',
+    'panty pull',
+    'panties aside',
+    'imminent penetration',
+    'penis on pussy',
+    'cowgirl position',
+    'sex',
+    'vaginal',
+    'hair grab',
+    'head grab'
+  ].forEach((tag) => {
+    assert.ok(draft.tags.includes(tag), `Expected ${tag} in ${draft.tags.join(', ')}`);
+  });
+
+  ['close-up', 'breast focus', 'explicit'].forEach((tag) => {
+    assert.strictEqual(draft.tags.includes(tag), false, `Did not expect ${tag} in ${draft.tags.join(', ')}`);
+  });
+}
+
+function testSofaMissionaryDraftTags() {
+  const draft = generateDraftTags([
+    'pov hand, from above, sofa, humping, penis on pussy, standing, m legs.',
+    '\uD131 \uBC11\uC5D0\uC11C\uBD80\uD130 \uD5C8\uBC85\uC9C0\uAE4C\uC9C0 \uBCF4\uC774\uAC8C, \uBAB8\uC744 \uB354\uB4EC\uB354\uB4EC, \uAC00\uC2B4 \uC704\uC8FC\uB85C \uD130\uCE58.',
+    '\uBC30\uB791 \uC190\uC5D0 \uC815\uC561\uC788\uB294 \uC0C1\uD0DC, \uC190\uC73C\uB85C \uBC30\uC5D0 \uC788\uB294 \uC815\uC561 \uB9CC\uC9C0\uB294 \uC911.',
+    '\uC815\uC0C1\uC704 side view \uC774\uC5B4\uB9AC\uD0B9\uC911, \uD0A4\uC2A4 \uC9C1\uC804.',
+    '\uC815\uBA74\uC5D0\uC11C \uBCF8 \uD6C4\uBC30\uC704, \uB0A8\uC790\uBD88\uC54C, \uB0A8\uC790 \uB4F1\uC9DD\uB9CC \uBCF4\uC774\uB294 \uC0C1\uD0DC.'
+  ].join('\n'));
+
+  [
+    'pov',
+    'pov hands',
+    'from above',
+    'couch',
+    'grinding',
+    'penis on pussy',
+    'standing',
+    'm legs',
+    'upper body',
+    'cropped face',
+    'thighs',
+    'groping',
+    'breast grab',
+    'hand on breast',
+    'stomach',
+    'cum',
+    'cum on stomach',
+    'cum on hand',
+    'hand on stomach',
+    'sex',
+    'missionary',
+    'side view',
+    'ear licking',
+    'licking',
+    'imminent kiss',
+    'kissing',
+    'doggystyle',
+    'straight-on',
+    'testicles',
+    'male back',
+    'from behind'
+  ].forEach((tag) => {
+    assert.ok(draft.tags.includes(tag), `Expected ${tag} in ${draft.tags.join(', ')}`);
+  });
+}
+
 function testCustomTagDictionaryRules() {
   const rules = parseTagDictionary([
     '■ 얼굴 - 감정',
@@ -475,6 +605,25 @@ function testCustomTagDictionaryRules() {
   assert.ok(applied.tags.includes('one eye closed'));
   assert.strictEqual(applied.tags.includes('looking at another'), false);
   assert.ok(applied.tags.includes(';d'));
+}
+
+function testTagAssignments() {
+  const assignments = normalizeTagAssignments({}, [
+    'from below',
+    'closed eyes',
+    'hand job',
+    'couch',
+    '2::smile::'
+  ]);
+
+  assert.strictEqual(assignments['from below'], 'scene');
+  assert.strictEqual(assignments.couch, 'scene');
+  assert.strictEqual(assignments['closed eyes'], 'character-0');
+  assert.strictEqual(assignments['hand job'], 'character-0');
+  assert.strictEqual(assignments['2::smile::'], 'character-0');
+
+  const preserved = normalizeTagAssignments({ 'closed eyes': 'character-1' }, ['closed eyes']);
+  assert.strictEqual(preserved['closed eyes'], 'character-1');
 }
 
 function testMockGeneration() {
@@ -559,7 +708,10 @@ testFocusCompositionDraftTags();
 testEmbraceAndSexCompositionDraftTags();
 testSecondSequenceCompositionDraftTags();
 testHeartDeliveryServiceDraftTags();
+testBackViewCowgirlDraftTags();
+testSofaMissionaryDraftTags();
 testCustomTagDictionaryRules();
+testTagAssignments();
 testMockGeneration();
 testFailedGeneration();
 

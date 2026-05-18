@@ -10,6 +10,7 @@ const state = {
   pendingCharacterPromptCarry: null,
   tagSearch: '',
   draftTags: [],
+  draftTagAssignments: {},
   draftNegativeTags: [],
   settings: null,
   secretStatus: null,
@@ -210,12 +211,12 @@ function uniqueTags(tags) {
 
 const promptTagOrder = [
   ['1girl', '1boy', 'multiple girls', 'solo'],
-  ['cowboy shot', 'bust shot', 'upper body', 'full body', 'wide shot', 'side view', 'from side', 'from above', 'from below', 'pov', 'dutch angle', 'looking at viewer', 'looking back'],
-  ['indoors', 'outdoors', 'entrance', 'doorway', 'bedroom', 'bathroom', 'bathtub', 'open door', 'bed', 'table', 'school', 'classroom', 'market street', 'city street', 'forest', 'night', 'sunset', 'rain'],
-  ['standing', 'walking', 'sitting', 'kneeling', 'lying', 'leaning forward', 'leaning on person', 'arms around shoulders', 'arms around neck', 'hug', 'holding hands', 'holding paper', 'waving', 'hands behind back', 'hair flip', 'pointing', 'straddling', 'girl on top', 'cowgirl position', 'sitting on lap', 'upright straddle', 'all fours', 'head tilt', 'head shaking', 'wink', 'whispering', 'whisper to ear', 'sniffing', 'background crowd'],
-  ['smile', 'expressionless', 'angry', 'glaring', 'scared', 'surprised', 'embarrassed', 'drunk', 'blush', 'tears'],
-  ['breasts', 'ass focus', 'lower body', 'cropped torso', 'face out of frame', 'cropped face', 'ear', 'thighs', 'tail', 'tail grab', 'tail wagging', 'hand on another\'s ass', 'hand on thigh', 'highly detailed'],
-  ['sex', 'vaginal', 'pussy', 'pussy focus', 'spread legs', 'fingering', 'clitoris', 'breast sucking', 'breast grab', 'breast press', 'nipple flick', 'hand on nipple', 'kissing', 'saliva', 'hand job', 'hands on penis', 'ear licking', 'licking', 'nude', 'bottomless', 'partially undressed', 'doggystyle', 'cowgirl position', 'paizuri', 'mating press', 'missionary', 'fellatio', 'cum', 'cumdrip', 'cum on breasts', 'female ejaculation', 'after sex', 'restrained', 'hand over mouth', 'head grab'],
+  ['cowboy shot', 'bust shot', 'upper body', 'full body', 'wide shot', 'side view', 'from side', 'from above', 'from below', 'pov', 'straight-on', 'dutch angle', 'looking at viewer', 'looking down', 'looking back'],
+  ['indoors', 'outdoors', 'entrance', 'doorway', 'bedroom', 'bathroom', 'bathtub', 'open door', 'bed', 'couch', 'table', 'school', 'classroom', 'market street', 'city street', 'forest', 'night', 'sunset', 'rain'],
+  ['standing', 'walking', 'sitting', 'kneeling', 'lying', 'bent over', 'leaning forward', 'leaning on person', 'arms around shoulders', 'arms around neck', 'hug', 'holding hands', 'holding paper', 'waving', 'hands behind back', 'hair flip', 'pointing', 'straddling', 'girl on top', 'cowgirl position', 'sitting on lap', 'upright straddle', 'all fours', 'head tilt', 'head shaking', 'wink', 'whispering', 'whisper to ear', 'sniffing', 'background crowd'],
+  ['smile', 'smirk', 'expressionless', 'angry', 'glaring', 'scared', 'surprised', 'embarrassed', 'drunk', 'blush', 'tears'],
+  ['breasts', 'underboob', 'ass', 'ass focus', 'penis focus', 'face focus', 'lower body', 'cropped torso', 'male back', 'stomach', 'm legs', 'face out of frame', 'eyes out of frame', 'cropped face', 'ear', 'thighs', 'tail', 'tail grab', 'tail wagging', 'hand on another\'s ass', 'hand on thigh', 'hand on breast', 'hand on stomach', 'groping', 'ring', 'wedding ring', 'highly detailed'],
+  ['sex', 'vaginal', 'pussy', 'pussy focus', 'spread legs', 'fingering', 'clitoris', 'breast sucking', 'breast grab', 'breast press', 'nipple flick', 'hand on nipple', 'kissing', 'imminent kiss', 'saliva', 'hand job', 'hands on penis', 'hand on penis', 'penis', 'glans', 'testicles', 'tongue', 'licking penis', 'ear licking', 'licking', 'nude', 'topless', 'bottomless', 'partially undressed', 'skirt lift', 'panty pull', 'panties aside', 'imminent penetration', 'penis on pussy', 'grinding', 'sixty-nine', 'doggystyle', 'cowgirl position', 'paizuri', 'mating press', 'missionary', 'fellatio', 'cum', 'cumdrip', 'cum on breasts', 'cum on stomach', 'cum on hand', 'female ejaculation', 'after sex', 'restrained', 'hand over mouth', 'hair grab', 'head grab'],
   ['paper', 'document', 'briefcase', 'cushion', 'holding phone', 'smartphone', 'drinking', 'undressing', 'covering self', 'forehead-to-forehead', 'facing another', 'reaching towards viewer']
 ];
 
@@ -225,6 +226,70 @@ const promptTagRank = promptTagOrder.reduce((acc, group, groupIndex) => {
   });
   return acc;
 }, {});
+
+const tagTargetSceneLabels = new Set([
+  '1girl', '1boy', 'multiple girls', 'solo',
+  'cowboy shot', 'bust shot', 'upper body', 'full body', 'wide shot',
+  'pov', 'pov hands', 'pov doorway', 'multiple views', 'straight-on',
+  'facing away', 'three quarter view', 'dutch angle', 'upside-down',
+  'from above', 'high up', 'from below', 'side view', 'from side',
+  'facing to the side', 'profile', 'from behind', 'indoors', 'outdoors',
+  'entrance', 'doorway', 'bedroom', 'bathroom', 'bathtub', 'open door',
+  'bed', 'couch', 'table', 'school', 'classroom', 'market street',
+  'city street', 'forest', 'night', 'sunset', 'rain', 'sex', 'vaginal',
+  'kissing', 'imminent kiss', 'saliva', 'imminent penetration',
+  'penis on pussy', 'grinding', 'sixty-nine', 'doggystyle',
+  'cowgirl position', 'paizuri', 'mating press', 'missionary',
+  'fellatio', 'after sex', 'forehead-to-forehead', 'facing another',
+  'reaching towards viewer'
+]);
+
+function getDefaultTagTarget(tag) {
+  const label = getTagSortLabel(tag);
+  return tagTargetSceneLabels.has(label) ? 'scene' : 'character-0';
+}
+
+function normalizeTagAssignments(assignments, tags) {
+  const source = assignments && typeof assignments === 'object' ? assignments : {};
+  return Object.fromEntries(uniqueTags(tags).map((tag) => {
+    const savedTarget = source[tag] || source[getTagSortLabel(tag)];
+    return [tag, savedTarget || getDefaultTagTarget(tag)];
+  }));
+}
+
+function getTagTarget(tag) {
+  return state.draftTagAssignments[tag] || state.draftTagAssignments[getTagSortLabel(tag)] || getDefaultTagTarget(tag);
+}
+
+function splitTagsByTarget(tags, assignments = {}) {
+  return uniqueTags(tags).reduce((acc, tag) => {
+    const target = assignments[tag] || assignments[getTagSortLabel(tag)] || getDefaultTagTarget(tag);
+
+    if (target === 'scene') {
+      acc.sceneTags.push(tag);
+      return acc;
+    }
+
+    const match = String(target).match(/^character-(\d+)$/);
+    const characterIndex = match ? Number(match[1]) : 0;
+    if (!acc.characterTags[characterIndex]) {
+      acc.characterTags[characterIndex] = [];
+    }
+    acc.characterTags[characterIndex].push(tag);
+    return acc;
+  }, { sceneTags: [], characterTags: [] });
+}
+
+function appendTagsToCharacterPromptLines(characterPromptsText, characterTags) {
+  const lines = String(characterPromptsText || '').split('\n');
+  const count = Math.max(lines.length, characterTags.length, 1);
+
+  return Array.from({ length: count }, (_item, index) => {
+    const prompt = (lines[index] || '').trim();
+    const tags = orderPromptTags(characterTags[index] || []);
+    return [prompt, ...tags].filter(Boolean).join(', ');
+  }).filter(Boolean);
+}
 
 function orderPromptTags(tags) {
   return uniqueTags(tags).sort((left, right) => {
@@ -307,11 +372,12 @@ function syncPromptFromTags() {
   refreshPromptPreview();
 }
 
-function buildCombinedPrompt(basePrompt, draftTags, characterPromptsText) {
+function buildCombinedPrompt(basePrompt, draftTags, characterPromptsText, tagAssignments = {}) {
+  const { sceneTags, characterTags } = splitTagsByTarget(draftTags, tagAssignments);
   const parts = [
     basePrompt.trim(),
-    ...orderPromptTags(draftTags),
-    ...characterPromptsText.split('\n').map((line) => line.trim()).filter(Boolean)
+    ...orderPromptTags(sceneTags),
+    ...appendTagsToCharacterPromptLines(characterPromptsText, characterTags)
   ];
   return parts.filter(Boolean).join(', ');
 }
@@ -321,12 +387,14 @@ function getComputedPromptPreviews() {
     prompt: buildCombinedPrompt(
     state.settings?.basePrompt || '',
     state.draftTags,
-    elements.characterPromptsInput.value
+    elements.characterPromptsInput.value,
+    state.draftTagAssignments
     ),
     negativePrompt: buildCombinedPrompt(
       state.settings?.baseNegativePrompt || '',
       state.draftNegativeTags,
-      elements.characterNegativePromptsInput.value
+      elements.characterNegativePromptsInput.value,
+      Object.fromEntries(state.draftNegativeTags.map((tag) => [tag, 'scene']))
     )
   };
 }
@@ -462,6 +530,7 @@ function finishCharacterSlotReorder() {
   syncCharacterInputsFromSlots();
   setDirty(true);
   refreshPromptPreview();
+  renderTagChips();
 }
 
 function getCharacterSlotAfterDrag(container, y) {
@@ -610,6 +679,7 @@ function createCharacterPromptSlot(prompt = '', negativePrompt = '', position = 
       syncCharacterInputsFromSlots();
       setDirty(true);
       refreshPromptPreview();
+      renderTagChips();
     });
   });
 
@@ -624,6 +694,7 @@ function createCharacterPromptSlot(prompt = '', negativePrompt = '', position = 
     syncCharacterInputsFromSlots();
     setDirty(true);
     refreshPromptPreview();
+    renderTagChips();
   });
 
   dragHandle.addEventListener('dragstart', (event) => {
@@ -782,7 +853,11 @@ function renderSceneList() {
 }
 function updateTagAtIndex(target, index, nextTag) {
   if (target === 'positive') {
+    const previousTag = state.draftTags[index];
+    const previousTarget = previousTag ? getTagTarget(previousTag) : getDefaultTagTarget(nextTag);
     state.draftTags = state.draftTags.map((tag, tagIndex) => tagIndex === index ? nextTag : tag);
+    delete state.draftTagAssignments[previousTag];
+    state.draftTagAssignments[nextTag] = previousTarget;
   } else {
     state.draftNegativeTags = state.draftNegativeTags.map((tag, tagIndex) => tagIndex === index ? nextTag : tag);
   }
@@ -794,11 +869,25 @@ function updateTagAtIndex(target, index, nextTag) {
 
 function removeTagAtIndex(target, index) {
   if (target === 'positive') {
+    const previousTag = state.draftTags[index];
     state.draftTags = state.draftTags.filter((_tag, tagIndex) => tagIndex !== index);
+    delete state.draftTagAssignments[previousTag];
   } else {
     state.draftNegativeTags = state.draftNegativeTags.filter((_tag, tagIndex) => tagIndex !== index);
   }
 
+  syncPromptFromTags();
+  setDirty(true);
+  renderTagChips();
+}
+
+function updateTagAssignmentAtIndex(index, nextTarget) {
+  const tag = state.draftTags[index];
+  if (!tag) {
+    return;
+  }
+
+  state.draftTagAssignments[tag] = nextTarget;
   syncPromptFromTags();
   setDirty(true);
   renderTagChips();
@@ -810,6 +899,7 @@ function createChip(tag, index, target, isSearchMatch = false) {
   const name = document.createElement('span');
   const controls = document.createElement('span');
   const weightInput = document.createElement('input');
+  const targetSelect = document.createElement('select');
   const removeButton = document.createElement('button');
 
   chip.className = `tag-chip${isSearchMatch ? ' search-match' : ''}`;
@@ -817,13 +907,41 @@ function createChip(tag, index, target, isSearchMatch = false) {
   name.textContent = parsed.label;
   name.title = tag;
 
-  controls.className = 'tag-weight-controls';
+  controls.className = target === 'positive' ? 'tag-weight-controls has-target' : 'tag-weight-controls';
 
   weightInput.type = 'number';
   weightInput.className = 'tag-weight-input';
   weightInput.step = '0.1';
   weightInput.value = formatWeight(parsed.weight);
   weightInput.title = 'NovelAI weight. 1 is normal, -1 suppresses the tag.';
+
+  targetSelect.className = 'tag-target-select';
+  targetSelect.title = 'Tag target';
+  if (target === 'positive') {
+    const slots = getCharacterPromptSlots();
+    const assignedTarget = getTagTarget(tag);
+    const assignedMatch = String(assignedTarget).match(/^character-(\d+)$/);
+    const assignedCount = assignedMatch ? Number(assignedMatch[1]) + 1 : 1;
+    const characterCount = Math.max(slots.length, assignedCount, 1);
+    const options = [
+      ['scene', '장면']
+    ];
+
+    for (let characterIndex = 0; characterIndex < characterCount; characterIndex += 1) {
+      options.push([`character-${characterIndex}`, `C${characterIndex + 1}`]);
+    }
+
+    options.forEach(([value, label]) => {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = label;
+      targetSelect.appendChild(option);
+    });
+    targetSelect.value = assignedTarget;
+    targetSelect.addEventListener('change', () => {
+      updateTagAssignmentAtIndex(index, targetSelect.value);
+    });
+  }
 
   removeButton.type = 'button';
   removeButton.className = 'tag-remove-button';
@@ -849,7 +967,11 @@ function createChip(tag, index, target, isSearchMatch = false) {
     removeTagAtIndex(target, index);
   });
 
-  controls.append(weightInput, removeButton);
+  if (target === 'positive') {
+    controls.append(weightInput, targetSelect, removeButton);
+  } else {
+    controls.append(weightInput, removeButton);
+  }
   chip.append(name, controls);
   return chip;
 }
@@ -1014,6 +1136,7 @@ function renderSceneForm(options = {}) {
     elements.emptyState.classList.remove('hidden');
     elements.sceneForm.classList.add('hidden');
     state.draftTags = [];
+    state.draftTagAssignments = {};
     state.draftNegativeTags = [];
     state.selectedImageId = null;
     elements.carryCharacterToNextSceneButton.disabled = true;
@@ -1042,6 +1165,7 @@ function renderSceneForm(options = {}) {
   elements.characterPositionsInput.value = characterPrompts.positions;
   renderCharacterPromptSlots();
   state.draftTags = uniqueTags(scene.tags || []);
+  state.draftTagAssignments = normalizeTagAssignments(scene.tagAssignments, state.draftTags);
   state.draftNegativeTags = uniqueTags(scene.negativeTags || []);
   const hadPendingCharacterPromptCarry = Boolean(state.pendingCharacterPromptCarry);
   const usesCarriedCharacterPrompts = Boolean(state.pendingCharacterPromptCarry);
@@ -1848,14 +1972,20 @@ async function copyCharacterPreset() {
 
 function buildSceneFromForm(scene, statusOverride) {
   const tags = uniqueTags(state.draftTags);
+  const tagAssignments = normalizeTagAssignments(state.draftTagAssignments, tags);
   const negativeTags = uniqueTags(state.draftNegativeTags);
   const basePrompt = state.settings?.basePrompt || '';
   const baseNegativePrompt = state.settings?.baseNegativePrompt || '';
   const characterPromptsText = elements.characterPromptsInput.value.trim();
   const characterNegativePromptsText = elements.characterNegativePromptsInput.value.trim();
   const characterPositionsText = elements.characterPositionsInput.value.trim();
-  const combinedPrompt = buildCombinedPrompt(basePrompt, tags, characterPromptsText);
-  const combinedNegativePrompt = buildCombinedPrompt(baseNegativePrompt, negativeTags, characterNegativePromptsText);
+  const combinedPrompt = buildCombinedPrompt(basePrompt, tags, characterPromptsText, tagAssignments);
+  const combinedNegativePrompt = buildCombinedPrompt(
+    baseNegativePrompt,
+    negativeTags,
+    characterNegativePromptsText,
+    Object.fromEntries(negativeTags.map((tag) => [tag, 'scene']))
+  );
   const prompt = elements.promptInput.value.trim() || combinedPrompt;
   const negativePrompt = elements.negativePromptInput.value.trim() || combinedNegativePrompt;
 
@@ -1864,6 +1994,7 @@ function buildSceneFromForm(scene, statusOverride) {
     sceneNo: elements.sceneNoInput.value.trim() || scene.sceneNo,
     description: elements.descriptionInput.value.trim(),
     tags,
+    tagAssignments,
     negativeTags,
     basePrompt,
     baseNegativePrompt,
@@ -2247,6 +2378,7 @@ async function loadSelectedImagePromptToEditor() {
     ...scene,
     basePrompt: metadata.basePrompt || scene.basePrompt || '',
     baseNegativePrompt: metadata.baseNegativePrompt || scene.baseNegativePrompt || '',
+    tagAssignments: metadata.tagAssignments || scene.tagAssignments || {},
     characterPromptsText: metadata.characterPromptsText || scene.characterPromptsText || '',
     characterNegativePromptsText: metadata.characterNegativePromptsText || scene.characterNegativePromptsText || '',
     characterPositionsText: metadata.characterPositionsText || scene.characterPositionsText || '',
@@ -2273,6 +2405,7 @@ async function applyImageMetadataToEditor(payload) {
       ...scene,
       basePrompt: metadata.basePrompt || metadata.prompt || scene.basePrompt || '',
       baseNegativePrompt: metadata.baseNegativePrompt || metadata.negativePrompt || scene.baseNegativePrompt || '',
+      tagAssignments: metadata.tagAssignments || scene.tagAssignments || {},
       characterPromptsText: metadata.characterPromptsText || scene.characterPromptsText || '',
       characterNegativePromptsText: metadata.characterNegativePromptsText || scene.characterNegativePromptsText || '',
       characterPositionsText: metadata.characterPositionsText || scene.characterPositionsText || '',
@@ -2319,6 +2452,7 @@ function addTagFromInput(input, target) {
 
   if (target === 'positive') {
     state.draftTags = orderPromptTags([...state.draftTags, ...tags]);
+    state.draftTagAssignments = normalizeTagAssignments(state.draftTagAssignments, state.draftTags);
   } else {
     state.draftNegativeTags = orderPromptTags([...state.draftNegativeTags, ...tags]);
   }
@@ -2331,6 +2465,7 @@ function addTagFromInput(input, target) {
 
 function organizeTagsForSelectedScene() {
   state.draftTags = orderPromptTags(state.draftTags);
+  state.draftTagAssignments = normalizeTagAssignments(state.draftTagAssignments, state.draftTags);
   state.draftNegativeTags = orderPromptTags(state.draftNegativeTags);
   refreshPromptPreview();
   setDirty(true);
@@ -2370,6 +2505,10 @@ function organizeTagsForSelectedScene() {
 elements.addCharacterButton.addEventListener('click', () => {
   elements.characterSlots.appendChild(createCharacterPromptSlot());
   renumberCharacterSlots();
+  syncCharacterInputsFromSlots();
+  setDirty(true);
+  refreshPromptPreview();
+  renderTagChips();
 });
 elements.characterSlots.addEventListener('dragover', handleCharacterSlotDragOver);
 
