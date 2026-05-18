@@ -48,6 +48,10 @@ npm start
 
 ![Import TXT and select a scene](docs/beginner-guide/02-import-and-select.svg)
 
+#txt 파일 예시
+<img width="428" height="754" alt="스크린샷 2026-05-18 160631" src="https://github.com/user-attachments/assets/a56ab08a-49ae-477e-b8da-cb3d665db576" />
+
+
 ![Generate tags and insert character prompts](docs/beginner-guide/03-tags-and-character.svg)
 
 ![Generate the first image](docs/beginner-guide/04-generate-first-image.svg)
