@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+node --check index.js
+node --check renderer.js
+node --check preload.js
+node --check core.js
+npm test

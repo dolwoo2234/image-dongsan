@@ -17,6 +17,7 @@ const state = {
   settings: null,
   secretStatus: null,
   updateInfo: null,
+  guideStepIndex: 0,
   i2iOpen: false,
   droppedPngImport: null,
   inpaintOpen: false,
@@ -148,7 +149,16 @@ const elements = {
   dropImportI2IButton: document.querySelector('#dropImportI2IButton'),
   dropImportInpaintButton: document.querySelector('#dropImportInpaintButton'),
   dropImportPromptButton: document.querySelector('#dropImportPromptButton'),
-  dropImportMetaText: document.querySelector('#dropImportMetaText')
+  dropImportSeedCheckbox: document.querySelector('#dropImportSeedCheckbox'),
+  dropImportMetaText: document.querySelector('#dropImportMetaText'),
+  openGuideButton: document.querySelector('#openGuideButton'),
+  guideDialog: document.querySelector('#guideDialog'),
+  guideCloseButton: document.querySelector('#guideCloseButton'),
+  guideTitle: document.querySelector('#guideTitle'),
+  guideBody: document.querySelector('#guideBody'),
+  guideStepText: document.querySelector('#guideStepText'),
+  guidePrevButton: document.querySelector('#guidePrevButton'),
+  guideNextButton: document.querySelector('#guideNextButton')
 };
 
 const statusLabels = {
@@ -165,6 +175,62 @@ const statusLabels = {
   keep: '채택',
   rejected: '보류'
 };
+
+const guideStorageKey = 'dongsan.beginnerGuide.seen.v2';
+const guideSteps = [
+  {
+    selector: '#importButton',
+    title: '1. TXT 불러오기',
+    body: '작업은 TXT 불러오기에서 시작합니다. 장면 번호가 들어간 메모장을 불러오면 왼쪽 씬 목록에 장면들이 생깁니다.'
+  },
+  {
+    selector: '#sceneList',
+    title: '2. 씬 선택',
+    body: '왼쪽 씬 목록에서 작업할 씬을 고릅니다. 생성 완료, 프롬프트 승인됨, 불러옴 상태 색으로 진행도를 확인할 수 있습니다.'
+  },
+  {
+    selector: '#generateTagsButton',
+    title: '3. 태그 초안 생성',
+    body: '씬을 고른 뒤 태그 초안 생성을 누르면 장면묘사에서 Danbooru 태그 초안이 만들어집니다.'
+  },
+  {
+    selector: '#organizeTagsButton',
+    title: '4. 가이드 순서로 정리',
+    body: '태그가 많아졌다면 가이드 순서로 정리를 눌러 카메라, 장소, 행동, 신체 태그가 보기 좋게 정렬되도록 합니다.'
+  },
+  {
+    selector: '#insertCharacterPresetButton',
+    title: '5. 캐릭터 프리셋 넣기',
+    body: '캐릭터 프롬프트 저장소에서 프리셋을 고르고 현재 씬에 넣기를 누르면 캐릭터 프롬프트 칸에 들어갑니다.'
+  },
+  {
+    selector: '#tagChips',
+    title: '6. 태그 수정과 대상 지정',
+    body: '태그 칩에서 숫자는 강조값을 바꾸고, 장면/C1/C2/C1&C2 선택은 어느 프롬프트 줄에 들어갈지 정합니다.'
+  },
+  {
+    selector: '#novelAiGenerateButton',
+    title: '7. 현재 씬 생성',
+    body: '프롬프트가 준비되면 현재 씬 생성을 누릅니다. 연속 실행 숫자를 1 또는 5로 빠르게 바꿀 수도 있습니다.'
+  },
+  {
+    selector: '#galleryList',
+    placement: 'bottom-center',
+    title: '8. 갤러리에서 결과 확인',
+    body: '생성 결과는 오른쪽 갤러리에 쌓입니다. 이미지를 선택하면 중앙 미리보기에서 재생성, I2I, 인페인트 작업을 이어갈 수 있습니다.'
+  },
+  {
+    selector: '#toggleSettingsButton',
+    title: '9. NovelAI 설정 펼치기',
+    body: '처음 사용하는 PC에서는 오른쪽 설정 영역의 펼치기를 눌러 NovelAI 설정을 먼저 열어주세요.'
+  },
+  {
+    selector: '#apiKeyInput',
+    expandSettings: true,
+    title: '10. NovelAI API 키 저장',
+    body: '설정이 열린 뒤 API 키를 입력하고 저장을 누르면 실제 생성 버튼을 사용할 수 있습니다. API 키는 프로젝트 JSON이 아니라 이 PC에 따로 저장됩니다.'
+  }
+];
 
 function labelStatus(status) {
   return statusLabels[status] || status || '없음';
@@ -254,7 +320,7 @@ const tagTargetSceneLabels = new Set([
   'facing to the side', 'profile', 'from behind', 'indoors', 'outdoors',
   'entrance', 'doorway', 'bedroom', 'bathroom', 'bathtub', 'open door',
   'bed', 'couch', 'table', 'school', 'classroom', 'market street',
-  'city street', 'forest', 'night', 'sunset', 'rain', 'sex', 'vaginal',
+  'city street', 'forest', 'night', 'sunset', 'rain', 'vaginal',
   'kissing', 'imminent kiss', 'saliva', 'imminent penetration',
   'penis on pussy', 'grinding', 'sixty-nine', 'doggystyle',
   'cowgirl position', 'paizuri', 'mating press', 'missionary',
@@ -264,7 +330,12 @@ const tagTargetSceneLabels = new Set([
 
 function getDefaultTagTarget(tag) {
   const label = getTagSortLabel(tag);
-  return tagTargetSceneLabels.has(label) ? 'scene' : 'character-0';
+  const targetMap = {
+    "underbody to male's face": 'character-0',
+    'top-down bottom-up': 'character-1'
+  };
+
+  return targetMap[label] || (tagTargetSceneLabels.has(label) ? 'scene' : 'character-0');
 }
 
 function normalizeTagAssignments(assignments, tags) {
@@ -279,6 +350,21 @@ function getTagTarget(tag) {
   return state.draftTagAssignments[tag] || state.draftTagAssignments[getTagSortLabel(tag)] || getDefaultTagTarget(tag);
 }
 
+function getCharacterIndexesForTagTarget(target) {
+  const normalized = String(target || '');
+  const multiMatch = normalized.match(/^characters-([0-9-]+)$/);
+
+  if (multiMatch) {
+    return multiMatch[1]
+      .split('-')
+      .map((value) => Number(value))
+      .filter((value, index, values) => Number.isInteger(value) && value >= 0 && values.indexOf(value) === index);
+  }
+
+  const singleMatch = normalized.match(/^character-(\d+)$/);
+  return singleMatch ? [Number(singleMatch[1])] : [0];
+}
+
 function splitTagsByTarget(tags, assignments = {}) {
   return uniqueTags(tags).reduce((acc, tag) => {
     const target = assignments[tag] || assignments[getTagSortLabel(tag)] || getDefaultTagTarget(tag);
@@ -288,12 +374,12 @@ function splitTagsByTarget(tags, assignments = {}) {
       return acc;
     }
 
-    const match = String(target).match(/^character-(\d+)$/);
-    const characterIndex = match ? Number(match[1]) : 0;
-    if (!acc.characterTags[characterIndex]) {
-      acc.characterTags[characterIndex] = [];
-    }
-    acc.characterTags[characterIndex].push(tag);
+    getCharacterIndexesForTagTarget(target).forEach((characterIndex) => {
+      if (!acc.characterTags[characterIndex]) {
+        acc.characterTags[characterIndex] = [];
+      }
+      acc.characterTags[characterIndex].push(tag);
+    });
     return acc;
   }, { sceneTags: [], characterTags: [] });
 }
@@ -964,8 +1050,11 @@ function createChip(tag, index, target, isSearchMatch = false) {
     const slots = getCharacterPromptSlots();
     const assignedTarget = getTagTarget(tag);
     const assignedMatch = String(assignedTarget).match(/^character-(\d+)$/);
-    const assignedCount = assignedMatch ? Number(assignedMatch[1]) + 1 : 1;
-    const characterCount = Math.max(slots.length, assignedCount, 1);
+    const assignedIndexes = getCharacterIndexesForTagTarget(assignedTarget);
+    const assignedCount = assignedMatch
+      ? Number(assignedMatch[1]) + 1
+      : Math.max(...assignedIndexes.map((value) => value + 1), 1);
+    const characterCount = Math.max(slots.length, assignedCount, 2);
     const options = [
       ['scene', '장면']
     ];
@@ -973,6 +1062,8 @@ function createChip(tag, index, target, isSearchMatch = false) {
     for (let characterIndex = 0; characterIndex < characterCount; characterIndex += 1) {
       options.push([`character-${characterIndex}`, `C${characterIndex + 1}`]);
     }
+
+    options.splice(3, 0, ['characters-0-1', 'C1&C2']);
 
     options.forEach(([value, label]) => {
       const option = document.createElement('option');
@@ -1679,6 +1770,87 @@ async function loadProject() {
   state.settingsDirty = false;
   setDirty(false);
   render();
+  maybeOpenGuideOnFirstRun();
+}
+
+function getGuideTarget(step) {
+  return step?.selector ? document.querySelector(step.selector) : null;
+}
+
+function clearGuideHighlight() {
+  document.querySelectorAll('.guide-highlight-target').forEach((element) => {
+    element.classList.remove('guide-highlight-target');
+  });
+}
+
+function ensureSettingsExpandedForGuide() {
+  if (!elements.settingsSection?.classList.contains('collapsed')) {
+    return;
+  }
+
+  elements.settingsSection.classList.remove('collapsed');
+  elements.toggleSettingsButton.textContent = '접기';
+}
+
+function showGuideStep() {
+  const step = guideSteps[state.guideStepIndex] || guideSteps[0];
+  if (step.expandSettings) {
+    ensureSettingsExpandedForGuide();
+  }
+
+  const target = getGuideTarget(step);
+
+  elements.guideTitle.textContent = step.title;
+  elements.guideBody.textContent = step.body;
+  elements.guideStepText.textContent = `${state.guideStepIndex + 1} / ${guideSteps.length}`;
+  elements.guidePrevButton.disabled = state.guideStepIndex === 0;
+  elements.guideNextButton.textContent = state.guideStepIndex === guideSteps.length - 1 ? '완료' : '다음';
+  elements.guideDialog.classList.remove('guide-placement-bottom-center');
+  elements.guideDialog.classList.toggle('guide-placement-bottom-center', step.placement === 'bottom-center');
+  clearGuideHighlight();
+
+  if (target) {
+    target.classList.add('guide-highlight-target');
+    target.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+  }
+}
+
+function openGuide(options = {}) {
+  state.guideStepIndex = Number.isInteger(options.stepIndex) ? options.stepIndex : 0;
+  elements.guideDialog?.classList.remove('hidden');
+  showGuideStep();
+}
+
+function closeGuide(markSeen = true) {
+  elements.guideDialog?.classList.add('hidden');
+  clearGuideHighlight();
+
+  if (markSeen) {
+    localStorage.setItem(guideStorageKey, '1');
+  }
+}
+
+function nextGuideStep() {
+  if (state.guideStepIndex >= guideSteps.length - 1) {
+    closeGuide(true);
+    return;
+  }
+
+  state.guideStepIndex += 1;
+  showGuideStep();
+}
+
+function prevGuideStep() {
+  state.guideStepIndex = Math.max(0, state.guideStepIndex - 1);
+  showGuideStep();
+}
+
+function maybeOpenGuideOnFirstRun() {
+  if (localStorage.getItem(guideStorageKey) === '1') {
+    return;
+  }
+
+  window.setTimeout(() => openGuide(), 450);
 }
 
 async function importText() {
@@ -1799,6 +1971,20 @@ function applyImportedSettings(settings) {
     ...(state.settings || {}),
     ...cleanedSettings,
     provider: 'novelai'
+  };
+}
+
+function omitSeedFromImportPayload(payload) {
+  const metadata = { ...(payload?.metadata || {}) };
+  const settings = { ...(payload?.settings || {}) };
+
+  delete metadata.seed;
+  delete settings.seed;
+
+  return {
+    ...payload,
+    metadata,
+    settings
   };
 }
 
@@ -2545,12 +2731,15 @@ async function loadSelectedImagePromptToEditor() {
 }
 
 async function applyImageMetadataToEditor(payload, options = {}) {
-  const metadata = payload?.metadata || {};
+  const importSeed = options.importSeed === true;
+  const normalizedPayload = importSeed ? payload : omitSeedFromImportPayload(payload);
+  const metadata = normalizedPayload?.metadata || {};
   const scene = getSelectedScene();
 
   if (options.importGenerationSettings !== false) {
-    applyImportedSettings(payload?.settings || metadata);
+    applyImportedSettings(normalizedPayload?.settings || metadata);
   }
+  state.settings.seed = importSeed ? (state.settings.seed || '') : '';
   if (metadata.basePrompt || metadata.prompt) {
     state.settings.basePrompt = metadata.basePrompt || metadata.prompt;
   }
@@ -2601,6 +2790,7 @@ function showDropImportDialog(importPayload) {
   }
 
   state.droppedPngImport = importPayload;
+  elements.dropImportSeedCheckbox.checked = false;
   elements.dropImportPreviewImage.src = importPayload.previewUrl;
   elements.dropImportMetaText.textContent = importPayload.payload?.metadata?.prompt
     ? '메타데이터가 있는 PNG입니다. 원하는 방식으로 가져오세요.'
@@ -2624,8 +2814,10 @@ async function importDroppedImageToCurrentScene(mode) {
 
   try {
     setGenerationStatus('running', mode === 'i2i' ? 'PNG를 I2I 소스로 가져오는 중...' : 'PNG를 인페인트 소스로 가져오는 중...');
-    await applyImageMetadataToEditor(pending.payload);
-    const result = await window.dongsan.importImageForScene(scene.id, pending.filePath, pending.payload?.metadata || {});
+    const importSeed = elements.dropImportSeedCheckbox?.checked === true;
+    const payload = importSeed ? pending.payload : omitSeedFromImportPayload(pending.payload);
+    await applyImageMetadataToEditor(payload, { importSeed });
+    const result = await window.dongsan.importImageForScene(scene.id, pending.filePath, payload?.metadata || {});
     state.project = result.project;
     state.selectedSceneId = scene.id;
     state.selectedImageId = result.imageId;
@@ -2648,7 +2840,9 @@ async function importDroppedPromptOnly() {
 
   try {
     setGenerationStatus('running', 'PNG 프롬프트를 가져오는 중...');
-    await applyImageMetadataToEditor(pending.payload, { highlight: true, importGenerationSettings: false });
+    const importSeed = elements.dropImportSeedCheckbox?.checked === true;
+    const payload = importSeed ? pending.payload : omitSeedFromImportPayload(pending.payload);
+    await applyImageMetadataToEditor(payload, { highlight: true, importGenerationSettings: false, importSeed });
     closeDropImportDialog();
     setGenerationStatus('done', 'PNG 프롬프트를 가져왔습니다.');
   } catch (error) {
@@ -2799,6 +2993,7 @@ elements.apiKeyInput.addEventListener('input', () => {
 });
 
 elements.importButton.addEventListener('click', importText);
+elements.openGuideButton.addEventListener('click', () => openGuide());
 elements.addSceneButton.addEventListener('click', addScene);
 elements.deleteSceneButton.addEventListener('click', deleteSelectedScene);
 elements.generateTagsButton.addEventListener('click', generateTagsForSelectedScene);
@@ -2848,6 +3043,14 @@ elements.dropImportPromptButton.addEventListener('click', importDroppedPromptOnl
 elements.dropImportDialog.addEventListener('click', (event) => {
   if (event.target === elements.dropImportDialog) {
     closeDropImportDialog();
+  }
+});
+elements.guideCloseButton.addEventListener('click', () => closeGuide(true));
+elements.guidePrevButton.addEventListener('click', prevGuideStep);
+elements.guideNextButton.addEventListener('click', nextGuideStep);
+elements.guideDialog.addEventListener('click', (event) => {
+  if (event.target === elements.guideDialog) {
+    closeGuide(true);
   }
 });
 

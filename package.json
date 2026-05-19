@@ -1,12 +1,15 @@
 {
   "name": "dongsan",
   "productName": "Dongsan",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "description": "Dongsan scene prompt and NovelAI desktop viewer",
   "main": "index.js",
   "scripts": {
     "start": "electron .",
-    "test": "node tests/core.test.js"
+    "test": "node tests/core.test.js",
+    "check": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check.ps1",
+    "eval": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/eval.ps1",
+    "doctor": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/doctor.ps1"
   },
   "keywords": [],
   "author": "",

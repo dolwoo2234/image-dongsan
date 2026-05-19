@@ -420,7 +420,34 @@
           <button id="dropImportInpaintButton" class="primary-button" type="button">인페로</button>
           <button id="dropImportPromptButton" class="ghost-button" type="button">프롬프트만 가져오기</button>
         </div>
+        <label class="drop-import-option">
+          <input id="dropImportSeedCheckbox" type="checkbox">
+          <span>Seed 가져오기</span>
+        </label>
         <p id="dropImportMetaText" class="drop-import-meta">메타데이터가 있는 PNG입니다.</p>
+      </div>
+    </section>
+
+    <button id="openGuideButton" class="guide-floating-button" type="button">사용 가이드</button>
+
+    <section id="guideDialog" class="guide-dialog hidden" aria-modal="true" role="dialog">
+      <div class="guide-card">
+        <button id="guideCloseButton" class="guide-close" type="button" aria-label="닫기">x</button>
+        <div class="guide-copy">
+          <p class="eyebrow">Beginner Guide</p>
+          <h2 id="guideTitle">Dongsan 사용 가이드</h2>
+          <p id="guideBody"></p>
+        </div>
+        <div class="guide-target-note">
+          <span>화면에서 강조된 버튼이나 영역을 확인하세요.</span>
+        </div>
+        <div class="guide-footer">
+          <span id="guideStepText" class="guide-step-text">1 / 1</span>
+          <div class="guide-actions">
+            <button id="guidePrevButton" class="ghost-button compact-button" type="button">이전</button>
+            <button id="guideNextButton" class="primary-button compact-button" type="button">다음</button>
+          </div>
+        </div>
       </div>
     </section>
 

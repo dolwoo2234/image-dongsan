@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+if [[ -f package-lock.json ]]; then
+  npm ci
+elif [[ -f package.json ]]; then
+  npm install
+else
+  echo "No Node dependency manifest found. Nothing to bootstrap."
+fi

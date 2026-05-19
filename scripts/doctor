@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+echo "Repository"
+echo " root: $(pwd)"
+if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  echo " git: yes"
+  echo " branch: $(git branch --show-current 2>/dev/null || true)"
+  echo " status:"
+  git status --short || true
+else
+  echo " git: no"
+fi
+
+echo
+echo "Harness"
+for path in \
+  AGENTS.md \
+  harness.yml \
+  docs/workflow.md \
+  docs/decisions.md \
+  docs/references.md \
+  tasks/TEMPLATE.md \
+  scripts/bootstrap.cmd \
+  scripts/check.cmd \
+  scripts/test.cmd \
+  scripts/eval.cmd \
+  scripts/doctor.cmd \
+  scripts/hooks.cmd; do
+  if [[ -e "$path" ]]; then
+    echo " ok: $path"
+  else
+    echo " missing: $path"
+  fi
+done
+
+echo
+echo "Tools"
+for tool in rg git node npm powershell bash pre-commit; do
+  if command -v "$tool" >/dev/null 2>&1; then
+    echo " ok: $tool"
+  else
+    echo " missing: $tool"
+  fi
+done

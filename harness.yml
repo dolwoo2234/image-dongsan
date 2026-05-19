@@ -1,0 +1,54 @@
+version: 1
+name: dongsan-codex-harness
+description: Codex harness for the Dongsan Electron NovelAI prompt and image workbench.
+
+commands:
+  bootstrap: scripts/bootstrap.cmd
+  check: scripts/check.cmd
+  test: scripts/test.cmd
+  eval: scripts/eval.cmd
+  doctor: scripts/doctor.cmd
+  hooks: scripts/hooks.cmd
+
+shell_commands:
+  bootstrap: scripts/bootstrap
+  check: scripts/check
+  test: scripts/test
+  eval: scripts/eval
+  doctor: scripts/doctor
+  hooks: scripts/hooks
+
+documents:
+  agent_instructions: AGENTS.md
+  workflow: docs/workflow.md
+  decisions: docs/decisions.md
+  references: docs/references.md
+  task_template: tasks/TEMPLATE.md
+
+task_loop:
+  - inspect
+  - plan
+  - implement
+  - verify
+  - handoff
+
+verification:
+  default: scripts/check.cmd
+  handoff: scripts/eval.cmd
+  focused_test: npm test
+
+compatibility:
+  codex: AGENTS.md
+  cursor: AGENTS.md
+  claude_code_local: CLAUDE.md
+
+project:
+  stack:
+    - Electron
+    - Node.js CommonJS
+    - plain HTML/CSS/renderer JavaScript
+  entrypoints:
+    main: index.js
+    renderer: renderer.js
+    preload: preload.js
+    tests: tests/core.test.js

@@ -69,6 +69,20 @@ On Windows, users can also double-click `run.bat`. It checks for Node.js/npm, in
 
 NovelAI API keys are saved locally on each user's computer through Electron user data storage. They are not stored in this repository.
 
+## Codex Harness
+
+This repository includes a lightweight Codex harness adapted from [ganimjeong/Harness-for-codex](https://github.com/ganimjeong/Harness-for-codex).
+
+For Windows development, use:
+
+```powershell
+.\scripts\doctor.cmd
+.\scripts\bootstrap.cmd
+.\scripts\check.cmd
+```
+
+The canonical workflow and command registry live in `AGENTS.md`, `harness.yml`, `docs/workflow.md`, and `docs/decisions.md`.
+
 ## Updates
 
 Use GitHub Releases for published versions. The app can check the latest release from GitHub and, when a newer version exists, update itself with:
@@ -78,6 +92,12 @@ git pull --ff-only
 ```
 
 After a successful update, Dongsan restarts automatically.
+
+### v1.0.13
+
+- Added a first-run beginner guide that highlights the actual app buttons and workflow steps.
+- Added C1&C2 tag targeting, optional seed import for PNG metadata, and refined 69-position tag routing.
+- Added a Codex harness structure and helper scripts for local development checks.
 
 ### v1.0.12
 

@@ -126,7 +126,7 @@ function testKoreanHashSceneParser() {
 
 function testDraftTags() {
   const draft = generateDraftTags('A girl stands alone in a rainy city street at night and smiles.');
-  assert.ok(draft.tags.includes('1girl'));
+  assert.strictEqual(draft.tags.includes('1girl'), false);
   assert.ok(draft.tags.includes('solo'));
   assert.ok(draft.tags.includes('rain'));
   assert.ok(draft.tags.includes('city street'));
@@ -150,7 +150,7 @@ function testKoreanActionCameraTags() {
     '웅성웅성웅성~'
   ].join('\n'));
 
-  assert.ok(draft.tags.includes('1boy'));
+  assert.strictEqual(draft.tags.includes('1boy'), false);
   assert.ok(draft.tags.includes('multiple girls'));
   assert.ok(draft.tags.includes('walking'));
   assert.ok(draft.tags.includes('blush'));
@@ -176,7 +176,7 @@ function testGuideTagOrderingAndExpandedCues() {
     '준철이 얼굴을 들이밀어 노려봅니다.'
   ].join('\n'));
 
-  assert.ok(draft.tags.includes('1boy'));
+  assert.strictEqual(draft.tags.includes('1boy'), false);
   assert.ok(draft.tags.includes('looking at viewer'));
   assert.ok(draft.tags.includes('angry'));
   assert.ok(draft.tags.includes('wink'));
@@ -197,8 +197,6 @@ function testRenaSachonDraftTags() {
   ].join('\n'));
 
   [
-    '1girl',
-    '1boy',
     'from below',
     'from above',
     'from side',
@@ -248,7 +246,6 @@ function testRenaSachonNsfwDraftTags() {
   ].join('\n'));
 
   [
-    'sex',
     'vaginal',
     'doggystyle',
     'from behind',
@@ -520,6 +517,8 @@ function testBackViewCowgirlDraftTags() {
     'licking',
     'licking penis',
     'sixty-nine',
+    "underbody to male's face",
+    'top-down bottom-up',
     'hand on thigh',
     'looking back',
     'paizuri',
@@ -530,7 +529,6 @@ function testBackViewCowgirlDraftTags() {
     'imminent penetration',
     'penis on pussy',
     'cowgirl position',
-    'sex',
     'vaginal',
     'hair grab',
     'head grab'
@@ -572,7 +570,6 @@ function testSofaMissionaryDraftTags() {
     'cum on stomach',
     'cum on hand',
     'hand on stomach',
-    'sex',
     'missionary',
     'side view',
     'ear licking',
@@ -621,6 +618,13 @@ function testTagAssignments() {
   assert.strictEqual(assignments['closed eyes'], 'character-0');
   assert.strictEqual(assignments['hand job'], 'character-0');
   assert.strictEqual(assignments['2::smile::'], 'character-0');
+
+  const pairedAssignments = normalizeTagAssignments({}, [
+    "underbody to male's face",
+    'top-down bottom-up'
+  ]);
+  assert.strictEqual(pairedAssignments["underbody to male's face"], 'character-0');
+  assert.strictEqual(pairedAssignments['top-down bottom-up'], 'character-1');
 
   const preserved = normalizeTagAssignments({ 'closed eyes': 'character-1' }, ['closed eyes']);
   assert.strictEqual(preserved['closed eyes'], 'character-1');

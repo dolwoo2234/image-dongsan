@@ -1396,15 +1396,185 @@ textarea:focus {
   gap: 10px;
 }
 
+.drop-import-option {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.drop-import-option input {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+}
+
 .drop-import-meta {
   margin: 0;
   color: var(--muted);
   font-size: 13px;
 }
 
+.guide-floating-button {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 46;
+  min-height: 40px;
+  border: 1px solid rgba(87, 184, 167, 0.55);
+  border-radius: 999px;
+  background: rgba(32, 36, 45, 0.94);
+  color: var(--text);
+  padding: 0 16px;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(10px);
+}
+
+.guide-floating-button:hover {
+  border-color: var(--accent);
+  background: rgba(63, 157, 141, 0.94);
+}
+
+.guide-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  align-items: end;
+  justify-items: end;
+  background: rgba(5, 7, 10, 0.36);
+  padding: 24px;
+  pointer-events: none;
+}
+
+.guide-dialog.hidden {
+  display: none;
+}
+
+.guide-card {
+  position: relative;
+  display: grid;
+  gap: 16px;
+  width: min(470px, calc(100vw - 32px));
+  border: 1px solid rgba(87, 184, 167, 0.36);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 22px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.48);
+  pointer-events: auto;
+}
+
+.guide-dialog.guide-placement-bottom-center {
+  justify-items: center;
+}
+
+.guide-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel-strong);
+  color: var(--text);
+  font-size: 20px;
+  line-height: 1;
+}
+
+.guide-copy {
+  display: grid;
+  gap: 8px;
+  padding-right: 34px;
+}
+
+.guide-copy h2 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.guide-copy p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.guide-target-note {
+  border: 1px solid rgba(87, 184, 167, 0.28);
+  border-radius: 8px;
+  background: rgba(87, 184, 167, 0.08);
+  padding: 10px 12px;
+  color: var(--accent);
+  font-size: 13px;
+}
+
+.guide-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.guide-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.guide-step-text {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.guide-highlight-target {
+  position: relative;
+  z-index: 66;
+  outline: 3px solid rgba(87, 184, 167, 0.92);
+  outline-offset: 4px;
+  box-shadow: 0 0 0 8px rgba(87, 184, 167, 0.18), 0 0 34px rgba(87, 184, 167, 0.42);
+  animation: guide-pulse 1.3s ease-in-out infinite;
+}
+
+@keyframes guide-pulse {
+  0%,
+  100% {
+    outline-color: rgba(87, 184, 167, 0.92);
+    box-shadow: 0 0 0 8px rgba(87, 184, 167, 0.18), 0 0 34px rgba(87, 184, 167, 0.42);
+  }
+
+  50% {
+    outline-color: rgba(240, 187, 97, 0.95);
+    box-shadow: 0 0 0 11px rgba(240, 187, 97, 0.16), 0 0 42px rgba(240, 187, 97, 0.34);
+  }
+}
+
 @media (max-width: 760px) {
   .drop-import-actions {
     grid-template-columns: 1fr;
+  }
+
+  .guide-dialog {
+    align-items: end;
+    justify-items: center;
+    padding: 14px;
+  }
+
+  .guide-card {
+    width: 100%;
+  }
+
+  .guide-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .guide-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
   }
 }
 

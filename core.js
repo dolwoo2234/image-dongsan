@@ -57,6 +57,14 @@ function normalizeSubsceneScene(scene, index) {
 
 function getDefaultTagTarget(tag) {
   const label = getPromptTagSortLabel(tag);
+  const targetMap = {
+    "underbody to male's face": 'character-0',
+    'top-down bottom-up': 'character-1'
+  };
+
+  if (targetMap[label]) {
+    return targetMap[label];
+  }
   const sceneLabels = new Set([
     '1girl', '1boy', 'multiple girls', 'solo',
     'cowboy shot', 'bust shot', 'upper body', 'full body', 'wide shot',
@@ -66,7 +74,7 @@ function getDefaultTagTarget(tag) {
     'facing to the side', 'profile', 'from behind', 'indoors', 'outdoors',
     'entrance', 'doorway', 'bedroom', 'bathroom', 'bathtub', 'open door',
     'bed', 'couch', 'table', 'school', 'classroom', 'market street',
-    'city street', 'forest', 'night', 'sunset', 'rain', 'sex', 'vaginal',
+    'city street', 'forest', 'night', 'sunset', 'rain', 'vaginal',
     'kissing', 'imminent kiss', 'saliva', 'imminent penetration',
     'penis on pussy', 'grinding', 'sixty-nine', 'doggystyle',
     'cowgirl position', 'paizuri', 'mating press', 'missionary',
@@ -412,8 +420,8 @@ const renaSachonDraftRules = [
   { triggers: ['\uC11C \uC788\uB294', '\uC11C\uC788\uB294', '\uC11C \uC788\uB294 \uB290\uB08C'], tags: ['standing'] },
   { triggers: ['\uBD84\uD560\uCEF7', '\uBD84\uD560 \uCEF7', '\uD654\uBA74\uBD84\uD560'], tags: ['multiple views'] },
   { triggers: ['\uC704\uC5D0 \uD0C0\uC788', '\uC704\uC5D0 \uC62C\uB77C\uD0C0', '\uC704\uB85C \uC62C\uB77C\uD0C4', '\uC62C\uB77C\uD0C4 \uC0C1\uD0DC', '\uC62C\uB77C\uD0C4 \uC5EC\uC790', '\uC62C\uB77C\uD0C0 \uC788'], tags: ['straddling', 'girl on top'] },
-  { triggers: ['\uAE30\uC2B9\uC704'], tags: ['sex', 'cowgirl position', 'girl on top'] },
-  { triggers: ['\uB300\uBA74 \uC88C\uC704', '\uB300\uBA74\uC88C\uC704'], tags: ['sex', 'sitting', 'sitting on lap', 'upright straddle', 'facing another'] },
+  { triggers: ['\uAE30\uC2B9\uC704'], tags: ['cowgirl position', 'girl on top'] },
+  { triggers: ['\uB300\uBA74 \uC88C\uC704', '\uB300\uBA74\uC88C\uC704'], tags: ['sitting', 'sitting on lap', 'upright straddle', 'facing another'] },
   { triggers: ['\uC88C\uC704'], tags: ['sitting', 'upright straddle'] },
   { triggers: ['\uB2E4\uB9AC \uBC8C\uB9B0', '\uB2E4\uB9AC\uB97C \uBC8C\uB9B0', '\uB2E4\uB9AC \uBC8C\uB9AC', '\uB2E4\uB9AC\uB97C \uBC8C\uB9AC'], tags: ['spread legs'] },
   { triggers: ['\uB2E4\uB9AC \uC0AC\uC774', '\uBC8C\uB9B0 \uB2E4\uB9AC \uC0AC\uC774'], tags: ['spread legs'] },
@@ -426,18 +434,18 @@ const renaSachonDraftRules = [
   { triggers: ['\uD0A4\uC2A4 \uC9C1\uC804', '\uD0A4\uC2A4\uC9C1\uC804'], tags: ['imminent kiss', 'kissing'] },
   { triggers: ['\uAC8C\uAC78\uC2A4\uB7FD', '\uB098\uB20C\uC11C'], tags: ['saliva'] },
   { triggers: ['\uD600\uB85C \uD398\uB2C8\uC2A4 \uD565', '\uD398\uB2C8\uC2A4 \uD565', '\uD398\uB2C8\uC2A4\uB97C \uD565'], tags: ['tongue', 'licking', 'licking penis', 'penis'] },
-  { triggers: ['69\uC790\uC138', '69\uC0C1\uD0DC', '69 \uC790\uC138', 'sixty-nine'], tags: ['sixty-nine'] },
-  { triggers: ['\uC0BD\uC785', '\uD53C\uC2A4\uD1A4', '\uBC15\uAE30', '\uD37D\uD37D'], tags: ['sex', 'vaginal'] },
-  { triggers: ['\uC0BD\uC785 \uD3EC\uCEE4\uC2A4', '\uC0BD\uC785\uD3EC\uCEE4\uC2A4'], tags: ['sex', 'vaginal', 'penis focus'] },
+  { triggers: ['69\uC790\uC138', '69\uC0C1\uD0DC', '69 \uC790\uC138', '69', 'sixty-nine'], tags: ['sixty-nine', "underbody to male's face", 'top-down bottom-up'] },
+  { triggers: ['\uC0BD\uC785', '\uD53C\uC2A4\uD1A4', '\uBC15\uAE30', '\uD37D\uD37D'], tags: ['vaginal'] },
+  { triggers: ['\uC0BD\uC785 \uD3EC\uCEE4\uC2A4', '\uC0BD\uC785\uD3EC\uCEE4\uC2A4'], tags: ['vaginal', 'penis focus'] },
   { triggers: ['\uC0BD\uC785 \uC804', '\uC0BD\uC785\uC804'], tags: ['imminent penetration'] },
   { triggers: ['\uC131\uAE30\uC5D0 \uBE44\uBE44', '\uBCF4\uC9C0\uC5D0 \uBE44\uBE44', '\uD398\uB2C8\uC2A4\uB97C \uC5EC\uC790 \uC131\uAE30\uC5D0 \uBE44\uBE44'], tags: ['penis on pussy', 'imminent penetration'] },
   { triggers: ['\uD5D8\uD551', 'humping'], tags: ['grinding', 'penis on pussy'] },
   { triggers: ['\uBA38\uB9AC \uD754\uB4E4', '\uBA38\uB9AC\uAC00 \uD754\uB4E4', '\uB4E4\uC369\uB4E4\uC369'], tags: ['head shaking'] },
-  { triggers: ['\uD6C4\uBC30\uC704', '\uB4A4\uB85C \uBC15\uAE30'], tags: ['sex', 'doggystyle', 'from behind'] },
-  { triggers: ['\uC815\uBA74\uC5D0\uC11C \uBCF8 \uD6C4\uBC30\uC704', '\uC815\uBA74\uC5D0\uC11C \uD6C4\uBC30\uC704'], tags: ['sex', 'doggystyle', 'straight-on'] },
-  { triggers: ['\uAD50\uBC30 \uD504\uB808\uC2A4', '\uAD50\uBC30\uD504\uB808\uC2A4'], tags: ['sex', 'mating press', 'missionary'] },
-  { triggers: ['\uC815\uC0C1\uC704'], tags: ['sex', 'missionary'] },
-  { triggers: ['\uCE21\uC704'], tags: ['sex', 'side view'] },
+  { triggers: ['\uD6C4\uBC30\uC704', '\uB4A4\uB85C \uBC15\uAE30'], tags: ['doggystyle', 'from behind'] },
+  { triggers: ['\uC815\uBA74\uC5D0\uC11C \uBCF8 \uD6C4\uBC30\uC704', '\uC815\uBA74\uC5D0\uC11C \uD6C4\uBC30\uC704'], tags: ['doggystyle', 'straight-on'] },
+  { triggers: ['\uAD50\uBC30 \uD504\uB808\uC2A4', '\uAD50\uBC30\uD504\uB808\uC2A4'], tags: ['mating press', 'missionary'] },
+  { triggers: ['\uC815\uC0C1\uC704'], tags: ['missionary'] },
+  { triggers: ['\uCE21\uC704'], tags: ['side view'] },
   { triggers: ['\uD3A0\uB77C'], tags: ['fellatio'] },
   { triggers: ['\uD1A0\uD0B9', '\uB9D0\uD558\uAE30', '\uB9D0\uD558\uB294'], tags: ['talking'] },
   { triggers: ['\uBA38\uB9AC \uC7A1', '\uBA38\uB9AC\uB97C \uC7A1'], tags: ['head grab'] },
@@ -574,14 +582,6 @@ function generateDraftTags(description) {
   const tags = [];
   const negativeTags = [];
 
-  if (hasAny(text, ['girl', 'woman', 'female', '\uC18C\uB140', '\uC5EC\uC790', '\uC5EC\uC131'])) {
-    addTag(tags, '1girl');
-  }
-
-  if (hasAny(text, ['boy', 'man', 'male', '\uC18C\uB144', '\uB0A8\uC790', '\uB0A8\uC131'])) {
-    addTag(tags, '1boy');
-  }
-
   if (hasAny(text, ['solo', 'alone', '\uD63C\uC790', '\uB2E8\uB3C5'])) {
     addTag(tags, 'solo');
   }
@@ -715,10 +715,6 @@ function generateDraftTags(description) {
 
   if (hasAny(text, ['\uC5EC\uC790\uB4E4', '\uC5EC\uC131\uB4E4'])) {
     addTag(tags, 'multiple girls');
-  }
-
-  if (hasAny(text, ['\uC900\uCCA0', '\uB0A8\uC790 \uC8FC\uC778\uACF5', '\uC8FC\uC778\uACF5'])) {
-    addTag(tags, '1boy');
   }
 
   applyDraftRuleSet(description, tags);
