@@ -27,6 +27,26 @@ let activeNovelAiAbortController = null;
 
 app.setName(appName);
 
+const singleInstanceLock = app.requestSingleInstanceLock();
+
+if (!singleInstanceLock) {
+  app.quit();
+}
+
+app.on('second-instance', () => {
+  const [win] = BrowserWindow.getAllWindows();
+
+  if (!win) {
+    return;
+  }
+
+  if (win.isMinimized()) {
+    win.restore();
+  }
+
+  win.focus();
+});
+
 function getProjectPaths() {
   const root = app.getPath('userData');
   return {

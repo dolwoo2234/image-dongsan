@@ -93,6 +93,10 @@ git pull --ff-only
 
 After a successful update, Dongsan restarts automatically.
 
+### v1.0.14
+
+- Added single-instance startup handling so a second launch focuses the existing Dongsan window instead of opening another process that can fight over Chromium cache files.
+
 ### v1.0.13
 
 - Added a first-run beginner guide that highlights the actual app buttons and workflow steps.
