@@ -91,7 +91,7 @@ Use GitHub Releases for published versions. The app can check the latest release
 git pull --ff-only
 ```
 
-After a successful update, Dongsan restarts automatically.
+업데이트가 성공하면 Dongsan이 자동으로 재시작됩니다.
 
 ### v1.0.15
 
@@ -107,49 +107,52 @@ After a successful update, Dongsan restarts automatically.
 
 ### v1.0.14
 
-- Added single-instance startup handling so a second launch focuses the existing Dongsan window instead of opening another process that can fight over Chromium cache files.
+- 앱을 두 번 실행했을 때 새 프로세스를 또 열지 않고, 이미 열린 Dongsan 창을 앞으로 가져오도록 했습니다.
+- 여러 창이 동시에 Chromium 캐시를 사용하면서 생기던 캐시 생성 오류 가능성을 줄였습니다.
 
 ### v1.0.13
 
-- Added a first-run beginner guide that highlights the actual app buttons and workflow steps.
-- Added C1&C2 tag targeting, optional seed import for PNG metadata, and refined 69-position tag routing.
-- Added a Codex harness structure and helper scripts for local development checks.
+- 처음 실행하는 사용자를 위한 초보자 가이드를 추가했습니다. 실제 앱 버튼과 작업 순서를 화면에서 강조해 안내합니다.
+- 태그 적용 위치에 `C1&C2`를 추가해서 두 캐릭터에 동시에 들어가야 하는 태그를 지정할 수 있게 했습니다.
+- PNG 메타데이터를 가져올 때 Seed를 가져올지 선택할 수 있게 했습니다.
+- 69 자세 관련 태그가 장면/C1/C2에 더 적절히 배치되도록 태그 라우팅을 보완했습니다.
+- Codex 하네스 구조와 로컬 개발 점검용 보조 스크립트를 추가했습니다.
 
 ### v1.0.12
 
-- Added PNG drop choices: open as I2I, open as inpaint, or import prompt only.
-- Added Image2Image generation with Strength and Noise controls.
-- Added a green 2.2-second highlight for newly imported prompt fields and newly added tag chips.
-- Imported PNG files can now be copied into the current scene gallery as source images.
+- PNG 파일을 앱에 드롭했을 때 `I2I로 열기`, `인페인트로 열기`, `프롬프트만 가져오기` 중에서 선택할 수 있게 했습니다.
+- Image2Image 기능을 추가하고 Strength, Noise 조절 슬라이더를 넣었습니다.
+- 가져온 프롬프트 필드와 새로 추가된 태그칩이 2.2초 동안 초록색으로 강조되어 변경 위치를 쉽게 볼 수 있게 했습니다.
+- 외부 PNG 파일을 현재 씬 갤러리에 소스 이미지로 복사해 사용할 수 있게 했습니다.
 
 ### v1.0.11
 
-- Added tag target assignment for draft tags: scene, Character 1, Character 2, and later character slots.
-- Routed scene/camera tags to the NovelAI base caption and character/action tags to the selected character caption.
-- Added more general Danbooru drafting rules from the latest scene-description sets.
-- Stopped generating default negative draft tags automatically.
+- 태그 초안에 적용 위치를 지정하는 기능을 추가했습니다. 장면, Character 1, Character 2, 이후 캐릭터 슬롯으로 나눠 넣을 수 있습니다.
+- 카메라/구도/배경 태그는 NovelAI 기본 프롬프트로, 캐릭터 행동 태그는 선택한 캐릭터 프롬프트로 들어가도록 정리했습니다.
+- 최신 장면 묘사 TXT에서 일반화 가능한 Danbooru 태그 드래프트 규칙을 추가했습니다.
+- 네거티브 태그 초안이 자동으로 생성되지 않도록 변경했습니다.
 
 ### v1.0.10
 
-- Added more general Danbooru drafting rules from the Heart Delivery Service scene set.
-- Removed automatic `explicit` drafting and refined pose/body/action tags.
-- Fixed character preset insertion so multi-line presets stay in one character slot.
+- Heart Delivery Service 장면 세트에서 일반화 가능한 Danbooru 태그 드래프트 규칙을 추가했습니다.
+- `explicit` 태그가 자동으로 들어가지 않도록 제거하고, 포즈/신체/행동 태그 규칙을 다듬었습니다.
+- 캐릭터 프리셋을 현재 씬에 넣을 때 여러 줄 프리셋이 여러 캐릭터로 쪼개지지 않고 하나의 캐릭터 슬롯에 유지되도록 고쳤습니다.
 
 ### v1.0.6
 
-- Added `install-dongsan.bat` for one-click Windows clone, install, and start.
-- Moved install instructions near the top of the README for first-time users.
+- Windows에서 한 번에 clone, 설치, 실행을 할 수 있는 `install-dongsan.bat`를 추가했습니다.
+- 처음 받는 사용자가 바로 볼 수 있도록 설치 방법을 README 상단으로 옮겼습니다.
 
 ### v1.0.3
 
-- Made `run.bat` install dependencies automatically when Electron is missing.
-- Added clearer Windows run instructions for cloned/downloaded copies.
+- Electron이 없을 때 `run.bat`가 필요한 의존성을 자동 설치하도록 했습니다.
+- clone 또는 다운로드한 사용자를 위한 Windows 실행 안내를 더 명확하게 정리했습니다.
 
 ### v1.0.2
 
-- Reworked the main layout into scene list, global/character presets, editor, and settings/gallery columns.
-- Added character position controls for NovelAI character prompts.
-- Made character prompt carry-over apply once and then turn off automatically when changing scenes.
-- Added a scene generation cancel button.
-- Changed NovelAI 429 retry handling to retry 8 times at 1-second intervals.
-- Expanded Danbooru tag drafting for the NSFW Rena Sachon scene set.
+- 메인 UI를 씬 목록, 글로벌/캐릭터 프리셋, 편집 화면, 설정/갤러리 컬럼 구조로 재배치했습니다.
+- NovelAI 캐릭터 프롬프트의 Character Position을 설정할 수 있는 컨트롤을 추가했습니다.
+- 다음 씬으로 캐릭터 프롬프트를 넘기는 기능이 한 번만 적용되고, 씬 변경 후 자동으로 꺼지도록 변경했습니다.
+- 씬 생성 중단 버튼을 추가했습니다.
+- NovelAI 429 오류가 발생했을 때 1초 간격으로 최대 8번 재시도하도록 변경했습니다.
+- NSFW Rena Sachon 장면 세트에 맞춘 Danbooru 태그 드래프트 규칙을 확장했습니다.
