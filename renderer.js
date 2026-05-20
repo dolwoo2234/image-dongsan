@@ -12,6 +12,7 @@ const state = {
   draftTags: [],
   draftTagAssignments: {},
   draftNegativeTags: [],
+  wildcardPrompts: [],
   recentlyAddedTagKeys: new Set(),
   recentlyAddedTagTimer: null,
   settings: null,
@@ -86,6 +87,10 @@ const elements = {
   negativeTagInput: document.querySelector('#negativeTagInput'),
   addNegativeTagButton: document.querySelector('#addNegativeTagButton'),
   negativeTagChips: document.querySelector('#negativeTagChips'),
+  wildcardOptionFields: document.querySelector('#wildcardOptionFields'),
+  addWildcardOptionButton: document.querySelector('#addWildcardOptionButton'),
+  addWildcardButton: document.querySelector('#addWildcardButton'),
+  wildcardChips: document.querySelector('#wildcardChips'),
   carryCharacterToNextSceneButton: document.querySelector('#carryCharacterToNextSceneButton'),
   characterPromptsInput: document.querySelector('#characterPromptsInput'),
   characterNegativePromptsInput: document.querySelector('#characterNegativePromptsInput'),
@@ -209,26 +214,26 @@ const guideSteps = [
     body: '태그 칩에서 숫자는 강조값을 바꾸고, 장면/C1/C2/C1&C2 선택은 어느 프롬프트 줄에 들어갈지 정합니다.'
   },
   {
-    selector: '#novelAiGenerateButton',
-    title: '7. 현재 씬 생성',
-    body: '프롬프트가 준비되면 현재 씬 생성을 누릅니다. 연속 실행 숫자를 1 또는 5로 빠르게 바꿀 수도 있습니다.'
-  },
-  {
-    selector: '#galleryList',
-    placement: 'bottom-center',
-    title: '8. 갤러리에서 결과 확인',
-    body: '생성 결과는 오른쪽 갤러리에 쌓입니다. 이미지를 선택하면 중앙 미리보기에서 재생성, I2I, 인페인트 작업을 이어갈 수 있습니다.'
-  },
-  {
     selector: '#toggleSettingsButton',
-    title: '9. NovelAI 설정 펼치기',
-    body: '처음 사용하는 PC에서는 오른쪽 설정 영역의 펼치기를 눌러 NovelAI 설정을 먼저 열어주세요.'
+    title: '7. NovelAI 설정 펼치기',
+    body: '프롬프트 초안이 준비되면 실제 생성을 위해 NovelAI API 키가 필요합니다. 오른쪽 설정 영역의 펼치기를 눌러 설정을 열어주세요.'
   },
   {
     selector: '#apiKeyInput',
     expandSettings: true,
-    title: '10. NovelAI API 키 저장',
-    body: '설정이 열린 뒤 API 키를 입력하고 저장을 누르면 실제 생성 버튼을 사용할 수 있습니다. API 키는 프로젝트 JSON이 아니라 이 PC에 따로 저장됩니다.'
+    title: '8. NovelAI API 키 저장',
+    body: 'API 키를 입력하고 저장을 누르면 실제 생성 버튼을 사용할 수 있습니다. API 키는 프로젝트 JSON이 아니라 이 PC에 따로 저장됩니다.'
+  },
+  {
+    selector: '#novelAiGenerateButton',
+    title: '9. 현재 씬 생성',
+    body: 'API 키가 저장되고 프롬프트가 준비되면 현재 씬 생성을 누릅니다. 연속 실행 숫자를 1 또는 5로 빠르게 바꿀 수도 있습니다.'
+  },
+  {
+    selector: '#galleryList',
+    placement: 'bottom-center',
+    title: '10. 갤러리에서 결과 확인',
+    body: '생성 결과는 오른쪽 갤러리에 쌓입니다. 이미지를 선택하면 중앙 미리보기에서 재생성, I2I, 인페인트 작업을 이어갈 수 있습니다.'
   }
 ];
 
@@ -297,10 +302,10 @@ const promptTagOrder = [
   ['1girl', '1boy', 'multiple girls', 'solo'],
   ['cowboy shot', 'bust shot', 'upper body', 'full body', 'wide shot', 'side view', 'from side', 'from above', 'from below', 'pov', 'straight-on', 'dutch angle', 'looking at viewer', 'looking down', 'looking back'],
   ['indoors', 'outdoors', 'entrance', 'doorway', 'bedroom', 'bathroom', 'bathtub', 'open door', 'bed', 'couch', 'table', 'school', 'classroom', 'market street', 'city street', 'forest', 'night', 'sunset', 'rain'],
-  ['standing', 'walking', 'sitting', 'kneeling', 'lying', 'bent over', 'leaning forward', 'leaning on person', 'arms around shoulders', 'arms around neck', 'hug', 'holding hands', 'holding paper', 'waving', 'hands behind back', 'hair flip', 'pointing', 'straddling', 'girl on top', 'cowgirl position', 'sitting on lap', 'upright straddle', 'all fours', 'head tilt', 'head shaking', 'wink', 'whispering', 'whisper to ear', 'sniffing', 'background crowd'],
+  ['standing', 'walking', 'sitting', 'kneeling', 'lying', 'arm pillow', 'bent over', 'leaning forward', 'leaning on person', 'arms around shoulders', 'arms around neck', 'hug', 'holding hands', 'holding paper', 'holding glass', 'waving', 'hands behind back', 'hair flip', 'pointing', 'straddling', 'girl on top', 'cowgirl position', 'sitting on lap', 'upright straddle', 'crossed legs', 'yokozuwari', 'all fours', 'head tilt', 'head shaking', 'wink', 'whispering', 'whisper to ear', 'sniffing', 'selfie', 'background crowd'],
   ['smile', 'smirk', 'expressionless', 'angry', 'glaring', 'scared', 'surprised', 'embarrassed', 'drunk', 'blush', 'tears'],
   ['breasts', 'underboob', 'ass', 'ass focus', 'penis focus', 'face focus', 'lower body', 'cropped torso', 'male back', 'stomach', 'm legs', 'face out of frame', 'eyes out of frame', 'cropped face', 'ear', 'thighs', 'tail', 'tail grab', 'tail wagging', 'hand on another\'s ass', 'hand on thigh', 'hand on breast', 'hand on stomach', 'groping', 'ring', 'wedding ring', 'highly detailed'],
-  ['sex', 'vaginal', 'pussy', 'pussy focus', 'spread legs', 'fingering', 'clitoris', 'breast sucking', 'breast grab', 'breast press', 'nipple flick', 'hand on nipple', 'kissing', 'imminent kiss', 'saliva', 'hand job', 'hands on penis', 'hand on penis', 'penis', 'glans', 'testicles', 'tongue', 'licking penis', 'ear licking', 'licking', 'nude', 'topless', 'bottomless', 'partially undressed', 'skirt lift', 'panty pull', 'panties aside', 'imminent penetration', 'penis on pussy', 'grinding', 'sixty-nine', 'doggystyle', 'cowgirl position', 'paizuri', 'mating press', 'missionary', 'fellatio', 'cum', 'cumdrip', 'cum on breasts', 'cum on stomach', 'cum on hand', 'female ejaculation', 'after sex', 'restrained', 'hand over mouth', 'hair grab', 'head grab'],
+  ['sex', 'vaginal', 'pussy', 'pussy focus', 'spread legs', 'one leg raised', 'fingering', 'clitoris', 'breast sucking', 'breast grab', 'breast press', 'nipple flick', 'hand on nipple', 'kissing', 'imminent kiss', 'saliva', 'hand job', 'hands on penis', 'hand on penis', 'penis', 'penis on pussy', 'disembodied penis', 'glans', 'testicles', 'tongue', 'licking penis', 'ear licking', 'licking', 'nude', 'topless', 'bottomless', 'partially undressed', 'open fly', 'skirt lift', 'panty pull', 'panties aside', 'imminent penetration', 'grinding', 'sixty-nine', 'doggystyle', 'cowgirl position', 'paizuri', 'mating press', 'missionary', 'side sex', 'fellatio', 'cum', 'cumdrip', 'cum on breasts', 'cum on stomach', 'cum on hand', 'female ejaculation', 'after sex', 'restrained', 'hand over mouth', 'hair grab', 'head grab'],
   ['paper', 'document', 'briefcase', 'cushion', 'holding phone', 'smartphone', 'drinking', 'undressing', 'covering self', 'forehead-to-forehead', 'facing another', 'reaching towards viewer']
 ];
 
@@ -322,8 +327,8 @@ const tagTargetSceneLabels = new Set([
   'bed', 'couch', 'table', 'school', 'classroom', 'market street',
   'city street', 'forest', 'night', 'sunset', 'rain', 'vaginal',
   'kissing', 'imminent kiss', 'saliva', 'imminent penetration',
-  'penis on pussy', 'grinding', 'sixty-nine', 'doggystyle',
-  'cowgirl position', 'paizuri', 'mating press', 'missionary',
+  'penis on pussy', 'disembodied penis', 'grinding', 'sixty-nine', 'doggystyle',
+  'cowgirl position', 'paizuri', 'mating press', 'missionary', 'side sex',
   'fellatio', 'after sex', 'forehead-to-forehead', 'facing another',
   'reaching towards viewer'
 ]);
@@ -348,6 +353,35 @@ function normalizeTagAssignments(assignments, tags) {
 
 function getTagTarget(tag) {
   return state.draftTagAssignments[tag] || state.draftTagAssignments[getTagSortLabel(tag)] || getDefaultTagTarget(tag);
+}
+
+function getTargetOptions(selectedTarget = 'scene') {
+  const slots = getCharacterPromptSlots();
+  const options = [
+    ['scene', '장면'],
+    ...slots.map((_slot, index) => [`character-${index}`, `C${index + 1}`])
+  ];
+
+  if (slots.length >= 2) {
+    options.splice(3, 0, ['characters-0-1', 'C1&C2']);
+  }
+
+  if (!options.some(([value]) => value === selectedTarget)) {
+    options.push([selectedTarget, selectedTarget]);
+  }
+
+  return options;
+}
+
+function populateTargetSelect(select, selectedTarget = 'scene') {
+  select.innerHTML = '';
+  getTargetOptions(selectedTarget).forEach(([value, label]) => {
+    const option = document.createElement('option');
+    option.value = value;
+    option.textContent = label;
+    option.selected = value === selectedTarget;
+    select.appendChild(option);
+  });
 }
 
 function getCharacterIndexesForTagTarget(target) {
@@ -384,13 +418,36 @@ function splitTagsByTarget(tags, assignments = {}) {
   }, { sceneTags: [], characterTags: [] });
 }
 
-function appendTagsToCharacterPromptLines(characterPromptsText, characterTags) {
+function splitWildcardPromptsByTarget(wildcards = []) {
+  return (Array.isArray(wildcards) ? wildcards : []).reduce((acc, wildcard) => {
+    const value = formatWildcardPrompt(wildcard);
+
+    if (!value) {
+      return acc;
+    }
+
+    if (wildcard.target === 'scene') {
+      acc.sceneTags.push(value);
+      return acc;
+    }
+
+    getCharacterIndexesForTagTarget(wildcard.target).forEach((characterIndex) => {
+      if (!acc.characterTags[characterIndex]) {
+        acc.characterTags[characterIndex] = [];
+      }
+      acc.characterTags[characterIndex].push(value);
+    });
+    return acc;
+  }, { sceneTags: [], characterTags: [] });
+}
+
+function appendTagsToCharacterPromptLines(characterPromptsText, characterTags, preserveOrder = false) {
   const lines = String(characterPromptsText || '').split('\n');
   const count = Math.max(lines.length, characterTags.length, 1);
 
   return Array.from({ length: count }, (_item, index) => {
     const prompt = (lines[index] || '').trim();
-    const tags = orderPromptTags(characterTags[index] || []);
+    const tags = preserveOrder ? (characterTags[index] || []) : orderPromptTags(characterTags[index] || []);
     return [prompt, ...tags].filter(Boolean).join(', ');
   }).filter(Boolean);
 }
@@ -476,12 +533,159 @@ function syncPromptFromTags() {
   refreshPromptPreview();
 }
 
-function buildCombinedPrompt(basePrompt, draftTags, characterPromptsText, tagAssignments = {}) {
+function normalizeWildcardOptions(value) {
+  return String(value || '')
+    .split('|')
+    .map((option) => option.trim())
+    .filter(Boolean);
+}
+
+function createWildcardPrompt(options, target = 'scene') {
+  const normalizedOptions = Array.isArray(options)
+    ? options.map((option) => String(option || '').trim()).filter(Boolean)
+    : normalizeWildcardOptions(options);
+
+  return {
+    id: `wildcard-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    options: normalizedOptions,
+    target: target || 'scene'
+  };
+}
+
+function normalizeWildcardPrompts(wildcards) {
+  return (Array.isArray(wildcards) ? wildcards : [])
+    .map((wildcard) => createWildcardPrompt(wildcard.options || [], wildcard.target || 'scene'))
+    .filter((wildcard) => wildcard.options.length > 0);
+}
+
+function formatWildcardPrompt(wildcard) {
+  const options = Array.isArray(wildcard?.options)
+    ? wildcard.options.map((option) => String(option || '').trim()).filter(Boolean)
+    : [];
+
+  if (options.length === 0) {
+    return '';
+  }
+
+  return `||${options.join('|')}||`;
+}
+
+function getWildcardLabel(wildcard) {
+  return formatWildcardPrompt(wildcard);
+}
+
+function getWildcardOptionRows() {
+  return Array.from(elements.wildcardOptionFields?.querySelectorAll('.wildcard-option-row') || []);
+}
+
+function getWildcardOptionInputs() {
+  return Array.from(elements.wildcardOptionFields?.querySelectorAll('.wildcard-option-input') || []);
+}
+
+function getWildcardOptionsFromFields() {
+  return getWildcardOptionInputs()
+    .map((input) => input.value.trim())
+    .filter(Boolean);
+}
+
+function refreshWildcardOptionPlaceholders() {
+  getWildcardOptionInputs().forEach((input, index) => {
+    input.placeholder = index === 0 ? 'red hair' : index === 1 ? 'blue hair' : `선택지 ${index + 1}`;
+  });
+}
+
+function updateWildcardOptionRemoveButtons() {
+  const rows = getWildcardOptionRows();
+  rows.forEach((row) => {
+    const removeButton = row.querySelector('.wildcard-option-remove');
+    if (!removeButton) {
+      return;
+    }
+    removeButton.disabled = rows.length <= 2;
+  });
+}
+
+function bindWildcardOptionRow(row) {
+  const input = row.querySelector('.wildcard-option-input');
+  const removeButton = row.querySelector('.wildcard-option-remove');
+
+  if (input && !input.dataset.boundWildcardOption) {
+    input.addEventListener('keydown', handleWildcardOptionKeydown);
+    input.dataset.boundWildcardOption = 'true';
+  }
+
+  if (removeButton && !removeButton.dataset.boundWildcardOptionRemove) {
+    removeButton.addEventListener('click', () => {
+      if (getWildcardOptionRows().length <= 2) {
+        return;
+      }
+      row.remove();
+      refreshWildcardOptionPlaceholders();
+      updateWildcardOptionRemoveButtons();
+    });
+    removeButton.dataset.boundWildcardOptionRemove = 'true';
+  }
+}
+
+function createWildcardOptionRow(value = '') {
+  const row = document.createElement('div');
+  row.className = 'wildcard-option-row';
+
+  const input = document.createElement('input');
+  input.className = 'wildcard-option-input';
+  input.type = 'text';
+  input.placeholder = `선택지 ${getWildcardOptionInputs().length + 1}`;
+  input.value = value;
+  const removeButton = document.createElement('button');
+  removeButton.className = 'ghost-button compact-button wildcard-option-remove';
+  removeButton.type = 'button';
+  removeButton.textContent = 'x';
+  removeButton.title = '선택지 삭제';
+
+  row.append(input, removeButton);
+  bindWildcardOptionRow(row);
+  return row;
+}
+
+function addWildcardOptionField(value = '') {
+  const row = createWildcardOptionRow(value);
+  elements.wildcardOptionFields.appendChild(row);
+  refreshWildcardOptionPlaceholders();
+  updateWildcardOptionRemoveButtons();
+  const input = row.querySelector('.wildcard-option-input');
+  input.focus();
+}
+
+function resetWildcardOptionFields() {
+  const rows = getWildcardOptionRows();
+  rows.forEach((row, index) => {
+    const input = row.querySelector('.wildcard-option-input');
+    if (index < 2) {
+      if (input) {
+        input.value = '';
+      }
+      return;
+    }
+
+    row.remove();
+  });
+  refreshWildcardOptionPlaceholders();
+  updateWildcardOptionRemoveButtons();
+}
+
+function buildCombinedPrompt(basePrompt, draftTags, characterPromptsText, tagAssignments = {}, wildcardPrompts = []) {
   const { sceneTags, characterTags } = splitTagsByTarget(draftTags, tagAssignments);
+  const wildcardTargets = splitWildcardPromptsByTarget(wildcardPrompts);
+  const maxCharacterCount = Math.max(characterTags.length, wildcardTargets.characterTags.length);
+  const mergedCharacterTags = Array.from({ length: maxCharacterCount }, (_item, index) => [
+    ...(characterTags[index] ? orderPromptTags(characterTags[index]) : []),
+    ...(wildcardTargets.characterTags[index] || [])
+  ]);
   const parts = [
     basePrompt.trim(),
     ...orderPromptTags(sceneTags),
-    ...appendTagsToCharacterPromptLines(characterPromptsText, characterTags)
+    ...wildcardTargets.sceneTags,
+    ...appendTagsToCharacterPromptLines(characterPromptsText, mergedCharacterTags, true)
   ];
   return parts.filter(Boolean).join(', ');
 }
@@ -492,7 +696,8 @@ function getComputedPromptPreviews() {
     state.settings?.basePrompt || '',
     state.draftTags,
     elements.characterPromptsInput.value,
-    state.draftTagAssignments
+    state.draftTagAssignments,
+    state.wildcardPrompts
     ),
     negativePrompt: buildCombinedPrompt(
       state.settings?.baseNegativePrompt || '',
@@ -1110,6 +1315,56 @@ function createChip(tag, index, target, isSearchMatch = false) {
   return chip;
 }
 
+function updateWildcardAtIndex(index, patch) {
+  state.wildcardPrompts = state.wildcardPrompts.map((wildcard, wildcardIndex) => (
+    wildcardIndex === index ? { ...wildcard, ...patch } : wildcard
+  ));
+  syncPromptFromTags();
+  setDirty(true);
+  renderTagChips();
+}
+
+function removeWildcardAtIndex(index) {
+  state.wildcardPrompts = state.wildcardPrompts.filter((_wildcard, wildcardIndex) => wildcardIndex !== index);
+  syncPromptFromTags();
+  setDirty(true);
+  renderTagChips();
+}
+
+function createWildcardChip(wildcard, index, isSearchMatch = false) {
+  const chip = document.createElement('div');
+  const name = document.createElement('span');
+  const controls = document.createElement('span');
+  const targetSelect = document.createElement('select');
+  const removeButton = document.createElement('button');
+  const label = getWildcardLabel(wildcard);
+
+  chip.className = `tag-chip wildcard-chip${isSearchMatch ? ' search-match' : ''}`;
+  name.className = 'tag-chip-name';
+  name.textContent = label;
+  name.title = label;
+  controls.className = 'tag-weight-controls has-target wildcard-controls';
+
+  targetSelect.className = 'tag-target-select';
+  targetSelect.title = 'Wildcard target';
+  populateTargetSelect(targetSelect, wildcard.target || 'scene');
+  targetSelect.addEventListener('change', () => {
+    updateWildcardAtIndex(index, { target: targetSelect.value });
+  });
+
+  removeButton.type = 'button';
+  removeButton.className = 'tag-remove-button';
+  removeButton.textContent = 'x';
+  removeButton.title = '와일드카드 삭제';
+  removeButton.addEventListener('click', () => {
+    removeWildcardAtIndex(index);
+  });
+
+  controls.append(targetSelect, removeButton);
+  chip.append(name, controls);
+  return chip;
+}
+
 function renderTagEmpty(target, text) {
   const empty = document.createElement('span');
   empty.className = 'tag-empty';
@@ -1120,6 +1375,7 @@ function renderTagEmpty(target, text) {
 function renderTagChips() {
   elements.tagChips.innerHTML = '';
   elements.negativeTagChips.innerHTML = '';
+  elements.wildcardChips.innerHTML = '';
   const query = state.tagSearch.trim().toLowerCase();
 
   if (state.draftTags.length === 0) {
@@ -1128,6 +1384,10 @@ function renderTagChips() {
 
   if (state.draftNegativeTags.length === 0) {
     renderTagEmpty(elements.negativeTagChips, '아직 네거티브 태그가 없습니다');
+  }
+
+  if (state.wildcardPrompts.length === 0) {
+    renderTagEmpty(elements.wildcardChips, '선택지 칸을 2개 이상 채운 뒤 추가하세요');
   }
 
   state.draftTags.forEach((tag, index) => {
@@ -1144,6 +1404,12 @@ function renderTagChips() {
       tag.toLowerCase().includes(query) || parsed.label.toLowerCase().includes(query)
     ));
     elements.negativeTagChips.appendChild(createChip(tag, index, 'negative', isSearchMatch));
+  });
+
+  state.wildcardPrompts.forEach((wildcard, index) => {
+    const label = getWildcardLabel(wildcard);
+    const isSearchMatch = Boolean(query && label.toLowerCase().includes(query));
+    elements.wildcardChips.appendChild(createWildcardChip(wildcard, index, isSearchMatch));
   });
 }
 
@@ -1213,6 +1479,8 @@ function renderQueueAndGallery() {
       const badge = document.createElement('span');
       const imageStatus = image.status || 'candidate';
       card.className = 'gallery-card';
+      card.draggable = true;
+      card.dataset.imageId = image.id;
       if (image.id === state.selectedImageId) {
         card.classList.add('selected');
       }
@@ -1248,6 +1516,11 @@ function renderQueueAndGallery() {
         renderSelectedImage();
         renderQueueAndGallery();
       });
+      card.addEventListener('dragstart', (event) => {
+        event.dataTransfer.effectAllowed = 'copy';
+        event.dataTransfer.setData('application/x-dongsan-image-id', image.id);
+        event.dataTransfer.setData('text/plain', image.id);
+      });
       elements.galleryList.appendChild(card);
     });
   }
@@ -1274,6 +1547,7 @@ function renderSceneForm(options = {}) {
     state.draftTags = [];
     state.draftTagAssignments = {};
     state.draftNegativeTags = [];
+    state.wildcardPrompts = [];
     state.selectedImageId = null;
     elements.carryCharacterToNextSceneButton.disabled = true;
     renderSelectedImage();
@@ -1303,6 +1577,7 @@ function renderSceneForm(options = {}) {
   state.draftTags = uniqueTags(scene.tags || []);
   state.draftTagAssignments = normalizeTagAssignments(scene.tagAssignments, state.draftTags);
   state.draftNegativeTags = uniqueTags(scene.negativeTags || []);
+  state.wildcardPrompts = normalizeWildcardPrompts(scene.wildcardPrompts || []);
   const hadPendingCharacterPromptCarry = Boolean(state.pendingCharacterPromptCarry);
   const usesCarriedCharacterPrompts = Boolean(state.pendingCharacterPromptCarry);
   const promptScene = usesCarriedCharacterPrompts
@@ -1385,7 +1660,7 @@ function updateInpaintBrushCursor(event = null) {
     return;
   }
 
-  const brushSize = Math.max(4, Number(elements.inpaintBrushSizeInput.value) || 48);
+  const brushSize = Math.max(12, Number(elements.inpaintBrushSizeInput.value) || 48);
   const rect = elements.inpaintMaskCanvas.getBoundingClientRect();
   const displaySize = (brushSize / elements.inpaintMaskCanvas.width) * rect.width;
 
@@ -1513,7 +1788,7 @@ function drawInpaintStroke(event) {
   }
 
   const point = getInpaintCanvasPoint(event);
-  const brushSize = Math.max(4, Number(elements.inpaintBrushSizeInput.value) || 48);
+  const brushSize = Math.max(12, Number(elements.inpaintBrushSizeInput.value) || 48);
   paintInpaintLine(state.inpaintLastPoint, point, brushSize / 2, state.inpaintMode === 'eraser' ? 0 : 1);
   state.inpaintLastPoint = point;
   renderInpaintMaskCanvas();
@@ -1527,7 +1802,7 @@ function beginInpaintStroke(event) {
   event.preventDefault();
   updateInpaintBrushCursor(event);
   const point = getInpaintCanvasPoint(event);
-  const brushSize = Math.max(4, Number(elements.inpaintBrushSizeInput.value) || 48);
+  const brushSize = Math.max(12, Number(elements.inpaintBrushSizeInput.value) || 48);
   state.inpaintDrawing = true;
   state.inpaintLastPoint = point;
   paintInpaintCircle(point, brushSize / 2, state.inpaintMode === 'eraser' ? 0 : 1);
@@ -2246,12 +2521,13 @@ function buildSceneFromForm(scene, statusOverride) {
   const tags = uniqueTags(state.draftTags);
   const tagAssignments = normalizeTagAssignments(state.draftTagAssignments, tags);
   const negativeTags = uniqueTags(state.draftNegativeTags);
+  const wildcardPrompts = normalizeWildcardPrompts(state.wildcardPrompts);
   const basePrompt = state.settings?.basePrompt || '';
   const baseNegativePrompt = state.settings?.baseNegativePrompt || '';
   const characterPromptsText = elements.characterPromptsInput.value.trim();
   const characterNegativePromptsText = elements.characterNegativePromptsInput.value.trim();
   const characterPositionsText = elements.characterPositionsInput.value.trim();
-  const combinedPrompt = buildCombinedPrompt(basePrompt, tags, characterPromptsText, tagAssignments);
+  const combinedPrompt = buildCombinedPrompt(basePrompt, tags, characterPromptsText, tagAssignments, wildcardPrompts);
   const combinedNegativePrompt = buildCombinedPrompt(
     baseNegativePrompt,
     negativeTags,
@@ -2268,6 +2544,7 @@ function buildSceneFromForm(scene, statusOverride) {
     tags,
     tagAssignments,
     negativeTags,
+    wildcardPrompts,
     basePrompt,
     baseNegativePrompt,
     characterPromptsText,
@@ -2610,6 +2887,7 @@ async function novelAiI2ISelectedImage() {
 
   const strength = Math.min(Math.max(Number(elements.i2iStrengthInput.value) || 0.7, 0), 1);
   const noise = Math.min(Math.max(Number(elements.i2iNoiseInput.value) || 0, 0), 1);
+  const runCount = getGenerationRunCount();
 
   try {
     await persistSettingsIfDirty();
@@ -2618,14 +2896,35 @@ async function novelAiI2ISelectedImage() {
     state.generationInProgress = true;
     state.generationCancelRequested = false;
     renderQueueAndGallery();
-    setGenerationStatus('running', `I2I 생성 중... (strength ${strength.toFixed(2)}, noise ${noise.toFixed(2)})`);
-    const nextProject = await window.dongsan.novelAiImageToImage(image.id, sceneOverride, strength, noise);
-    const preserveDirtyForm = state.dirty;
-    state.project = nextProject;
-    state.selectedImageId = getLatestJobResultImageId(image.sceneId, 'novelai-i2i') || image.id;
-    state.i2iOpen = false;
-    render({ preserveDirtyForm });
-    setGenerationStatus('done', 'I2I 생성 완료');
+
+    for (let index = 0; index < runCount; index += 1) {
+      if (state.generationCancelRequested) {
+        setGenerationStatus('idle', `I2I 생성 중단됨 (${index}/${runCount} 완료)`);
+        break;
+      }
+
+      setGenerationStatus('running', `I2I 생성 중... (${index + 1}/${runCount}, strength ${strength.toFixed(2)}, noise ${noise.toFixed(2)})`);
+      const nextProject = await window.dongsan.novelAiImageToImage(image.id, sceneOverride, strength, noise);
+      const preserveDirtyForm = state.dirty;
+      state.project = nextProject;
+      state.selectedImageId = getLatestJobResultImageId(image.sceneId, 'novelai-i2i') || image.id;
+      state.i2iOpen = false;
+      render({ preserveDirtyForm });
+
+      if (index < runCount - 1) {
+        setGenerationStatus('running', `다음 I2I 생성까지 0.5초 대기 중... (${index + 1}/${runCount} 완료)`);
+        const shouldContinue = await waitBetweenGenerationRuns(500);
+
+        if (!shouldContinue) {
+          setGenerationStatus('idle', `I2I 생성 중단됨 (${index + 1}/${runCount} 완료)`);
+          break;
+        }
+      }
+    }
+
+    if (!state.generationCancelRequested) {
+      setGenerationStatus('done', `I2I 연속 생성 완료 (${runCount}/${runCount})`);
+    }
   } catch (error) {
     if (String(error.message || '').includes('canceled')) {
       setGenerationStatus('idle', '이미지 생성이 중단되었습니다.');
@@ -2667,6 +2966,7 @@ async function novelAiInpaintSelectedImage() {
   }
 
   const strength = Math.min(Math.max(Number(elements.inpaintStrengthInput.value) || 1, 0), 1);
+  const runCount = getGenerationRunCount();
   try {
     await persistSettingsIfDirty();
     const sceneOverride = await persistScene(scene, 'prompt_approved');
@@ -2674,15 +2974,36 @@ async function novelAiInpaintSelectedImage() {
     state.generationInProgress = true;
     state.generationCancelRequested = false;
     renderQueueAndGallery();
-    setGenerationStatus('running', '인페인트 생성 중...');
-    const nextProject = await window.dongsan.novelAiInpaint(image.id, sceneOverride, maskDataUrl, strength);
-    const preserveDirtyForm = state.dirty;
-    state.project = nextProject;
-    state.selectedImageId = getLatestJobResultImageId(image.sceneId, 'novelai-inpaint') || image.id;
-    state.inpaintOpen = false;
-    clearInpaintMask();
-    render({ preserveDirtyForm });
-    setGenerationStatus('done', '인페인트 생성 완료');
+
+    for (let index = 0; index < runCount; index += 1) {
+      if (state.generationCancelRequested) {
+        setGenerationStatus('idle', `인페인트 생성 중단됨 (${index}/${runCount} 완료)`);
+        break;
+      }
+
+      setGenerationStatus('running', `인페인트 생성 중... (${index + 1}/${runCount})`);
+      const nextProject = await window.dongsan.novelAiInpaint(image.id, sceneOverride, maskDataUrl, strength);
+      const preserveDirtyForm = state.dirty;
+      state.project = nextProject;
+      state.selectedImageId = getLatestJobResultImageId(image.sceneId, 'novelai-inpaint') || image.id;
+      state.inpaintOpen = false;
+      render({ preserveDirtyForm });
+
+      if (index < runCount - 1) {
+        setGenerationStatus('running', `다음 인페인트 생성까지 0.5초 대기 중... (${index + 1}/${runCount} 완료)`);
+        const shouldContinue = await waitBetweenGenerationRuns(500);
+
+        if (!shouldContinue) {
+          setGenerationStatus('idle', `인페인트 생성 중단됨 (${index + 1}/${runCount} 완료)`);
+          break;
+        }
+      }
+    }
+
+    if (!state.generationCancelRequested) {
+      clearInpaintMask();
+      setGenerationStatus('done', `인페인트 연속 생성 완료 (${runCount}/${runCount})`);
+    }
   } catch (error) {
     if (String(error.message || '').includes('canceled')) {
       setGenerationStatus('idle', '이미지 생성이 중단되었습니다.');
@@ -2716,6 +3037,7 @@ async function loadSelectedImagePromptToEditor() {
     basePrompt: metadata.basePrompt || scene.basePrompt || '',
     baseNegativePrompt: metadata.baseNegativePrompt || scene.baseNegativePrompt || '',
     tagAssignments: metadata.tagAssignments || scene.tagAssignments || {},
+    wildcardPrompts: metadata.wildcardPrompts || scene.wildcardPrompts || [],
     characterPromptsText: metadata.characterPromptsText || scene.characterPromptsText || '',
     characterNegativePromptsText: metadata.characterNegativePromptsText || scene.characterNegativePromptsText || '',
     characterPositionsText: metadata.characterPositionsText || scene.characterPositionsText || '',
@@ -2754,6 +3076,7 @@ async function applyImageMetadataToEditor(payload, options = {}) {
       basePrompt: metadata.basePrompt || metadata.prompt || scene.basePrompt || '',
       baseNegativePrompt: metadata.baseNegativePrompt || metadata.negativePrompt || scene.baseNegativePrompt || '',
       tagAssignments: metadata.tagAssignments || scene.tagAssignments || {},
+      wildcardPrompts: metadata.wildcardPrompts || scene.wildcardPrompts || [],
       characterPromptsText: metadata.characterPromptsText || scene.characterPromptsText || '',
       characterNegativePromptsText: metadata.characterNegativePromptsText || scene.characterNegativePromptsText || '',
       characterPositionsText: metadata.characterPositionsText || scene.characterPositionsText || '',
@@ -2775,7 +3098,7 @@ async function applyImageMetadataToEditor(payload, options = {}) {
 }
 
 function closeDropImportDialog() {
-  if (state.droppedPngImport?.previewUrl) {
+  if (state.droppedPngImport?.previewUrl && state.droppedPngImport.revokePreviewUrl !== false) {
     URL.revokeObjectURL(state.droppedPngImport.previewUrl);
   }
 
@@ -2785,17 +3108,72 @@ function closeDropImportDialog() {
 }
 
 function showDropImportDialog(importPayload) {
-  if (state.droppedPngImport?.previewUrl) {
+  if (state.droppedPngImport?.previewUrl && state.droppedPngImport.revokePreviewUrl !== false) {
     URL.revokeObjectURL(state.droppedPngImport.previewUrl);
   }
+
+  const metadata = importPayload.payload?.metadata || {};
+  const hasPromptMetadata = Boolean(metadata.prompt || metadata.basePrompt || metadata.characterPromptsText);
 
   state.droppedPngImport = importPayload;
   elements.dropImportSeedCheckbox.checked = false;
   elements.dropImportPreviewImage.src = importPayload.previewUrl;
-  elements.dropImportMetaText.textContent = importPayload.payload?.metadata?.prompt
+  elements.dropImportPromptButton.disabled = !hasPromptMetadata;
+  elements.dropImportPromptButton.title = hasPromptMetadata
+    ? 'PNG 메타데이터의 프롬프트를 현재 씬으로 가져옵니다'
+    : '이 PNG에는 가져올 프롬프트 메타데이터가 없습니다';
+  elements.dropImportSeedCheckbox.disabled = !hasPromptMetadata;
+  elements.dropImportMetaText.textContent = hasPromptMetadata
     ? '메타데이터가 있는 PNG입니다. 원하는 방식으로 가져오세요.'
-    : '메타데이터를 찾았지만 프롬프트가 비어 있습니다.';
+    : '메타데이터가 없어도 I2I와 인페인트 소스 이미지로 사용할 수 있습니다.';
   elements.dropImportDialog?.classList.remove('hidden');
+}
+
+function buildDropPayloadFromGalleryImage(image) {
+  if (!image?.path || !image?.uri) {
+    return null;
+  }
+
+  return {
+    filePath: image.path,
+    fileName: image.path.split(/[\\/]/).pop() || 'gallery-image.png',
+    previewUrl: image.uri,
+    revokePreviewUrl: false,
+    payload: {
+      source: 'project',
+      metadata: image.metadata || {},
+      settings: {
+        provider: 'novelai',
+        model: image.metadata?.model,
+        width: image.metadata?.width,
+        height: image.metadata?.height,
+        steps: image.metadata?.steps,
+        scale: image.metadata?.scale,
+        sampler: image.metadata?.sampler,
+        cfgRescale: image.metadata?.cfgRescale,
+        noiseSchedule: image.metadata?.noiseSchedule,
+        seed: image.metadata?.seed
+      }
+    }
+  };
+}
+
+function showGalleryImageImportDialog(imageId) {
+  const image = state.project?.images?.find((item) => item.id === imageId);
+  const payload = buildDropPayloadFromGalleryImage(image);
+
+  if (!payload) {
+    setGenerationStatus('error', '갤러리 이미지를 가져올 수 없습니다.');
+    return;
+  }
+
+  state.selectedSceneId = image.sceneId || state.selectedSceneId;
+  state.selectedImageId = image.id;
+  state.i2iOpen = false;
+  state.inpaintOpen = false;
+  render();
+  showDropImportDialog(payload);
+  setGenerationStatus('idle', '갤러리 이미지를 어떻게 사용할지 선택하세요.');
 }
 
 async function importDroppedImageToCurrentScene(mode) {
@@ -2835,6 +3213,12 @@ async function importDroppedPromptOnly() {
   const pending = state.droppedPngImport;
 
   if (!pending) {
+    return;
+  }
+
+  const metadata = pending.payload?.metadata || {};
+  if (!metadata.prompt && !metadata.basePrompt && !metadata.characterPromptsText) {
+    setGenerationStatus('error', '이 PNG에는 가져올 프롬프트 메타데이터가 없습니다.');
     return;
   }
 
@@ -2898,6 +3282,28 @@ function addTagFromInput(input, target) {
   syncPromptFromTags();
   setDirty(true);
   renderTagChips();
+}
+
+function addWildcardFromInput() {
+  const wildcard = createWildcardPrompt(getWildcardOptionsFromFields(), 'scene');
+
+  if (wildcard.options.length < 2) {
+    setGenerationStatus('error', '와일드카드는 선택지를 2개 이상 넣어주세요.');
+    return;
+  }
+
+  state.wildcardPrompts = [...state.wildcardPrompts, wildcard];
+  resetWildcardOptionFields();
+  syncPromptFromTags();
+  setDirty(true);
+  renderTagChips();
+}
+
+function handleWildcardOptionKeydown(event) {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    addWildcardFromInput();
+  }
 }
 
 function organizeTagsForSelectedScene() {
@@ -3084,6 +3490,8 @@ elements.insertCharacterPresetButton.addEventListener('click', insertCharacterPr
 elements.sceneForm.addEventListener('submit', saveSelectedScene);
 elements.addTagButton.addEventListener('click', () => addTagFromInput(elements.tagInput, 'positive'));
 elements.addNegativeTagButton.addEventListener('click', () => addTagFromInput(elements.negativeTagInput, 'negative'));
+elements.addWildcardOptionButton.addEventListener('click', () => addWildcardOptionField());
+elements.addWildcardButton.addEventListener('click', addWildcardFromInput);
 
 window.addEventListener('dragover', (event) => {
   event.preventDefault();
@@ -3092,6 +3500,13 @@ window.addEventListener('dragover', (event) => {
 
 window.addEventListener('drop', (event) => {
   event.preventDefault();
+  const galleryImageId = event.dataTransfer.getData('application/x-dongsan-image-id');
+
+  if (galleryImageId) {
+    showGalleryImageImportDialog(galleryImageId);
+    return;
+  }
+
   const file = Array.from(event.dataTransfer.files || []).find((item) => (
     String(item?.name || item?.path || '').toLowerCase().endsWith('.png')
   ));
@@ -3113,6 +3528,9 @@ elements.tagInput.addEventListener('keydown', (event) => {
     addTagFromInput(elements.tagInput, 'positive');
   }
 });
+
+getWildcardOptionRows().forEach(bindWildcardOptionRow);
+updateWildcardOptionRemoveButtons();
 
 elements.negativeTagInput.addEventListener('keydown', (event) => {
   if (event.key === 'Enter') {

@@ -586,6 +586,45 @@ function testSofaMissionaryDraftTags() {
   });
 }
 
+function testRoomDrinkingCowgirlDraftTags() {
+  const draft = generateDraftTags([
+    '\uC790\uCDE8\uBC29 \uCE68\uB300\uC5D0 \uAE30\uB300\uC11C \uC220\uC794\uC744 \uC950\uACE0 \uC544\uBE60\uB2E4\uB9AC\uB85C \uC549\uC544\uC788\uB2E4.',
+    '\uC778\uC5B4\uACF5\uC8FC \uC790\uC138\uB85C \uC549\uC544\uC11C \uB0A8\uC790\uB97C \uC62C\uB824\uB2E4\uBCF4\uB294 \uC5EC\uC790.',
+    '\uC5F4\uB9B0 \uBC84\uD074, \uBC14\uC9C0\uB97C \uBC97\uAE30\uACE0 \uC5EC\uC790\uAC00 \uC704\uC5D0\uC11C \uC2A4\uB9C8\uD0C0.',
+    'disembodided penis, pussy penetration, M legs, side sex, one leg raised.',
+    '\uD314\uBCA0\uAC1C \uD558\uACE0 \uB098\uB780\uD788 \uB204\uC6CC\uC11C \uC140\uCE74 \uC719\uD06C.'
+  ].join('\n'));
+
+  [
+    'bedroom',
+    'bed',
+    'leaning on person',
+    'holding glass',
+    'drinking',
+    'sitting',
+    'crossed legs',
+    'yokozuwari',
+    'open fly',
+    'undressing',
+    'grinding',
+    'penis on pussy',
+    'disembodied penis',
+    'pussy',
+    'vaginal',
+    'm legs',
+    'side sex',
+    'side view',
+    'one leg raised',
+    'arm pillow',
+    'selfie',
+    'holding phone',
+    'smartphone',
+    'wink'
+  ].forEach((tag) => {
+    assert.ok(draft.tags.includes(tag), `Expected ${tag} in ${draft.tags.join(', ')}`);
+  });
+}
+
 function testCustomTagDictionaryRules() {
   const rules = parseTagDictionary([
     '■ 얼굴 - 감정',
@@ -635,12 +674,13 @@ function testMockGeneration() {
   const scene = {
     id: 'scene-1-001',
     sceneNo: '1',
-    prompt: '1girl, solo',
+    prompt: '1girl, solo, ||red hair|blue hair||',
     negativePrompt: 'bad anatomy',
     basePrompt: 'beautiful background',
     baseNegativePrompt: 'low quality',
     characterPromptsText: '1girl, solo',
     characterNegativePromptsText: 'bad anatomy',
+    wildcardPrompts: [{ options: ['red hair', 'blue hair'], target: 'scene' }],
     status: 'prompt_approved',
     updatedAt: new Date().toISOString()
   };
@@ -666,6 +706,7 @@ function testMockGeneration() {
   assert.strictEqual(nextProject.images[0].metadata.prompt, scene.prompt);
   assert.strictEqual(nextProject.images[0].metadata.basePrompt, scene.basePrompt);
   assert.strictEqual(nextProject.images[0].metadata.characterPromptsText, scene.characterPromptsText);
+  assert.deepStrictEqual(nextProject.images[0].metadata.wildcardPrompts, scene.wildcardPrompts);
   assert.strictEqual(nextProject.images[0].metadata.model, settings.model);
   assert.strictEqual(nextProject.images[0].metadata.width, settings.width);
   assert.strictEqual(nextProject.generationJobs[0].request.settings.scale, settings.scale);
@@ -714,6 +755,7 @@ testSecondSequenceCompositionDraftTags();
 testHeartDeliveryServiceDraftTags();
 testBackViewCowgirlDraftTags();
 testSofaMissionaryDraftTags();
+testRoomDrinkingCowgirlDraftTags();
 testCustomTagDictionaryRules();
 testTagAssignments();
 testMockGeneration();

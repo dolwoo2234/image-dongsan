@@ -153,7 +153,7 @@
                   <div class="inpaint-controls">
                     <label>
                       <span>브러시 크기</span>
-                      <input id="inpaintBrushSizeInput" type="range" min="4" max="160" step="2" value="48">
+                      <input id="inpaintBrushSizeInput" type="range" min="12" max="320" step="2" value="48">
                     </label>
                     <label>
                       <span>인페인트 강도</span>
@@ -243,6 +243,30 @@
               <div id="negativeTagChips" class="tag-chip-list"></div>
             </section>
           </div>
+
+          <section class="tag-editor wildcard-editor">
+            <div class="tag-editor-header">
+              <span>와일드카드</span>
+              <p class="wildcard-help">선택지 중 하나가 생성할 때마다 랜덤으로 들어갑니다.</p>
+              <div class="wildcard-builder">
+                <div id="wildcardOptionFields" class="wildcard-option-fields">
+                  <div class="wildcard-option-row">
+                    <input class="wildcard-option-input" type="text" placeholder="red hair">
+                    <button class="ghost-button compact-button wildcard-option-remove" type="button" title="선택지 삭제">x</button>
+                  </div>
+                  <div class="wildcard-option-row">
+                    <input class="wildcard-option-input" type="text" placeholder="blue hair">
+                    <button class="ghost-button compact-button wildcard-option-remove" type="button" title="선택지 삭제">x</button>
+                  </div>
+                </div>
+                <button id="addWildcardOptionButton" class="ghost-button compact-button" type="button">선택지 추가</button>
+              </div>
+              <div class="wildcard-add-grid">
+                <button id="addWildcardButton" class="ghost-button compact-button" type="button">추가</button>
+              </div>
+            </div>
+            <div id="wildcardChips" class="tag-chip-list"></div>
+          </section>
 
           <div class="section-title-row prompt-lock-row">
             <div>

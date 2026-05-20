@@ -574,6 +574,50 @@ label {
   gap: 8px;
 }
 
+.wildcard-editor {
+  min-height: 110px;
+}
+
+.wildcard-help {
+  margin: -2px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.wildcard-builder {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: start;
+}
+
+.wildcard-option-fields {
+  display: grid;
+  gap: 8px;
+}
+
+.wildcard-option-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 32px;
+  gap: 8px;
+}
+
+.wildcard-option-remove {
+  width: 32px;
+  padding: 0;
+}
+
+.wildcard-add-grid {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.wildcard-add-grid .compact-button {
+  min-width: 64px;
+}
+
 .tag-search-field {
   grid-column: 1 / -1;
 }
@@ -1576,6 +1620,11 @@ textarea:focus {
     display: grid;
     grid-template-columns: 1fr 1fr;
   }
+
+  .wildcard-builder {
+    grid-template-columns: 1fr;
+  }
+
 }
 
 @media (min-width: 1800px) {
