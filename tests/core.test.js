@@ -155,15 +155,15 @@ function testKoreanActionCameraTags() {
   assert.ok(draft.tags.includes('walking'));
   assert.ok(draft.tags.includes('blush'));
   assert.ok(draft.tags.includes('whispering'));
-  assert.ok(draft.tags.includes('side view'));
+  assert.ok(draft.tags.includes('from side'));
   assert.ok(draft.tags.includes('bust shot'));
   assert.ok(draft.tags.includes('upper body'));
   assert.ok(draft.tags.includes('market street'));
 }
 
 function testGuideTagOrderingAndExpandedCues() {
-  const ordered = orderPromptTags(['blush', 'market_street', '1boy', 'walking', 'side view']);
-  assert.deepStrictEqual(ordered, ['1boy', 'side view', 'market street', 'walking', 'blush']);
+  const ordered = orderPromptTags(['blush', 'market_street', '1boy', 'walking', 'from side']);
+  assert.deepStrictEqual(ordered, ['1boy', 'from side', 'market street', 'walking', 'blush']);
 
   const weightedOrdered = orderPromptTags(['blush', '1.5::looking back::', '-1::breasts::', '1girl']);
   assert.deepStrictEqual(weightedOrdered, ['1girl', '1.5::looking back::', 'blush', '-1::breasts::']);
@@ -503,7 +503,6 @@ function testBackViewCowgirlDraftTags() {
     'face out of frame',
     'spread legs',
     'from side',
-    'side view',
     'glans',
     'hand job',
     'hands on penis',
@@ -571,7 +570,7 @@ function testSofaMissionaryDraftTags() {
     'cum on hand',
     'hand on stomach',
     'missionary',
-    'side view',
+    'from side',
     'ear licking',
     'licking',
     'imminent kiss',
@@ -613,13 +612,80 @@ function testRoomDrinkingCowgirlDraftTags() {
     'vaginal',
     'm legs',
     'side sex',
-    'side view',
+    'from side',
     'one leg raised',
     'arm pillow',
     'selfie',
     'holding phone',
     'smartphone',
     'wink'
+  ].forEach((tag) => {
+    assert.ok(draft.tags.includes(tag), `Expected ${tag} in ${draft.tags.join(', ')}`);
+  });
+}
+
+function testAnalHumiliationDraftTags() {
+  const draft = generateDraftTags([
+    '반측면 뷰, 애널섹스, ASS FOCUS, 남자 하체만 보이게, 입에 스타킹.',
+    '가슴 꽉 쥐고 후배위, 삽입장면 안보이게 상체만.',
+    '아헤가오, 밑에서 본 후배위, 벽에 손 짚고있는 여성, 남자가 여성 허리에 손.',
+    '여자 얼굴 땅에 대고 남자에게 손 뒤로 잡힌상태, 일그러진 얼굴.',
+    'anal sex, 시오후키, leg frame, disembodided penis, 무릎꿇고 엉덩이 든 상태, 아래에서 본 뷰.',
+    '바닥에 볼 대고 쓰러지듯 누워있어요, 홍조, 쾌락 표정.',
+    '소변 위에 앉아있는 여자, 남자가 여자 머리채 잡고있어요.',
+    '펠라 위에서 바라본 pov, 남자 back view, 반측면 펠라 from below.',
+    'begging, looking up, 두 손 모아서 비는 중, 한손으로 셀프 핸드잡중, 몸 군데군데 정액.',
+    'PUSSY FOCUS, 망가진 얼굴, 반만 뜬 눈, 다리벌린상태.'
+  ].join('\n'));
+
+  [
+    'three quarter view',
+    'anal penetration',
+    'anal sex',
+    'ass',
+    'ass focus',
+    'lower body',
+    'cropped torso',
+    'stockings',
+    'clothes in mouth',
+    'breast grab',
+    'groping',
+    'doggystyle',
+    'upper body',
+    'ahegao',
+    'from below',
+    'hand on wall',
+    'hand on waist',
+    'kneeling',
+    'on floor',
+    'face down',
+    'restrained',
+    'arms behind back',
+    'grimace',
+    'female ejaculation',
+    'leg frame',
+    'disembodied penis',
+    'blush',
+    'pleasure face',
+    'urine',
+    'hair grab',
+    'head grab',
+    'fellatio',
+    'from above',
+    'pov',
+    'from behind',
+    'begging',
+    'looking up',
+    'clasped hands',
+    'masturbation',
+    'hand job',
+    'hand on penis',
+    'cum',
+    'cum on body',
+    'pussy',
+    'pussy focus',
+    'half-closed eyes',
+    'spread legs'
   ].forEach((tag) => {
     assert.ok(draft.tags.includes(tag), `Expected ${tag} in ${draft.tags.join(', ')}`);
   });
@@ -660,10 +726,14 @@ function testTagAssignments() {
 
   const pairedAssignments = normalizeTagAssignments({}, [
     "underbody to male's face",
-    'top-down bottom-up'
+    'top-down bottom-up',
+    'anal penetration',
+    'anal sex'
   ]);
   assert.strictEqual(pairedAssignments["underbody to male's face"], 'character-0');
   assert.strictEqual(pairedAssignments['top-down bottom-up'], 'character-1');
+  assert.strictEqual(pairedAssignments['anal penetration'], 'characters-0-1');
+  assert.strictEqual(pairedAssignments['anal sex'], 'characters-0-1');
 
   const preserved = normalizeTagAssignments({ 'closed eyes': 'character-1' }, ['closed eyes']);
   assert.strictEqual(preserved['closed eyes'], 'character-1');
@@ -756,6 +826,7 @@ testHeartDeliveryServiceDraftTags();
 testBackViewCowgirlDraftTags();
 testSofaMissionaryDraftTags();
 testRoomDrinkingCowgirlDraftTags();
+testAnalHumiliationDraftTags();
 testCustomTagDictionaryRules();
 testTagAssignments();
 testMockGeneration();

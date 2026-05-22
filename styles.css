@@ -622,6 +622,41 @@ label {
   grid-column: 1 / -1;
 }
 
+.base-prefix-panel {
+  display: grid;
+  grid-template-columns: auto minmax(132px, 0.7fr) minmax(180px, 1fr) auto auto auto auto;
+  gap: 8px;
+  align-items: center;
+  margin: 8px 0 10px;
+  padding: 8px;
+  border: 1px solid rgba(154, 164, 178, 0.18);
+  border-radius: 6px;
+  background: rgba(16, 18, 24, 0.34);
+}
+
+.base-prefix-title {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.base-prefix-panel select,
+.base-prefix-panel input {
+  min-width: 0;
+  min-height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--field);
+  color: var(--text);
+  padding: 6px 8px;
+}
+
+.base-prefix-panel .ghost-button {
+  background: rgba(16, 18, 24, 0.72);
+  border-color: rgba(154, 164, 178, 0.28);
+}
+
 .compact-button {
   min-height: 32px;
   padding: 0 8px;
@@ -1623,6 +1658,15 @@ textarea:focus {
 
   .wildcard-builder {
     grid-template-columns: 1fr;
+  }
+
+  .base-prefix-panel {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .base-prefix-title,
+  .base-prefix-panel input {
+    grid-column: 1 / -1;
   }
 
 }

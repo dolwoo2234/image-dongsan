@@ -13,6 +13,7 @@ const state = {
   draftTagAssignments: {},
   draftNegativeTags: [],
   wildcardPrompts: [],
+  finalPromptPrefix: '',
   recentlyAddedTagKeys: new Set(),
   recentlyAddedTagTimer: null,
   settings: null,
@@ -81,6 +82,12 @@ const elements = {
   sceneNoInput: document.querySelector('#sceneNoInput'),
   descriptionInput: document.querySelector('#descriptionInput'),
   tagSearchInput: document.querySelector('#tagSearchInput'),
+  basePrefixPresetSelect: document.querySelector('#basePrefixPresetSelect'),
+  basePrefixPresetInput: document.querySelector('#basePrefixPresetInput'),
+  applyBasePrefixPresetButton: document.querySelector('#applyBasePrefixPresetButton'),
+  addBasePrefixPresetButton: document.querySelector('#addBasePrefixPresetButton'),
+  saveBasePrefixPresetButton: document.querySelector('#saveBasePrefixPresetButton'),
+  deleteBasePrefixPresetButton: document.querySelector('#deleteBasePrefixPresetButton'),
   tagInput: document.querySelector('#tagInput'),
   addTagButton: document.querySelector('#addTagButton'),
   tagChips: document.querySelector('#tagChips'),
@@ -182,6 +189,13 @@ const statusLabels = {
 };
 
 const guideStorageKey = 'dongsan.beginnerGuide.seen.v2';
+const basePrefixPresetStorageKey = 'dongsan.basePrefixPresets.v1';
+const defaultBasePrefixPresets = [
+  { id: 'couple', label: '1girl,1boy,couple', prompt: '1girl,1boy,couple' },
+  { id: 'girl-solo', label: '1girl,solo', prompt: '1girl,solo' },
+  { id: 'boy-solo', label: '1boy,solo', prompt: '1boy,solo' }
+];
+const defaultBasePrefixPresetIds = new Set(defaultBasePrefixPresets.map((preset) => preset.id));
 const guideSteps = [
   {
     selector: '#importButton',
@@ -300,13 +314,13 @@ function uniqueTags(tags) {
 
 const promptTagOrder = [
   ['1girl', '1boy', 'multiple girls', 'solo'],
-  ['cowboy shot', 'bust shot', 'upper body', 'full body', 'wide shot', 'side view', 'from side', 'from above', 'from below', 'pov', 'straight-on', 'dutch angle', 'looking at viewer', 'looking down', 'looking back'],
+  ['cowboy shot', 'bust shot', 'upper body', 'full body', 'wide shot', 'from side', 'from above', 'from below', 'pov', 'straight-on', 'dutch angle', 'looking at viewer', 'looking down', 'looking back'],
   ['indoors', 'outdoors', 'entrance', 'doorway', 'bedroom', 'bathroom', 'bathtub', 'open door', 'bed', 'couch', 'table', 'school', 'classroom', 'market street', 'city street', 'forest', 'night', 'sunset', 'rain'],
-  ['standing', 'walking', 'sitting', 'kneeling', 'lying', 'arm pillow', 'bent over', 'leaning forward', 'leaning on person', 'arms around shoulders', 'arms around neck', 'hug', 'holding hands', 'holding paper', 'holding glass', 'waving', 'hands behind back', 'hair flip', 'pointing', 'straddling', 'girl on top', 'cowgirl position', 'sitting on lap', 'upright straddle', 'crossed legs', 'yokozuwari', 'all fours', 'head tilt', 'head shaking', 'wink', 'whispering', 'whisper to ear', 'sniffing', 'selfie', 'background crowd'],
-  ['smile', 'smirk', 'expressionless', 'angry', 'glaring', 'scared', 'surprised', 'embarrassed', 'drunk', 'blush', 'tears'],
-  ['breasts', 'underboob', 'ass', 'ass focus', 'penis focus', 'face focus', 'lower body', 'cropped torso', 'male back', 'stomach', 'm legs', 'face out of frame', 'eyes out of frame', 'cropped face', 'ear', 'thighs', 'tail', 'tail grab', 'tail wagging', 'hand on another\'s ass', 'hand on thigh', 'hand on breast', 'hand on stomach', 'groping', 'ring', 'wedding ring', 'highly detailed'],
-  ['sex', 'vaginal', 'pussy', 'pussy focus', 'spread legs', 'one leg raised', 'fingering', 'clitoris', 'breast sucking', 'breast grab', 'breast press', 'nipple flick', 'hand on nipple', 'kissing', 'imminent kiss', 'saliva', 'hand job', 'hands on penis', 'hand on penis', 'penis', 'penis on pussy', 'disembodied penis', 'glans', 'testicles', 'tongue', 'licking penis', 'ear licking', 'licking', 'nude', 'topless', 'bottomless', 'partially undressed', 'open fly', 'skirt lift', 'panty pull', 'panties aside', 'imminent penetration', 'grinding', 'sixty-nine', 'doggystyle', 'cowgirl position', 'paizuri', 'mating press', 'missionary', 'side sex', 'fellatio', 'cum', 'cumdrip', 'cum on breasts', 'cum on stomach', 'cum on hand', 'female ejaculation', 'after sex', 'restrained', 'hand over mouth', 'hair grab', 'head grab'],
-  ['paper', 'document', 'briefcase', 'cushion', 'holding phone', 'smartphone', 'drinking', 'undressing', 'covering self', 'forehead-to-forehead', 'facing another', 'reaching towards viewer']
+  ['standing', 'walking', 'sitting', 'kneeling', 'lying', 'on floor', 'face down', 'arm pillow', 'bent over', 'leaning forward', 'leaning on person', 'arms around shoulders', 'arms around neck', 'hug', 'holding hands', 'holding paper', 'holding glass', 'waving', 'hands behind back', 'arms behind back', 'hair flip', 'pointing', 'straddling', 'girl on top', 'cowgirl position', 'sitting on lap', 'upright straddle', 'crossed legs', 'yokozuwari', 'all fours', 'hand on wall', 'clasped hands', 'begging', 'head tilt', 'head shaking', 'wink', 'whispering', 'whisper to ear', 'sniffing', 'talking', 'selfie', 'background crowd'],
+  ['smile', 'smirk', 'expressionless', 'angry', 'glaring', 'scared', 'surprised', 'embarrassed', 'drunk', 'blush', 'tears', 'ahegao', 'grimace', 'half-closed eyes', 'pleasure face', 'looking up'],
+  ['breasts', 'underboob', 'ass', 'ass focus', 'penis focus', 'face focus', 'lower body', 'cropped torso', 'male torso', 'male back', 'stomach', 'm legs', 'leg frame', 'face out of frame', 'eyes out of frame', 'cropped face', 'ear', 'thighs', 'tail', 'tail grab', 'tail wagging', 'hand on another\'s ass', 'hand on thigh', 'hand on breast', 'hand on stomach', 'hand on waist', 'groping', 'ring', 'wedding ring', 'highly detailed'],
+  ['sex', 'vaginal', 'anal penetration', 'anal sex', 'pussy', 'pussy focus', 'spread legs', 'one leg raised', 'fingering', 'clitoris', 'breast sucking', 'breast grab', 'breast press', 'nipple flick', 'hand on nipple', 'kissing', 'imminent kiss', 'saliva', 'hand job', 'hands on penis', 'hand on penis', 'penis', 'penis on pussy', 'disembodied penis', 'glans', 'testicles', 'tongue', 'licking penis', 'ear licking', 'licking', 'nude', 'topless', 'bottomless', 'partially undressed', 'open fly', 'skirt lift', 'panty pull', 'panties aside', 'imminent penetration', 'grinding', 'sixty-nine', 'doggystyle', 'cowgirl position', 'paizuri', 'mating press', 'missionary', 'side sex', 'fellatio', 'cum', 'cumdrip', 'cum on breasts', 'cum on stomach', 'cum on hand', 'cum on body', 'female ejaculation', 'urine', 'after sex', 'restrained', 'clothes in mouth', 'hand over mouth', 'hair grab', 'head grab', 'masturbation'],
+  ['paper', 'document', 'briefcase', 'cushion', 'holding phone', 'smartphone', 'stockings', 'drinking', 'undressing', 'covering self', 'forehead-to-forehead', 'facing another', 'reaching towards viewer']
 ];
 
 const promptTagRank = promptTagOrder.reduce((acc, group, groupIndex) => {
@@ -321,7 +335,7 @@ const tagTargetSceneLabels = new Set([
   'cowboy shot', 'bust shot', 'upper body', 'full body', 'wide shot',
   'pov', 'pov hands', 'pov doorway', 'multiple views', 'straight-on',
   'facing away', 'three quarter view', 'dutch angle', 'upside-down',
-  'from above', 'high up', 'from below', 'side view', 'from side',
+  'from above', 'high up', 'from below', 'from side',
   'facing to the side', 'profile', 'from behind', 'indoors', 'outdoors',
   'entrance', 'doorway', 'bedroom', 'bathroom', 'bathtub', 'open door',
   'bed', 'couch', 'table', 'school', 'classroom', 'market street',
@@ -329,7 +343,7 @@ const tagTargetSceneLabels = new Set([
   'kissing', 'imminent kiss', 'saliva', 'imminent penetration',
   'penis on pussy', 'disembodied penis', 'grinding', 'sixty-nine', 'doggystyle',
   'cowgirl position', 'paizuri', 'mating press', 'missionary', 'side sex',
-  'fellatio', 'after sex', 'forehead-to-forehead', 'facing another',
+  'fellatio', 'urine', 'after sex', 'forehead-to-forehead', 'facing another',
   'reaching towards viewer'
 ]);
 
@@ -337,7 +351,9 @@ function getDefaultTagTarget(tag) {
   const label = getTagSortLabel(tag);
   const targetMap = {
     "underbody to male's face": 'character-0',
-    'top-down bottom-up': 'character-1'
+    'top-down bottom-up': 'character-1',
+    'anal penetration': 'characters-0-1',
+    'anal sex': 'characters-0-1'
   };
 
   return targetMap[label] || (tagTargetSceneLabels.has(label) ? 'scene' : 'character-0');
@@ -531,6 +547,171 @@ function getGenerationRunCount() {
 
 function syncPromptFromTags() {
   refreshPromptPreview();
+}
+
+function normalizeBasePrefixPreset(preset, index = 0) {
+  const prompt = String(preset?.prompt || '').trim();
+  const label = String(preset?.label || prompt || `프리셋 ${index + 1}`).trim();
+  const id = String(preset?.id || `base-prefix-${Date.now()}-${index}`).trim();
+  return { id, label, prompt };
+}
+
+function mergeBasePrefixPresets(customPresets = []) {
+  const defaults = defaultBasePrefixPresets.map(normalizeBasePrefixPreset);
+  const custom = (Array.isArray(customPresets) ? customPresets : [])
+    .map(normalizeBasePrefixPreset)
+    .filter((preset) => preset.prompt && !defaultBasePrefixPresetIds.has(preset.id));
+  return [...defaults, ...custom];
+}
+
+function getBasePrefixPresets() {
+  const stored = localStorage.getItem(basePrefixPresetStorageKey);
+  if (stored === null) {
+    return mergeBasePrefixPresets();
+  }
+
+  try {
+    const parsed = JSON.parse(stored);
+    if (!Array.isArray(parsed)) {
+      return mergeBasePrefixPresets();
+    }
+    return mergeBasePrefixPresets(parsed);
+  } catch (_error) {
+    return mergeBasePrefixPresets();
+  }
+}
+
+function persistBasePrefixPresets(presets) {
+  const customPresets = presets
+    .map(normalizeBasePrefixPreset)
+    .filter((preset) => preset.prompt && !defaultBasePrefixPresetIds.has(preset.id));
+  localStorage.setItem(basePrefixPresetStorageKey, JSON.stringify(customPresets));
+}
+
+function renderBasePrefixPresets(selectedId = null) {
+  const presets = getBasePrefixPresets();
+  const select = elements.basePrefixPresetSelect;
+  if (!select) {
+    return;
+  }
+
+  select.innerHTML = '';
+  presets.forEach((preset) => {
+    const option = document.createElement('option');
+    option.value = preset.id;
+    option.textContent = preset.label;
+    select.appendChild(option);
+  });
+
+  if (presets.length === 0) {
+    elements.basePrefixPresetInput.value = '';
+    elements.deleteBasePrefixPresetButton.disabled = true;
+    return;
+  }
+
+  const nextSelectedId = presets.some((preset) => preset.id === selectedId)
+    ? selectedId
+    : presets[0].id;
+  select.value = nextSelectedId;
+  const selectedPreset = presets.find((preset) => preset.id === nextSelectedId) || presets[0];
+  elements.basePrefixPresetInput.value = selectedPreset.prompt;
+  elements.deleteBasePrefixPresetButton.disabled = defaultBasePrefixPresetIds.has(selectedPreset.id);
+}
+
+function getSelectedBasePrefixPreset() {
+  const presets = getBasePrefixPresets();
+  return presets.find((preset) => preset.id === elements.basePrefixPresetSelect?.value) || null;
+}
+
+function prependPromptPrefix(prompt, prefix) {
+  const normalizedPrefix = String(prefix || '').trim().replace(/,+$/g, '');
+  const normalizedPrompt = String(prompt || '').trim();
+
+  if (!normalizedPrefix) {
+    return normalizedPrompt;
+  }
+
+  if (!normalizedPrompt) {
+    return normalizedPrefix;
+  }
+
+  const promptLower = normalizedPrompt.toLowerCase();
+  const prefixLower = normalizedPrefix.toLowerCase();
+  if (promptLower === prefixLower || promptLower.startsWith(`${prefixLower},`)) {
+    return normalizedPrompt;
+  }
+
+  return `${normalizedPrefix}, ${normalizedPrompt}`;
+}
+
+function applyBasePrefixPreset() {
+  const prefix = elements.basePrefixPresetInput.value.trim();
+  if (!prefix) {
+    setGenerationStatus('error', '붙일 인원 프리셋을 입력하세요.');
+    return;
+  }
+
+  state.finalPromptPrefix = prefix;
+  refreshPromptPreview();
+  setGenerationStatus('done', '인원 프리셋을 최종 프롬프트 맨 앞에 붙였습니다.');
+}
+
+function saveBasePrefixPreset() {
+  const prompt = elements.basePrefixPresetInput.value.trim();
+  if (!prompt) {
+    setGenerationStatus('error', '저장할 인원 프리셋을 입력하세요.');
+    return;
+  }
+
+  const presets = getBasePrefixPresets();
+  const selected = getSelectedBasePrefixPreset();
+  const nextPreset = {
+    id: selected && !defaultBasePrefixPresetIds.has(selected.id) ? selected.id : `base-prefix-${Date.now()}`,
+    label: prompt,
+    prompt
+  };
+  const nextPresets = selected && !defaultBasePrefixPresetIds.has(selected.id)
+    ? presets.map((preset) => preset.id === selected.id ? nextPreset : preset)
+    : [...presets, nextPreset];
+
+  persistBasePrefixPresets(nextPresets);
+  renderBasePrefixPresets(nextPreset.id);
+  setGenerationStatus('done', '인원 프리셋을 저장했습니다.');
+}
+
+function addBasePrefixPreset() {
+  const prompt = elements.basePrefixPresetInput.value.trim();
+  if (!prompt) {
+    setGenerationStatus('error', '추가할 인원 프리셋을 입력하세요.');
+    return;
+  }
+
+  const nextPreset = {
+    id: `base-prefix-${Date.now()}`,
+    label: prompt,
+    prompt
+  };
+  const nextPresets = [...getBasePrefixPresets(), nextPreset];
+  persistBasePrefixPresets(nextPresets);
+  renderBasePrefixPresets(nextPreset.id);
+  setGenerationStatus('done', '인원 프리셋을 추가했습니다.');
+}
+
+function deleteBasePrefixPreset() {
+  const selected = getSelectedBasePrefixPreset();
+  if (!selected) {
+    return;
+  }
+
+  if (defaultBasePrefixPresetIds.has(selected.id)) {
+    setGenerationStatus('error', '기본 인원 프리셋은 삭제할 수 없습니다.');
+    return;
+  }
+
+  const nextPresets = getBasePrefixPresets().filter((preset) => preset.id !== selected.id);
+  persistBasePrefixPresets(nextPresets);
+  renderBasePrefixPresets(nextPresets[0]?.id || null);
+  setGenerationStatus('done', '인원 프리셋을 삭제했습니다.');
 }
 
 function normalizeWildcardOptions(value) {
@@ -786,14 +967,14 @@ function toggleNegativePromptPreview() {
 
 function refreshPromptPreview() {
   const computed = getComputedPromptPreviews();
-  elements.promptInput.value = computed.prompt;
+  elements.promptInput.value = prependPromptPrefix(computed.prompt, state.finalPromptPrefix);
   elements.negativePromptInput.value = computed.negativePrompt;
   renderPromptHighlights();
 }
 
 function renderPromptPreviewForScene(scene) {
   const computed = getComputedPromptPreviews();
-  elements.promptInput.value = computed.prompt;
+  elements.promptInput.value = prependPromptPrefix(computed.prompt, state.finalPromptPrefix);
   elements.negativePromptInput.value = computed.negativePrompt;
   renderPromptHighlights();
 }
@@ -1548,6 +1729,7 @@ function renderSceneForm(options = {}) {
     state.draftTagAssignments = {};
     state.draftNegativeTags = [];
     state.wildcardPrompts = [];
+    state.finalPromptPrefix = '';
     state.selectedImageId = null;
     elements.carryCharacterToNextSceneButton.disabled = true;
     renderSelectedImage();
@@ -1578,6 +1760,7 @@ function renderSceneForm(options = {}) {
   state.draftTagAssignments = normalizeTagAssignments(scene.tagAssignments, state.draftTags);
   state.draftNegativeTags = uniqueTags(scene.negativeTags || []);
   state.wildcardPrompts = normalizeWildcardPrompts(scene.wildcardPrompts || []);
+  state.finalPromptPrefix = '';
   const hadPendingCharacterPromptCarry = Boolean(state.pendingCharacterPromptCarry);
   const usesCarriedCharacterPrompts = Boolean(state.pendingCharacterPromptCarry);
   const promptScene = usesCarriedCharacterPrompts
@@ -3488,6 +3671,15 @@ elements.deleteCharacterPresetButton.addEventListener('click', deleteCharacterPr
 elements.copyCharacterPresetButton.addEventListener('click', copyCharacterPreset);
 elements.insertCharacterPresetButton.addEventListener('click', insertCharacterPreset);
 elements.sceneForm.addEventListener('submit', saveSelectedScene);
+elements.basePrefixPresetSelect.addEventListener('change', () => {
+  const selected = getSelectedBasePrefixPreset();
+  elements.basePrefixPresetInput.value = selected?.prompt || '';
+  elements.deleteBasePrefixPresetButton.disabled = !selected || defaultBasePrefixPresetIds.has(selected.id);
+});
+elements.applyBasePrefixPresetButton.addEventListener('click', applyBasePrefixPreset);
+elements.addBasePrefixPresetButton.addEventListener('click', addBasePrefixPreset);
+elements.saveBasePrefixPresetButton.addEventListener('click', saveBasePrefixPreset);
+elements.deleteBasePrefixPresetButton.addEventListener('click', deleteBasePrefixPreset);
 elements.addTagButton.addEventListener('click', () => addTagFromInput(elements.tagInput, 'positive'));
 elements.addNegativeTagButton.addEventListener('click', () => addTagFromInput(elements.negativeTagInput, 'negative'));
 elements.addWildcardOptionButton.addEventListener('click', () => addWildcardOptionField());
@@ -3531,6 +3723,7 @@ elements.tagInput.addEventListener('keydown', (event) => {
 
 getWildcardOptionRows().forEach(bindWildcardOptionRow);
 updateWildcardOptionRemoveButtons();
+renderBasePrefixPresets();
 
 elements.negativeTagInput.addEventListener('keydown', (event) => {
   if (event.key === 'Enter') {
