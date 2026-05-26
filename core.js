@@ -95,6 +95,71 @@ function normalizeTagAssignments(assignments, tags) {
   }));
 }
 
+function getCharacterIndexesForTagTarget(target) {
+  const normalized = String(target || '');
+  const multiMatch = normalized.match(/^characters-([0-9-]+)$/);
+
+  if (multiMatch) {
+    return multiMatch[1]
+      .split('-')
+      .map((value) => Number(value))
+      .filter((value, index, values) => Number.isInteger(value) && value >= 0 && values.indexOf(value) === index);
+  }
+
+  const singleMatch = normalized.match(/^character-(\d+)$/);
+  return singleMatch ? [Number(singleMatch[1])] : [0];
+}
+
+function splitTagsByTarget(tags, assignments = {}) {
+  return orderPromptTags(tags || []).reduce((acc, tag) => {
+    const target = assignments[tag] || assignments[getPromptTagSortLabel(tag)] || getDefaultTagTarget(tag);
+
+    if (target === 'scene') {
+      acc.sceneTags.push(tag);
+      return acc;
+    }
+
+    getCharacterIndexesForTagTarget(target).forEach((characterIndex) => {
+      if (!acc.characterTags[characterIndex]) {
+        acc.characterTags[characterIndex] = [];
+      }
+      acc.characterTags[characterIndex].push(tag);
+    });
+    return acc;
+  }, { sceneTags: [], characterTags: [] });
+}
+
+function formatWildcardPrompt(wildcard) {
+  const options = Array.isArray(wildcard?.options)
+    ? wildcard.options.map((option) => String(option || '').trim()).filter(Boolean)
+    : [];
+
+  return options.length > 0 ? `||${options.join('|')}||` : '';
+}
+
+function splitWildcardPromptsByTarget(wildcards = []) {
+  return (Array.isArray(wildcards) ? wildcards : []).reduce((acc, wildcard) => {
+    const value = formatWildcardPrompt(wildcard);
+
+    if (!value) {
+      return acc;
+    }
+
+    if ((wildcard.target || 'scene') === 'scene') {
+      acc.sceneTags.push(value);
+      return acc;
+    }
+
+    getCharacterIndexesForTagTarget(wildcard.target).forEach((characterIndex) => {
+      if (!acc.characterTags[characterIndex]) {
+        acc.characterTags[characterIndex] = [];
+      }
+      acc.characterTags[characterIndex].push(value);
+    });
+    return acc;
+  }, { sceneTags: [], characterTags: [] });
+}
+
 function normalizeProject(project) {
   const scenes = Array.isArray(project?.scenes)
     ? project.scenes.map((scene, index) => {
@@ -959,9 +1024,15 @@ module.exports = {
   generateDraftTags,
   parseTagDictionary,
   applyCustomTagRules,
+  normalizePromptTag,
+  getPromptTagSortLabel,
   orderPromptTags,
   getDefaultTagTarget,
   normalizeTagAssignments,
+  getCharacterIndexesForTagTarget,
+  splitTagsByTarget,
+  formatWildcardPrompt,
+  splitWildcardPromptsByTarget,
   createMockGeneration,
   createGenerationRecord,
   createFailedGenerationRecord

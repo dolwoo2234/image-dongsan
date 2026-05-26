@@ -1,4 +1,15 @@
 const { contextBridge, ipcRenderer, webUtils } = require('electron');
+const {
+  formatWildcardPrompt,
+  getCharacterIndexesForTagTarget,
+  getDefaultTagTarget,
+  getPromptTagSortLabel,
+  normalizePromptTag,
+  normalizeTagAssignments,
+  orderPromptTags,
+  splitTagsByTarget,
+  splitWildcardPromptsByTarget
+} = require('./core');
 
 const dongsanApi = {
   loadProject: () => ipcRenderer.invoke('project:load'),
@@ -29,7 +40,18 @@ const dongsanApi = {
   importTagDictionary: () => ipcRenderer.invoke('settings:importTagDictionary'),
   clearApiKey: () => ipcRenderer.invoke('settings:clearApiKey'),
   checkForUpdates: () => ipcRenderer.invoke('app:checkForUpdates'),
-  applyUpdate: () => ipcRenderer.invoke('app:applyUpdate')
+  applyUpdate: () => ipcRenderer.invoke('app:applyUpdate'),
+  tagCore: {
+    formatWildcardPrompt,
+    getCharacterIndexesForTagTarget,
+    getDefaultTagTarget,
+    getPromptTagSortLabel,
+    normalizePromptTag,
+    normalizeTagAssignments,
+    orderPromptTags,
+    splitTagsByTarget,
+    splitWildcardPromptsByTarget
+  }
 };
 
 contextBridge.exposeInMainWorld('dongsan', dongsanApi);

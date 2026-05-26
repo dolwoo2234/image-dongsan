@@ -33,6 +33,8 @@ const state = {
   inpaintPanY: 0
 };
 
+const tagCore = window.dongsan.tagCore;
+
 const elements = {
   importButton: document.querySelector('#importButton'),
   addSceneButton: document.querySelector('#addSceneButton'),
@@ -255,7 +257,7 @@ function labelStatus(status) {
   return statusLabels[status] || status || '없음';
 }
 function normalizeTag(value) {
-  return value.trim().replace(/_/g, ' ').replace(/\s+/g, ' ');
+  return tagCore.normalizePromptTag(value);
 }
 
 function parseWeightedTag(value) {
@@ -305,66 +307,19 @@ function formatWeightedTag(label, weight) {
 }
 
 function getTagSortLabel(tag) {
-  return parseWeightedTag(tag).label;
+  return tagCore.getPromptTagSortLabel(tag);
 }
 
 function uniqueTags(tags) {
   return [...new Set(tags.map(normalizeTag).filter(Boolean))];
 }
 
-const promptTagOrder = [
-  ['1girl', '1boy', 'multiple girls', 'solo'],
-  ['cowboy shot', 'bust shot', 'upper body', 'full body', 'wide shot', 'from side', 'from above', 'from below', 'pov', 'straight-on', 'dutch angle', 'looking at viewer', 'looking down', 'looking back'],
-  ['indoors', 'outdoors', 'entrance', 'doorway', 'bedroom', 'bathroom', 'bathtub', 'open door', 'bed', 'couch', 'table', 'school', 'classroom', 'market street', 'city street', 'forest', 'night', 'sunset', 'rain'],
-  ['standing', 'walking', 'sitting', 'kneeling', 'lying', 'on floor', 'face down', 'arm pillow', 'bent over', 'leaning forward', 'leaning on person', 'arms around shoulders', 'arms around neck', 'hug', 'holding hands', 'holding paper', 'holding glass', 'waving', 'hands behind back', 'arms behind back', 'hair flip', 'pointing', 'straddling', 'girl on top', 'cowgirl position', 'sitting on lap', 'upright straddle', 'crossed legs', 'yokozuwari', 'all fours', 'hand on wall', 'clasped hands', 'begging', 'head tilt', 'head shaking', 'wink', 'whispering', 'whisper to ear', 'sniffing', 'talking', 'selfie', 'background crowd'],
-  ['smile', 'smirk', 'expressionless', 'angry', 'glaring', 'scared', 'surprised', 'embarrassed', 'drunk', 'blush', 'tears', 'ahegao', 'grimace', 'half-closed eyes', 'pleasure face', 'looking up'],
-  ['breasts', 'underboob', 'ass', 'ass focus', 'penis focus', 'face focus', 'lower body', 'cropped torso', 'male torso', 'male back', 'stomach', 'm legs', 'leg frame', 'face out of frame', 'eyes out of frame', 'cropped face', 'ear', 'thighs', 'tail', 'tail grab', 'tail wagging', 'hand on another\'s ass', 'hand on thigh', 'hand on breast', 'hand on stomach', 'hand on waist', 'groping', 'ring', 'wedding ring', 'highly detailed'],
-  ['sex', 'vaginal', 'anal penetration', 'anal sex', 'pussy', 'pussy focus', 'spread legs', 'one leg raised', 'fingering', 'clitoris', 'breast sucking', 'breast grab', 'breast press', 'nipple flick', 'hand on nipple', 'kissing', 'imminent kiss', 'saliva', 'hand job', 'hands on penis', 'hand on penis', 'penis', 'penis on pussy', 'disembodied penis', 'glans', 'testicles', 'tongue', 'licking penis', 'ear licking', 'licking', 'nude', 'topless', 'bottomless', 'partially undressed', 'open fly', 'skirt lift', 'panty pull', 'panties aside', 'imminent penetration', 'grinding', 'sixty-nine', 'doggystyle', 'cowgirl position', 'paizuri', 'mating press', 'missionary', 'side sex', 'fellatio', 'cum', 'cumdrip', 'cum on breasts', 'cum on stomach', 'cum on hand', 'cum on body', 'female ejaculation', 'urine', 'after sex', 'restrained', 'clothes in mouth', 'hand over mouth', 'hair grab', 'head grab', 'masturbation'],
-  ['paper', 'document', 'briefcase', 'cushion', 'holding phone', 'smartphone', 'stockings', 'drinking', 'undressing', 'covering self', 'forehead-to-forehead', 'facing another', 'reaching towards viewer']
-];
-
-const promptTagRank = promptTagOrder.reduce((acc, group, groupIndex) => {
-  group.forEach((tag, tagIndex) => {
-    acc[tag] = groupIndex * 100 + tagIndex;
-  });
-  return acc;
-}, {});
-
-const tagTargetSceneLabels = new Set([
-  '1girl', '1boy', 'multiple girls', 'solo',
-  'cowboy shot', 'bust shot', 'upper body', 'full body', 'wide shot',
-  'pov', 'pov hands', 'pov doorway', 'multiple views', 'straight-on',
-  'facing away', 'three quarter view', 'dutch angle', 'upside-down',
-  'from above', 'high up', 'from below', 'from side',
-  'facing to the side', 'profile', 'from behind', 'indoors', 'outdoors',
-  'entrance', 'doorway', 'bedroom', 'bathroom', 'bathtub', 'open door',
-  'bed', 'couch', 'table', 'school', 'classroom', 'market street',
-  'city street', 'forest', 'night', 'sunset', 'rain', 'vaginal',
-  'kissing', 'imminent kiss', 'saliva', 'imminent penetration',
-  'penis on pussy', 'disembodied penis', 'grinding', 'sixty-nine', 'doggystyle',
-  'cowgirl position', 'paizuri', 'mating press', 'missionary', 'side sex',
-  'fellatio', 'urine', 'after sex', 'forehead-to-forehead', 'facing another',
-  'reaching towards viewer'
-]);
-
 function getDefaultTagTarget(tag) {
-  const label = getTagSortLabel(tag);
-  const targetMap = {
-    "underbody to male's face": 'character-0',
-    'top-down bottom-up': 'character-1',
-    'anal penetration': 'characters-0-1',
-    'anal sex': 'characters-0-1'
-  };
-
-  return targetMap[label] || (tagTargetSceneLabels.has(label) ? 'scene' : 'character-0');
+  return tagCore.getDefaultTagTarget(tag);
 }
 
 function normalizeTagAssignments(assignments, tags) {
-  const source = assignments && typeof assignments === 'object' ? assignments : {};
-  return Object.fromEntries(uniqueTags(tags).map((tag) => {
-    const savedTarget = source[tag] || source[getTagSortLabel(tag)];
-    return [tag, savedTarget || getDefaultTagTarget(tag)];
-  }));
+  return tagCore.normalizeTagAssignments(assignments, tags || []);
 }
 
 function getTagTarget(tag) {
@@ -401,60 +356,15 @@ function populateTargetSelect(select, selectedTarget = 'scene') {
 }
 
 function getCharacterIndexesForTagTarget(target) {
-  const normalized = String(target || '');
-  const multiMatch = normalized.match(/^characters-([0-9-]+)$/);
-
-  if (multiMatch) {
-    return multiMatch[1]
-      .split('-')
-      .map((value) => Number(value))
-      .filter((value, index, values) => Number.isInteger(value) && value >= 0 && values.indexOf(value) === index);
-  }
-
-  const singleMatch = normalized.match(/^character-(\d+)$/);
-  return singleMatch ? [Number(singleMatch[1])] : [0];
+  return tagCore.getCharacterIndexesForTagTarget(target);
 }
 
 function splitTagsByTarget(tags, assignments = {}) {
-  return uniqueTags(tags).reduce((acc, tag) => {
-    const target = assignments[tag] || assignments[getTagSortLabel(tag)] || getDefaultTagTarget(tag);
-
-    if (target === 'scene') {
-      acc.sceneTags.push(tag);
-      return acc;
-    }
-
-    getCharacterIndexesForTagTarget(target).forEach((characterIndex) => {
-      if (!acc.characterTags[characterIndex]) {
-        acc.characterTags[characterIndex] = [];
-      }
-      acc.characterTags[characterIndex].push(tag);
-    });
-    return acc;
-  }, { sceneTags: [], characterTags: [] });
+  return tagCore.splitTagsByTarget(tags || [], assignments);
 }
 
 function splitWildcardPromptsByTarget(wildcards = []) {
-  return (Array.isArray(wildcards) ? wildcards : []).reduce((acc, wildcard) => {
-    const value = formatWildcardPrompt(wildcard);
-
-    if (!value) {
-      return acc;
-    }
-
-    if (wildcard.target === 'scene') {
-      acc.sceneTags.push(value);
-      return acc;
-    }
-
-    getCharacterIndexesForTagTarget(wildcard.target).forEach((characterIndex) => {
-      if (!acc.characterTags[characterIndex]) {
-        acc.characterTags[characterIndex] = [];
-      }
-      acc.characterTags[characterIndex].push(value);
-    });
-    return acc;
-  }, { sceneTags: [], characterTags: [] });
+  return tagCore.splitWildcardPromptsByTarget(wildcards);
 }
 
 function appendTagsToCharacterPromptLines(characterPromptsText, characterTags, preserveOrder = false) {
@@ -469,18 +379,7 @@ function appendTagsToCharacterPromptLines(characterPromptsText, characterTags, p
 }
 
 function orderPromptTags(tags) {
-  return uniqueTags(tags).sort((left, right) => {
-    const leftLabel = getTagSortLabel(left);
-    const rightLabel = getTagSortLabel(right);
-    const leftRank = promptTagRank[leftLabel] ?? 9000;
-    const rightRank = promptTagRank[rightLabel] ?? 9000;
-
-    if (leftRank !== rightRank) {
-      return leftRank - rightRank;
-    }
-
-    return leftLabel.localeCompare(rightLabel);
-  });
+  return tagCore.orderPromptTags(tags || []);
 }
 
 function getSelectedScene() {
@@ -740,15 +639,7 @@ function normalizeWildcardPrompts(wildcards) {
 }
 
 function formatWildcardPrompt(wildcard) {
-  const options = Array.isArray(wildcard?.options)
-    ? wildcard.options.map((option) => String(option || '').trim()).filter(Boolean)
-    : [];
-
-  if (options.length === 0) {
-    return '';
-  }
-
-  return `||${options.join('|')}||`;
+  return tagCore.formatWildcardPrompt(wildcard);
 }
 
 function getWildcardLabel(wildcard) {

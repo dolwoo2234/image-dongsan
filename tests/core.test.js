@@ -10,6 +10,8 @@ const {
   applyCustomTagRules,
   orderPromptTags,
   normalizeTagAssignments,
+  splitTagsByTarget,
+  splitWildcardPromptsByTarget,
   createMockGeneration
 } = require('../core');
 
@@ -739,6 +741,25 @@ function testTagAssignments() {
   assert.strictEqual(preserved['closed eyes'], 'character-1');
 }
 
+function testTagTargetSplitting() {
+  const tags = ['from below', 'closed eyes', 'anal sex', "underbody to male's face", 'top-down bottom-up'];
+  const assignments = normalizeTagAssignments({}, tags);
+  const split = splitTagsByTarget(tags, assignments);
+
+  assert.deepStrictEqual(split.sceneTags, ['from below']);
+  assert.deepStrictEqual(split.characterTags[0], ['anal sex', 'closed eyes', "underbody to male's face"]);
+  assert.deepStrictEqual(split.characterTags[1], ['anal sex', 'top-down bottom-up']);
+
+  const wildcardSplit = splitWildcardPromptsByTarget([
+    { options: ['red hair', 'blue hair'], target: 'scene' },
+    { options: ['smile', 'smirk'], target: 'characters-0-1' }
+  ]);
+
+  assert.deepStrictEqual(wildcardSplit.sceneTags, ['||red hair|blue hair||']);
+  assert.deepStrictEqual(wildcardSplit.characterTags[0], ['||smile|smirk||']);
+  assert.deepStrictEqual(wildcardSplit.characterTags[1], ['||smile|smirk||']);
+}
+
 function testMockGeneration() {
   const project = createEmptyProject();
   const scene = {
@@ -829,6 +850,7 @@ testRoomDrinkingCowgirlDraftTags();
 testAnalHumiliationDraftTags();
 testCustomTagDictionaryRules();
 testTagAssignments();
+testTagTargetSplitting();
 testMockGeneration();
 testFailedGeneration();
 
