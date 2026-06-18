@@ -544,14 +544,21 @@ function prependPromptPrefix(prompt, prefix) {
 }
 
 function applyBasePrefixPreset() {
-  const prefix = elements.basePrefixPresetInput.value.trim();
+  const prefix = elements.basePrefixPresetInput.value.trim().replace(/,+$/g, '');
   if (!prefix) {
-    setGenerationStatus('error', '붙일 인원 프리셋을 입력하세요.');
+    setGenerationStatus('error', '인원 프리셋을 입력하세요.');
     return;
   }
 
+  const prefixTagSet = new Set(prefix.split(',').map(normalizeTag).filter(Boolean));
   state.finalPromptPrefix = prefix;
+  if (prefixTagSet.size > 0) {
+    state.draftTags = state.draftTags.filter((tag) => !prefixTagSet.has(normalizeTag(tag)));
+    state.draftTagAssignments = normalizeTagAssignments(state.draftTagAssignments, state.draftTags);
+  }
   refreshPromptPreview();
+  setDirty(true);
+  renderTagChips();
   setGenerationStatus('done', '인원 프리셋을 최종 프롬프트 맨 앞에 붙였습니다.');
 }
 
@@ -865,8 +872,8 @@ function refreshPromptPreview() {
 
 function renderPromptPreviewForScene(scene) {
   const computed = getComputedPromptPreviews();
-  elements.promptInput.value = prependPromptPrefix(computed.prompt, state.finalPromptPrefix);
-  elements.negativePromptInput.value = computed.negativePrompt;
+  elements.promptInput.value = String(scene?.prompt || '').trim() || prependPromptPrefix(computed.prompt, state.finalPromptPrefix);
+  elements.negativePromptInput.value = String(scene?.negativePrompt || '').trim() || computed.negativePrompt;
   renderPromptHighlights();
 }
 
@@ -2122,6 +2129,22 @@ async function loadProject() {
   maybeOpenGuideOnFirstRun();
 }
 
+async function reloadProjectPreservingDirtyForm(selectedSceneId = state.selectedSceneId) {
+  const nextProject = await window.dongsan.loadProject();
+  const preserveDirtyForm = state.dirty;
+
+  state.project = nextProject;
+  if (selectedSceneId && nextProject.scenes.some((scene) => scene.id === selectedSceneId)) {
+    state.selectedSceneId = selectedSceneId;
+  }
+
+  if (!preserveDirtyForm) {
+    setDirty(false);
+  }
+
+  render({ preserveDirtyForm });
+}
+
 function getGuideTarget(step) {
   return step?.selector ? document.querySelector(step.selector) : null;
 }
@@ -2781,19 +2804,13 @@ async function novelAiGenerateSelectedScene() {
   } catch (error) {
     if (String(error.message || '').includes('canceled')) {
       setGenerationStatus('idle', '씬 생성이 중단되었습니다.');
-      state.project = await window.dongsan.loadProject();
-      state.selectedSceneId = scene.id;
-      setDirty(false);
-      render();
+      await reloadProjectPreservingDirtyForm(scene.id);
       return;
     }
 
     elements.projectStatus.textContent = error.message;
     setGenerationStatus('error', error.message);
-    state.project = await window.dongsan.loadProject();
-    state.selectedSceneId = scene.id;
-    setDirty(false);
-    render();
+    await reloadProjectPreservingDirtyForm(scene.id);
   } finally {
     state.generationInProgress = false;
     state.generationCancelRequested = false;
@@ -2913,8 +2930,7 @@ async function novelAiVariationFromSelectedImage() {
   } catch (error) {
     if (String(error.message || '').includes('canceled')) {
       setGenerationStatus('idle', '씬 생성이 중단되었습니다.');
-      state.project = await window.dongsan.loadProject();
-      render();
+      await reloadProjectPreservingDirtyForm(scene.id);
       return;
     }
 
@@ -2923,8 +2939,7 @@ async function novelAiVariationFromSelectedImage() {
       : error.message;
     elements.projectStatus.textContent = message;
     setGenerationStatus('error', message);
-    state.project = await window.dongsan.loadProject();
-    render();
+    await reloadProjectPreservingDirtyForm(scene.id);
   } finally {
     state.generationInProgress = false;
     state.generationCancelRequested = false;
@@ -3002,15 +3017,13 @@ async function novelAiI2ISelectedImage() {
   } catch (error) {
     if (String(error.message || '').includes('canceled')) {
       setGenerationStatus('idle', '이미지 생성이 중단되었습니다.');
-      state.project = await window.dongsan.loadProject();
-      render();
+      await reloadProjectPreservingDirtyForm(scene.id);
       return;
     }
 
     elements.projectStatus.textContent = error.message;
     setGenerationStatus('error', error.message);
-    state.project = await window.dongsan.loadProject();
-    render();
+    await reloadProjectPreservingDirtyForm(scene.id);
   } finally {
     state.generationInProgress = false;
     state.generationCancelRequested = false;
@@ -3081,15 +3094,13 @@ async function novelAiInpaintSelectedImage() {
   } catch (error) {
     if (String(error.message || '').includes('canceled')) {
       setGenerationStatus('idle', '이미지 생성이 중단되었습니다.');
-      state.project = await window.dongsan.loadProject();
-      render();
+      await reloadProjectPreservingDirtyForm(scene.id);
       return;
     }
 
     elements.projectStatus.textContent = error.message;
     setGenerationStatus('error', error.message);
-    state.project = await window.dongsan.loadProject();
-    render();
+    await reloadProjectPreservingDirtyForm(scene.id);
   } finally {
     state.generationInProgress = false;
     state.generationCancelRequested = false;

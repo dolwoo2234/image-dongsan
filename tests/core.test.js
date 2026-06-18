@@ -130,8 +130,9 @@ function testDraftTags() {
   const draft = generateDraftTags('A girl stands alone in a rainy city street at night and smiles.');
   assert.strictEqual(draft.tags.includes('1girl'), false);
   assert.ok(draft.tags.includes('solo'));
-  assert.ok(draft.tags.includes('rain'));
-  assert.ok(draft.tags.includes('city street'));
+  assert.strictEqual(draft.tags.includes('rain'), false);
+  assert.strictEqual(draft.tags.includes('city street'), false);
+  assert.strictEqual(generateDraftTags('A girl stands indoors.').tags.includes('indoors'), false);
   assert.ok(draft.tags.includes('night'));
   assert.deepStrictEqual(draft.negativeTags, []);
   assert.strictEqual(draft.tags.includes('best quality'), false);
@@ -210,7 +211,6 @@ function testRenaSachonDraftTags() {
     'hands behind back',
     'hair flip',
     'holding hands',
-    'breasts',
     'table',
     'drinking',
     'bed',
@@ -232,7 +232,6 @@ function testRenaSachonNsfwDraftTags() {
   ].join('\n'));
 
   [
-    'pussy',
     'pussy focus',
     'fingering',
     'breast sucking',
@@ -248,7 +247,7 @@ function testRenaSachonNsfwDraftTags() {
   ].join('\n'));
 
   [
-    'vaginal',
+    'pussy penetration',
     'doggystyle',
     'from behind',
     'restrained',
@@ -310,7 +309,6 @@ function testEmbraceAndSexCompositionDraftTags() {
   [
     'hug',
     'male torso',
-    'cropped torso',
     'kissing',
     'from side',
     'hand job',
@@ -319,7 +317,6 @@ function testEmbraceAndSexCompositionDraftTags() {
     'whispering',
     'whisper to ear',
     'from behind',
-    'cropped face',
     'multiple views',
     'full body',
     'straddling',
@@ -376,10 +373,12 @@ function testSecondSequenceCompositionDraftTags() {
     'all fours',
     'kneeling',
     'ear',
-    'sniffing',
+    'smelling',
     'forehead-to-forehead',
     'paizuri',
     'penis',
+    'hands on breasts',
+    'breast press',
     'nipple flick',
     'hand on nipple',
     'cum on breasts',
@@ -436,8 +435,6 @@ function testHeartDeliveryServiceDraftTags() {
     'from below',
     'from above',
     'nude',
-    'breasts',
-    'cropped torso',
     'face out of frame',
     'lower body',
     'bottomless',
@@ -457,6 +454,317 @@ function testHeartDeliveryServiceDraftTags() {
   });
 
   assert.strictEqual(draft.tags.includes('explicit'), false);
+}
+
+function testPastedSceneDescriptionRuleTags() {
+  const draft = generateDraftTags([
+    'male POV with penis corner, male POV with arm corner, hand foreground.',
+    'front camera shot, camera-aware shot, public filming on stage with background crowd.',
+    'female reaction focus and close reaction shot.',
+    'anal plug, deepthroat, armpit, spanking.',
+    '\uB300\uB538 \uC2DC\uC791, \uC2A4\uB9C8\uD0C0, \uB124 \uBC1C \uC790\uC138.'
+  ].join('\n'));
+
+  [
+    'penis',
+    'pov hands',
+    'straight-on',
+    'looking at viewer',
+    'stage',
+    'background crowd',
+    'pleasure face',
+    'anal plug',
+    'fellatio',
+    'deepthroat',
+    'armpits',
+    'spanking',
+    'hand job',
+    'hands on penis',
+    'grinding',
+    'penis on pussy',
+    'all fours'
+  ].forEach((tag) => {
+    assert.ok(draft.tags.includes(tag), `Expected ${tag} in ${draft.tags.join(', ')}`);
+  });
+
+  ['pov', 'disembodied penis', 'face focus', 'talking'].forEach((tag) => {
+    assert.strictEqual(draft.tags.includes(tag), false, `Did not expect ${tag} in ${draft.tags.join(', ')}`);
+  });
+
+  const nippleDraft = generateDraftTags('\uC816\uAF2D\uC9C0 \uAF2C\uC9D1\uAE30, \uD30C\uC774\uC988\uB9AC');
+  [
+    'pinching nipple',
+    'hands on breasts',
+    'breast press',
+    'paizuri'
+  ].forEach((tag) => {
+    assert.ok(nippleDraft.tags.includes(tag), `Expected ${tag} in ${nippleDraft.tags.join(', ')}`);
+  });
+
+  const assignments = normalizeTagAssignments({}, nippleDraft.tags);
+  assert.strictEqual(assignments['pinching nipple'], 'character-1');
+  assert.strictEqual(assignments['hands on breasts'], 'character-1');
+}
+
+function testWorkplaceShopIntroDraftTags() {
+  const draft = generateDraftTags([
+    '\uD68C\uC0AC \uC804\uACBD \uBAA8\uC2B5.',
+    '\uD558\uB9B0\uC774 \uC778\uC0AC\uD558\uACE0 \uC788\uACE0 \uC815\uD601\uC774 \uC0AC\uBB34\uC2E4 \uC758\uC790\uC5D0 \uC549\uC544 \uB4A4\uB3CC\uC544 \uBCF4\uB294 \uBAA8\uC2B5.',
+    '\uC0C1\uC790\uB4E4, wide shot, \uB458\uB2E4 \uCABC\uAD6C\uB824 \uC549\uC544\uC11C \uC0C1\uC790\uB97C \uC815\uB9AC\uC911.',
+    '\uB07C\uBD80\uB9AC\uB4EF \uBBF8\uC18C, \uB0A8\uC790\uC758 \uC606\uBAA8\uC2B5(faceless,profile), \uD55C\uC190\uAC00\uB77D\uC744 \uD53C\uACE0 \uC720\uD639\uC801\uC778 \uB208\uBE5B, \uAC00\uC2B4\uC704\uB85C\uB9CC \uBCF4\uC774\uB294 \uC0F7.',
+    '\uBCFC\uBC1C\uADF8\uB808, \uC190 \uD558\uB098\uB97C \uC790\uAE30 \uC785\uAC00\uC5D0 \uB300\uACE0 \uC55E\uC73C\uB85C \uBAB8\uC744 \uB0A8\uC131 \uCABD\uC73C\uB85C \uAE30\uC6B8\uC5EC\uC788\uB2E4.',
+    '\uBC14\uC9C0 \uBC11\uC73C\uB85C \uBC1C\uAE30, \uC790\uC9C0\uBD80\uBD84\uC744 \uB36E\uC369 \uC6C0\uCF1C\uC950\uACE0, \uBC14\uC9C0\uB97C \uB0B4\uB824 \uB0A8\uC131\uC740 penis only, \uD070 \uC790\uC9C0\uC5D0 \uB180\uB780\uB2E4.'
+  ].join('\n'));
+
+  [
+    'wide shot',
+    'sitting',
+    'office chair',
+    'looking back',
+    'bowing',
+    'squatting',
+    'box',
+    'cardboard box',
+    'from side',
+    'profile',
+    'faceless',
+    'index finger raised',
+    'pointing',
+    'seductive',
+    'bust shot',
+    'upper body',
+    'blush',
+    'finger to mouth',
+    'leaning forward',
+    'clothed erection',
+    'erection',
+    'hand on penis',
+    'hands on penis',
+    'groping',
+    'undressing',
+    'open fly',
+    'disembodied penis',
+    'large penis',
+    'penis',
+    'surprised'
+  ].forEach((tag) => {
+    assert.ok(draft.tags.includes(tag), `Expected ${tag} in ${draft.tags.join(', ')}`);
+  });
+
+  ['indoors', 'city street', 'talking', 'face focus'].forEach((tag) => {
+    assert.strictEqual(draft.tags.includes(tag), false, `Did not expect ${tag} in ${draft.tags.join(', ')}`);
+  });
+}
+
+function testFellatioTransitionDraftTags() {
+  const draft = generateDraftTags([
+    '구도 : 펠라 하는 모습 pov , from above.',
+    '(딥쓰롯) 목구멍 깊숙이 삼키는 모습, 못 견디고 뱉어내고 숨고르는 모습.',
+    '하린의 머리를 붙잡고 입에 자X를 쑤셔넣는 모습, 미친듯이 빠른 펠라소리.',
+    'leg frame, from below, worm\'s eye view, testicles, 여자 faceless, 펠라치오.',
+    '정혁이 하린의 입에서 자X를 뽑고 하린을 그대로 눕힌채 정상위로 박는다.',
+    '다리를 접은채 밀어 눕혀진 여성, 옆으로 넘어진 상태.',
+    '촬영용 배드(메트리스)에 눕힌채 바지와 팬티를 벗기는 모습.'
+  ].join('\n'));
+
+  [
+    'pov',
+    'from above',
+    'fellatio',
+    'penis',
+    'deepthroat',
+    'gagging',
+    'open mouth',
+    'panting',
+    'head grab',
+    'leg frame',
+    'from below',
+    "worm's eye view",
+    'testicles',
+    'faceless',
+    'lying',
+    'missionary',
+    'pussy penetration',
+    'folded legs',
+    'from side',
+    'bed',
+    'mattress',
+    'undressing',
+    'bottomless',
+    'panty pull'
+  ].forEach((tag) => {
+    assert.ok(draft.tags.includes(tag), `Expected ${tag} in ${draft.tags.join(', ')}`);
+  });
+
+  ['city street', 'rain', 'indoors', 'talking', 'face focus'].forEach((tag) => {
+    assert.strictEqual(draft.tags.includes(tag), false, `Did not expect ${tag} in ${draft.tags.join(', ')}`);
+  });
+}
+
+function testMissionaryIntensificationDraftTags() {
+  const draft = generateDraftTags([
+    '설레어하며 독백하는 하린, face focus, face only, blush, flush, saliva, looking down, profile.',
+    '정상위로 박아대는 모습, mating press, hands on ass, 남자는 hands on floor, 여자 open mouth, closed eyes, painful.',
+    '정혁의 엉덩이를 하린이 꽈악 끌어당기며 박아대는 모습, underbody only, hands on ass, 남자 3::back view::.',
+    '하얀 매트리스에 누워있고 격렬한 피스톤에 반쯤 가버린 하린, solo, saliva, half-closed eyes, upperbody only.',
+    '하얀 매트리스에 누워있음, matingpress 자세, 누워있는걸 머리쪽에서 본 모습, penetration focus.',
+    '활처럼 허릴 휘며 고개가 뒤로 젖혀진채, 남자 hand on metress, from side, profile, 여자 chin up, head back, open mouth, saliva.',
+    '시오후키하며 덜덜 떠는 하린, upside-down, 남자 하얀 메트리스 위에 무릎 꿇고 있음, ahegao, rolling eyes.',
+    '여성은 매트리스에 반쯤 누워있고 왼쪽에는 남성의 penis only, 여성은 penis를 바라보며 입맛 다신다.',
+    '상의와 속옷을 벗는 하린, 상의 벗고 브라까지 벗는 모습.',
+    '정혁을 눕히고 그 위로 쪼그려앉듯이 올라타는 자세.'
+  ].join('\n'));
+
+  [
+    'face only',
+    'blush',
+    'flushed face',
+    'saliva',
+    'looking down',
+    'from side',
+    'profile',
+    'missionary',
+    'mating press',
+    'hands on ass',
+    'hand on another\'s ass',
+    'hands on floor',
+    'open mouth',
+    'closed eyes',
+    'painful',
+    'grimace',
+    'underbody only',
+    'lower body',
+    'from behind',
+    'mattress',
+    'lying',
+    'solo',
+    'half-closed eyes',
+    'upper body only',
+    'upper body',
+    'penetration focus',
+    'pussy penetration',
+    'penis focus',
+    'arched back',
+    'head back',
+    'chin up',
+    'hands on mattress',
+    'upside-down',
+    'kneeling',
+    'ahegao',
+    'rolling eyes',
+    'disembodied penis',
+    'penis',
+    'licking lips',
+    'tongue',
+    'undressing',
+    'topless',
+    'bra',
+    'squatting',
+    'straddling',
+    'girl on top'
+  ].forEach((tag) => {
+    assert.ok(draft.tags.includes(tag), `Expected ${tag} in ${draft.tags.join(', ')}`);
+  });
+
+  ['face focus', 'talking', 'indoors'].forEach((tag) => {
+    assert.strictEqual(draft.tags.includes(tag), false, `Did not expect ${tag} in ${draft.tags.join(', ')}`);
+  });
+}
+
+function testSuppressedGenericBodyAndPenetrationTags() {
+  const draft = generateDraftTags([
+    '가슴, 엉덩이, 보지, 삽입, 피스톤, cropped face, cropped body, 하체만 보이게.',
+    'pussy penetration, vaginal, pussy, breasts, ass, cropped torso.'
+  ].join('\n'));
+
+  [
+    'breasts',
+    'ass',
+    'vaginal',
+    'pussy',
+    'cropped face',
+    'cropped torso',
+    'cropped body',
+    'croped face',
+    'croped body'
+  ].forEach((tag) => {
+    assert.strictEqual(draft.tags.includes(tag), false, `Did not expect ${tag} in ${draft.tags.join(', ')}`);
+  });
+
+  assert.ok(draft.tags.includes('pussy penetration'), `Expected pussy penetration in ${draft.tags.join(', ')}`);
+}
+
+function testBroadcastGroupNsfwDraftTags() {
+  const draft = generateDraftTags([
+    '\uC2DC\uCCAD\uC790 \uC5EC\uB7EC\uBD84, \uC790\uC704\uC911\uC778 \uB0A8\uC790\uB4E4 \uAC00\uC6B4\uB370\uC5D0 \uC549\uC740 \uC218\uC544, \uD5C8\uBC85\uC9C0\uC0F7.',
+    '\uC5BC\uAD74\uC5D0 \uC790\uC9C0 \uBE44\uBE44\uB294 \uC18C\uB9AC, \uC591 \uC606, \uB4A4\uC5D0 \uB0A8\uC790 \uD398\uB2C8\uC2A4, \uD558\uCCB4\uB9CC \uBCF4\uC774\uAC8C, \uD398\uB2C8\uC2A4 \uC950\uACE0 \uB300\uB538.',
+    '\uD5C8\uB9AC\uB97C \uC219\uC774\uACE0 \uB450 \uC190\uC73C\uB85C \uAC01\uAC01 \uB2E4\uB978 \uB0A8\uC790 \uB300\uB538, \uC5C9\uB369\uC774 \uC7A1\uC544 \uBC8C\uB9AC\uACE0, \uBE44\uC5B4\uC788\uB294 \uD654\uBA74 \uACF5\uAC04\uC5D0\uC11C \uC790\uC704\uC911\uC778 \uB0A8\uC790\uB4E4.',
+    '\uBC18\uCE21\uBA74\uBDF0, \uC544\uB798\uC5D0\uC11C, \uB4A4\uC5D0\uC11C \uBC15\uACE0 \uC591\uC190\uC5D0 \uB300\uB538\uC911, worm\'s eye view, leg frame.',
+    '\uD3A0\uB77C POV, \uB4A4\uC5D0 \uB0A8\uC790 \uC880 \uBCF4\uC774\uAC8C, \uD53C\uC2A4\uD1A4, \uB300\uB538 \uC18C\uB9AC \uCD5C\uACE0 \uC18D\uB3C4.',
+    '\uC9C8\uB0B4 \uC0AC\uC815 \uC52C, \uC785 \uC0AC\uC815\uC52C, \uB300\uB538 \uC0AC\uC815 \uC52C, \uC0AC\uC815\uC74C, \uC815\uC561 \uC0BC\uD0A4\uB294 \uC18C\uB9AC.',
+    'PUSSY FOCUS, \uC218\uC544\uB9CC \uB098\uC624\uAC8C, \uC0C1\uCCB4\uB97C \uBC18\uB9CC \uC77C\uC73C\uD0A8 \uC0C1\uD0DC, \uC785\uC5D0 \uCE68 \uD750\uB974\uAC8C, \uBC30\uACBD\uC5D0 \uB0A8\uC790\uB4E4.',
+    '\uD750\uD2B8\uB7EC\uC9C4 \uBAA8\uC2B5, M\uC790\uB85C \uC549\uC740 \uC0C1\uD0DC, \uC815\uBA74, \uB9C8\uC774\uD06C \uB4E4\uACE0 \uD798\uACB9\uAC8C \uB9AC\uD3EC\uD305, \uB4A4\uC5D0 \uB098\uCCB4 \uB0A8\uC790\uB4E4 \uC11C \uC788\uC5B4\uC694.'
+  ].join('\n'));
+
+  [
+    'looking at viewer',
+    'multiple boys',
+    'background men',
+    'male masturbation',
+    'cowboy shot',
+    'thighs',
+    'penis on face',
+    'multiple penises',
+    'lower body',
+    'penis',
+    'hand job',
+    'hands on penis',
+    'double handjob',
+    'bent over',
+    'from side',
+    'three quarter view',
+    'from below',
+    "worm's eye view",
+    'leg frame',
+    'doggystyle',
+    'from behind',
+    'pussy penetration',
+    'spread ass',
+    'hands on ass',
+    'fellatio',
+    'pov',
+    'cum',
+    'cum in mouth',
+    'creampie',
+    'swallowing',
+    'pussy focus',
+    'sitting',
+    'upper body',
+    'saliva',
+    'disheveled',
+    'messy hair',
+    'm legs',
+    'microphone',
+    'nude',
+    'standing'
+  ].forEach((tag) => {
+    assert.ok(draft.tags.includes(tag), `Expected ${tag} in ${draft.tags.join(', ')}`);
+  });
+
+  [
+    'breasts',
+    'ass',
+    'vaginal',
+    'pussy',
+    'cropped face',
+    'cropped torso',
+    'cropped body',
+    'face focus',
+    'talking',
+    'indoors'
+  ].forEach((tag) => {
+    assert.strictEqual(draft.tags.includes(tag), false, `Did not expect ${tag} in ${draft.tags.join(', ')}`);
+  });
 }
 
 function testBackViewCowgirlDraftTags() {
@@ -482,7 +790,6 @@ function testBackViewCowgirlDraftTags() {
   [
     'from behind',
     'facing away',
-    'ass',
     'ass focus',
     'thighs',
     'hand on another\'s ass',
@@ -509,10 +816,8 @@ function testBackViewCowgirlDraftTags() {
     'hand job',
     'hands on penis',
     'smirk',
-    'face focus',
     'ring',
     'wedding ring',
-    'cropped face',
     'eyes out of frame',
     'tongue',
     'licking',
@@ -530,14 +835,16 @@ function testBackViewCowgirlDraftTags() {
     'imminent penetration',
     'penis on pussy',
     'cowgirl position',
-    'vaginal',
+    'pussy penetration',
     'hair grab',
-    'head grab'
+    'head grab',
+    'hands on breasts',
+    'breast press'
   ].forEach((tag) => {
     assert.ok(draft.tags.includes(tag), `Expected ${tag} in ${draft.tags.join(', ')}`);
   });
 
-  ['close-up', 'breast focus', 'explicit'].forEach((tag) => {
+  ['close-up', 'breast focus', 'face focus', 'explicit'].forEach((tag) => {
     assert.strictEqual(draft.tags.includes(tag), false, `Did not expect ${tag} in ${draft.tags.join(', ')}`);
   });
 }
@@ -561,7 +868,6 @@ function testSofaMissionaryDraftTags() {
     'standing',
     'm legs',
     'upper body',
-    'cropped face',
     'thighs',
     'groping',
     'breast grab',
@@ -610,8 +916,7 @@ function testRoomDrinkingCowgirlDraftTags() {
     'grinding',
     'penis on pussy',
     'disembodied penis',
-    'pussy',
-    'vaginal',
+    'pussy penetration',
     'm legs',
     'side sex',
     'from side',
@@ -644,10 +949,8 @@ function testAnalHumiliationDraftTags() {
     'three quarter view',
     'anal penetration',
     'anal sex',
-    'ass',
     'ass focus',
     'lower body',
-    'cropped torso',
     'stockings',
     'clothes in mouth',
     'breast grab',
@@ -684,12 +987,250 @@ function testAnalHumiliationDraftTags() {
     'hand on penis',
     'cum',
     'cum on body',
-    'pussy',
     'pussy focus',
     'half-closed eyes',
     'spread legs'
   ].forEach((tag) => {
     assert.ok(draft.tags.includes(tag), `Expected ${tag} in ${draft.tags.join(', ')}`);
+  });
+}
+
+function testFemaleSixtyNineAndMasturbationDraftTags() {
+  const draft = generateDraftTags([
+    '#20',
+    '\uC138\uC624\uC5BC\uAD74\uC5D0 \uC5EC\uC790\uAC00 \uBCF4\uC9C0\uB97C \uB9C9 \uBE44\uBE55\uB2C8\uB2E4.',
+    '\uC5EC\uC131\uC758 \uC5BC\uAD74 \uC704\uB85C \uB2E4\uB978 \uC5EC\uC131\uC758 \uC5C9\uB369\uC774 \uB4B7\uBAA8\uC2B5.',
+    '#21',
+    '\uC5EC\uC131 \uB458\uC774 69\uC790\uC138, \uC11C\uB85C \uBCF4\uC9C0\uB97C \uD565\uACE0\uC788\uB2E4.',
+    '#22-1',
+    '\uB204\uC6CC\uC788\uB294 \uC5EC\uC131, \uC704\uC5D0\uB294 \uC5EC\uC131\uC774 69\uC790\uC138\uB85C \uC704\uB85C \uC62C\uB77C\uAC00\uC788\uB294\uB370 \uBCF4\uC774\uC9C0 \uC54A\uC74C, \uC2DC\uC624\uD6C4\uD0A4, \uB450 \uC5EC\uC131\uC740 \uC11C\uB85C \uBCF4\uC9C0\uB97C \uD565\uC544\uC8FC\uB294 \uC911.',
+    '#22-2',
+    '\uC704\uC5D0 \uC5CE\uB4DC\uB824 \uC788\uB294 \uC5EC\uC131, upside-down, \uBC11\uC5D0\uC11C \uBCF8 \uBDF0, \uBCF4\uC9C0\uAC00 \uC704\uCABD.',
+    '#23',
+    '\uC5EC\uC790 \uC785\uAC00\uC5D0 \uCE68 \uBB3B\uC740\uCC44\uB85C \uD328\uB2C9\uC628\uB4EF \uB2F9\uD669\uD55C \uD45C\uC815, dutch angle, M legs.',
+    '#24',
+    '\uB4B7\uBAA8\uC2B5, bent over, \uD63C\uC790 \uC790\uC704, \uD551\uAC70\uB9C1, \uB4A4 \uB3CC\uC544\uBCF4\uBA70, \uC790\uC704 \uD3EC\uCEE4\uC2A4, \uD480\uB9B0\uB208, \uB9DB\uD0F1\uC774\uAC00 \uAC04 \uD45C\uC815.'
+  ].join('\n'));
+
+  [
+    'multiple girls',
+    'yuri',
+    'facesitting',
+    'pussy on face',
+    'grinding',
+    'from behind',
+    'facing away',
+    'sixty-nine',
+    'cunnilingus',
+    'pussy licking',
+    'licking',
+    'tongue',
+    'lying',
+    'female ejaculation',
+    'upside-down',
+    'from below',
+    'face down',
+    'saliva',
+    'surprised',
+    'scared',
+    'dutch angle',
+    'm legs',
+    'bent over',
+    'solo',
+    'female masturbation',
+    'masturbation',
+    'masturbation focus',
+    'fingering',
+    'looking back',
+    'half-closed eyes',
+    'pleasure face'
+  ].forEach((tag) => {
+    assert.ok(draft.tags.includes(tag), `Expected ${tag} in ${draft.tags.join(', ')}`);
+  });
+
+  ["underbody to male's face", 'top-down bottom-up', 'pussy', 'vaginal', 'breasts', 'ass'].forEach((tag) => {
+    assert.strictEqual(draft.tags.includes(tag), false, `Did not expect ${tag} in ${draft.tags.join(', ')}`);
+  });
+}
+
+function testNewsroomGroupPenetrationDraftTags() {
+  const draft = generateDraftTags([
+    '#25',
+    'pussy focus, \uB2E4\uC774\uB098\uBBF9 \uC575\uAE00\uC774\uB098 \uB354\uD2F0\uC575\uAE00, \uBC14\uBCF4\uAC19\uC774 \uC6C3\uB294 \uD45C\uC815, \uB274\uC2A4\uB8F8 \uCC45\uC0C1\uC5D0 \uC549\uC544\uC788\uC5B4\uC694.',
+    '#26',
+    '\uC5CE\uB4DC\uB9B0 \uCC44 \uC591\uC190\uC73C\uB85C \uC790\uAE30 \uD478\uC2DC\uB97C \uBC8C\uB9AC\uACE0\uC788\uC5B4\uC5EC, bent over, spread pussy, leg frame.',
+    '#27',
+    'pov \uB0A8\uC790\uAC00 \uC5C9\uB369\uC774 \uBC8C\uB9AC\uACE0 \uC0BD\uC785, spread anus, pussy penetration.',
+    '#28',
+    '\uD6C4\uBC30\uC704 \uD558\uB2E4\uAC00 \uBAB8 \uB4E4\uC5B4\uC62C\uB824\uC11C \uD0A4\uC2A4\uD558\uB294\uB290\uB08C, face focus, bentover, looking back, kiss, tilt head.',
+    '#29',
+    '\uB0A8\uC790 \uC5EC\uB7EC\uBA85, \uAC00\uC2B4\uBE68\uB9AC\uAE30 + \uD3A0\uB77C + pussy penetration, grab thighs, M legs, spread legs.',
+    '#30',
+    '\uC591\uCABD \uB0A8\uC790 \uACE0\uCD94\uC7A1\uC740\uCC44\uB85C, double handjob, pussy penetration, cowgril position.'
+  ].join('\n'));
+
+  [
+    'pussy focus',
+    'dynamic angle',
+    'dutch angle',
+    'silly smile',
+    'smile',
+    'newsroom',
+    'news desk',
+    'desk',
+    'sitting',
+    'bent over',
+    'spread pussy',
+    'leg frame',
+    'pov',
+    'spread anus',
+    'spread ass',
+    'pussy penetration',
+    'doggystyle',
+    'from behind',
+    'face only',
+    'looking back',
+    'kissing',
+    'head tilt',
+    'multiple boys',
+    'background men',
+    'breast sucking',
+    'fellatio',
+    'grabbing thighs',
+    'hand on thigh',
+    'm legs',
+    'spread legs',
+    'double handjob',
+    'hand job',
+    'hands on penis',
+    'cowgirl position',
+    'girl on top'
+  ].forEach((tag) => {
+    assert.ok(draft.tags.includes(tag), `Expected ${tag} in ${draft.tags.join(', ')}`);
+  });
+
+  ['face focus', 'pussy', 'vaginal', 'breasts', 'ass'].forEach((tag) => {
+    assert.strictEqual(draft.tags.includes(tag), false, `Did not expect ${tag} in ${draft.tags.join(', ')}`);
+  });
+}
+
+function testShopCounterCoercionSequenceDraftTags() {
+  const draft = generateDraftTags([
+    '#1 카운터와 계산대, 어깨 너머로 돈 훔치는 모습, 손과 돈만 나오는 hand focus.',
+    '#3 뚱뚱한 사장, 못생긴 남자가 보라를 뒤에서 끌어안고 from below, 가슴 바로 아래에 손.',
+    '#4 옷을 위로 올린 shirt lift 상태, 뒤에서 끌어안고 가슴 만지며 손가락으로 꼭지 공략.',
+    '#5 눈을 똥그랗게 뜨고 놀란 여자, 남자가 턱 잡고 강제로 키스, 반측면.',
+    '#6 데스크 아래에서 쭈그려 앉아 팬티 위로 핑거링, 하체만, 얼굴 안 나오게.',
+    '#7 팬티 젖힌 상태로 핑거링, 데스크 아래, from above.',
+    '#8 카운터 위 크로플과 커피, 어색하게 웃는 여자, 엥 하고 쳐다보는 손님들.',
+    '#9 팬티 젖은 상태, pussy focus, from below, 화면을 정확히 보고 있다.',
+    '#10 웃으면서 전화중, 발그레한 상태, 바스트샷.',
+    '#11 전화중, 뒤에서 끌어안은 상태로 험핑.',
+    '#12 화면을 짚고 화면을 향해 팔을 뻗은 상태, 후배위, 통화중.',
+    '#13 후배위 사장 시점, 페니스와 손만 나오고 한손으로 엉덩이 잡고 통화하며 뒤돌아본다.',
+    '#14 고개를 땅에 박고 뺨이 바닥에 닿은 상태, 힘이 다 풀린 팔과 팔꿈치를 바닥에 대고 귀에 핸드폰.',
+    '#15 들박, from side, 벽에 등을 붙이고 남자가 엉덩이를 잡은 상태.',
+    '#18 접시 닦고 설거지 하는중, 접시와 싱크대, 옆에서 본 구도.',
+    '#20 팔짱끼고 사장 노려보는 알바생, 허벅지샷.',
+    '#23 스팽킹, 후배위 ass focus, 사장님 몸 화면에 걸치게.',
+    '#25 분할컷, 문 너머 남자친구, 문에 기대서 후배위 상태.',
+    '#26 화면 향해 팔 뻗어서 후배위, stretch arms to viewer.',
+    '#28 문 앞에 주저앉아 다리에 바지가 끼워진 상태, 무릎 세우고 다리 사이로 정액 흐르게, 눈물자국, 미들샷.'
+  ].join('\n'));
+
+  [
+    'counter',
+    'cash register',
+    'over shoulder',
+    'stealing',
+    'money',
+    'holding money',
+    'hands',
+    'hand focus',
+    'overweight man',
+    'ugly man',
+    'hug',
+    'from below',
+    'underboob',
+    'shirt lift',
+    'partially undressed',
+    'breast grab',
+    'nipple stimulation',
+    'hand on nipple',
+    'wide-eyed',
+    'surprised',
+    'forced kiss',
+    'kissing',
+    'holding chin',
+    'three quarter view',
+    'desk',
+    'under desk',
+    'squatting',
+    'fingering through panties',
+    'lower body',
+    'face out of frame',
+    'panties aside',
+    'fingering',
+    'from above',
+    'waffle',
+    'coffee',
+    'awkward smile',
+    'background crowd',
+    'wet panties',
+    'pussy focus',
+    'looking at viewer',
+    'holding phone',
+    'phone at ear',
+    'smartphone',
+    'blush',
+    'bust shot',
+    'grinding',
+    'penis on pussy',
+    'hand on screen',
+    'reaching towards viewer',
+    'outstretched arms',
+    'arms towards viewer',
+    'doggystyle',
+    'from behind',
+    'pov',
+    'penis',
+    'hands on ass',
+    'looking back',
+    'on floor',
+    'face down',
+    'cheek on floor',
+    'limp arms',
+    'elbows on floor',
+    'standing sex',
+    'held up',
+    'against wall',
+    'from side',
+    'washing dishes',
+    'holding plate',
+    'plate',
+    'sink',
+    'arms crossed',
+    'glaring',
+    'thighs',
+    'spanking',
+    'ass focus',
+    'male torso',
+    'multiple views',
+    'doorway',
+    'leaning on door',
+    'pants around legs',
+    'knees up',
+    'cum',
+    'cumdrip',
+    'tear streaks',
+    'tears',
+    'medium shot'
+  ].forEach((tag) => {
+    assert.ok(draft.tags.includes(tag), `Expected ${tag} in ${draft.tags.join(', ')}`);
+  });
+
+  ['leaning on person', 'pussy', 'vaginal', 'breasts', 'ass', 'cropped face', 'cropped torso'].forEach((tag) => {
+    assert.strictEqual(draft.tags.includes(tag), false, `Did not expect ${tag} in ${draft.tags.join(', ')}`);
   });
 }
 
@@ -747,7 +1288,7 @@ function testTagTargetSplitting() {
   const split = splitTagsByTarget(tags, assignments);
 
   assert.deepStrictEqual(split.sceneTags, ['from below']);
-  assert.deepStrictEqual(split.characterTags[0], ['anal sex', 'closed eyes', "underbody to male's face"]);
+  assert.deepStrictEqual(split.characterTags[0], ['closed eyes', 'anal sex', "underbody to male's face"]);
   assert.deepStrictEqual(split.characterTags[1], ['anal sex', 'top-down bottom-up']);
 
   const wildcardSplit = splitWildcardPromptsByTarget([
@@ -844,10 +1385,19 @@ testFocusCompositionDraftTags();
 testEmbraceAndSexCompositionDraftTags();
 testSecondSequenceCompositionDraftTags();
 testHeartDeliveryServiceDraftTags();
+testPastedSceneDescriptionRuleTags();
+testWorkplaceShopIntroDraftTags();
+testFellatioTransitionDraftTags();
+testMissionaryIntensificationDraftTags();
+testSuppressedGenericBodyAndPenetrationTags();
+testBroadcastGroupNsfwDraftTags();
 testBackViewCowgirlDraftTags();
 testSofaMissionaryDraftTags();
 testRoomDrinkingCowgirlDraftTags();
 testAnalHumiliationDraftTags();
+testFemaleSixtyNineAndMasturbationDraftTags();
+testNewsroomGroupPenetrationDraftTags();
+testShopCounterCoercionSequenceDraftTags();
 testCustomTagDictionaryRules();
 testTagAssignments();
 testTagTargetSplitting();
